@@ -1,19 +1,20 @@
-const $ = (s) => document.querySelector(s);
-const $$ = (s) => [...document.querySelectorAll(s)];
+// V43 stability helper: all missing/blank unit values default to 1U.
 function parseUnits(value) {
-  if (value === null || value === undefined || value === "") return 1;
-
-  if (typeof value === "number") return value;
+  if (value === null || value === undefined || value === '') return 1;
+  if (typeof value === 'number') return value;
 
   const cleaned = String(value)
-    .replace("U", "")
-    .replace("u", "")
-    .replace(",", "")
+    .replace('U', '')
+    .replace('u', '')
+    .replace(',', '')
     .trim();
 
   const parsed = Number.parseFloat(cleaned);
   return Number.isFinite(parsed) ? parsed : 1;
 }
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
 function uniq(arr){return [...new Set(arr.filter(Boolean))].sort();}
 function slugStatus(s){return String(s).replace(/\s+/g,'-').replace(/[^A-Z-]/g,'');}
 function pct(v){const n=parseFloat(String(v).replace('%',''));return Number.isFinite(n)?n:null;}
