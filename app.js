@@ -12,7 +12,6 @@ function parseUnits(value) {
     .trim();
 
   const parsed = Number.parseFloat(cleaned);
-
   return Number.isFinite(parsed) ? parsed : 1;
 }
 function uniq(arr){return [...new Set(arr.filter(Boolean))].sort();}
