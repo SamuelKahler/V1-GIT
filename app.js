@@ -936,6 +936,73 @@ function renderPerformanceLab(){
 }
 
 
+// V42 F5 Performance Lab
+let selectedF5Team = 'ALL';
+function f5AllBets(){ return Array.isArray(window.f5PerformanceBets) ? window.f5PerformanceBets : (typeof f5PerformanceBets !== 'undefined' ? f5PerformanceBets : []); }
+function f5Teams(){ return Array.isArray(window.mlbTeams) ? window.mlbTeams : (typeof mlbTeams !== 'undefined' ? mlbTeams : []); }
+function f5Stats(rows){
+  const total = rows.length;
+  const wins = rows.filter(r=>r.outcome==='win' || Number(r.result)>0).length;
+  const losses = rows.filter(r=>r.outcome==='loss' || Number(r.result)<0).length;
+  const profit = rows.reduce((s,r)=>s+Number(r.result||0),0);
+  const risk = wins + losses;
+  const winRate = risk ? (wins / risk) * 100 : 0;
+  const roi = risk ? (profit / risk) * 100 : 0;
+  const avgScore = total ? rows.reduce((s,r)=>s+Number(r.score||0),0) / total : 0;
+  const avgOdds = total ? rows.reduce((s,r)=>s+(Number.parseInt(String(r.odds||'').replace(/[^+\-\d]/g,''),10)||0),0) / total : 0;
+  return {total,wins,losses,profit,risk,winRate,roi,avgScore,avgOdds};
+}
+function f5MetricClass(value){ return Number(value) >= 0 ? 'metric-pop positive-metric' : 'metric-pop negative-metric'; }
+function f5FormatPct(value){ return `${Number(value||0).toFixed(2)}%`; }
+function f5FormatUnits(value){ const n=Number(value||0); return `${n>0?'+':''}${n.toFixed(2)}U`; }
+function f5LogoBadge(team){ return `<div class="f5-logo-badge">${team.abbr}</div>`; }
+function renderF5Overall(){
+  const el = $('#f5OverallSummary');
+  if(!el) return;
+  const stats = f5Stats(f5AllBets());
+  el.innerHTML = `<div><strong>${stats.total}</strong><small>Total F5 Bets</small></div><div><strong>${stats.wins}-${stats.losses}</strong><small>Record</small></div><div><strong class="metric-pop positive-metric">${f5FormatPct(stats.winRate)}</strong><small>Win %</small></div><div><strong class="${f5MetricClass(stats.roi)}">${f5FormatPct(stats.roi)}</strong><small>ROI</small></div><div><strong class="${f5MetricClass(stats.profit)}">${f5FormatUnits(stats.profit)}</strong><small>Profit</small></div><div><strong>${stats.avgScore.toFixed(2)}</strong><small>Avg AI Score</small></div>`;
+}
+function renderF5TeamGrid(){
+  const grid = $('#f5TeamGrid');
+  if(!grid) return;
+  const bets = f5AllBets();
+  const teams = f5Teams();
+  grid.innerHTML = teams.map(team=>{
+    const rows = bets.filter(b=>b.team===team.abbr);
+    const s = f5Stats(rows);
+    const active = selectedF5Team === team.abbr;
+    return `<button class="f5-team-card ${active?'active':''}" data-f5-team="${team.abbr}">${f5LogoBadge(team)}<span><strong>${team.name}</strong><small>${rows.length ? `${s.wins}-${s.losses} • ${f5FormatPct(s.winRate)} Win` : 'No F5 data yet'}</small></span></button>`;
+  }).join('');
+  grid.querySelectorAll('[data-f5-team]').forEach(btn=>btn.addEventListener('click',()=>{ selectedF5Team = btn.dataset.f5Team; renderF5PerformanceLab(); }));
+}
+function renderF5SelectedTeam(){
+  const title = $('#f5SelectedTeamTitle'), sub = $('#f5SelectedTeamSub'), statsEl = $('#f5SelectedTeamStats'), table = $('#f5BetTable');
+  if(!title || !sub || !statsEl || !table) return;
+  const teams = f5Teams();
+  const bets = f5AllBets();
+  const team = teams.find(t=>t.abbr===selectedF5Team) || teams.find(t=>bets.some(b=>b.team===t.abbr)) || teams[0];
+  if(!team){ title.textContent='No F5 database loaded'; sub.textContent='Add F5 bets to data.js.'; return; }
+  const rows = bets.filter(b=>b.team===team.abbr).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const s = f5Stats(rows);
+  title.innerHTML = `${f5LogoBadge(team)} ${team.name}`;
+  sub.textContent = rows.length ? `${rows.length} tracked F5 bets for ${team.name}.` : `${team.name} has no F5 bets in the database yet.`;
+  statsEl.innerHTML = `<div><strong>${rows.length}</strong><small>Team Bets</small></div><div><strong>${s.wins}-${s.losses}</strong><small>Record</small></div><div><strong class="metric-pop positive-metric">${rows.length?f5FormatPct(s.winRate):'—'}</strong><small>Win %</small></div><div><strong class="${f5MetricClass(s.roi)}">${rows.length?f5FormatPct(s.roi):'—'}</strong><small>ROI</small></div><div><strong class="${f5MetricClass(s.profit)}">${rows.length?f5FormatUnits(s.profit):'—'}</strong><small>Profit</small></div><div><strong>${rows.length?s.avgScore.toFixed(2):'—'}</strong><small>Avg AI Score</small></div>`;
+  if(!rows.length){ table.innerHTML = '<p class="subtle">No F5 bets for this team yet. This team card is ready for future updates.</p>'; return; }
+  table.innerHTML = `<div class="f5-table-wrap"><table class="f5-bet-table"><thead><tr><th>Date</th><th>Bet</th><th>Odds</th><th>Result</th><th>W/L</th><th>AI Score</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.date}</td><td><strong>${r.bet}</strong></td><td><strong class="f5-odds">${r.odds}</strong></td><td class="${Number(r.result)>=0?'status-WIN':'status-LOSS'}">${f5FormatUnits(r.result)}</td><td>${r.outcome==='win'?'✅':'❌'}</td><td><strong>${Number(r.score).toFixed(2)}</strong></td></tr>`).join('')}</tbody></table></div>`;
+}
+function renderF5PerformanceLab(){
+  if(!$('#f5OverallSummary')) return;
+  if(selectedF5Team === 'ALL'){
+    const bets=f5AllBets();
+    const topTeam = f5Teams().map(t=>({team:t, stats:f5Stats(bets.filter(b=>b.team===t.abbr))})).filter(x=>x.stats.total).sort((a,b)=>b.stats.profit-a.stats.profit)[0];
+    if(topTeam) selectedF5Team = topTeam.team.abbr;
+  }
+  renderF5Overall();
+  renderF5TeamGrid();
+  renderF5SelectedTeam();
+}
+
+
 function renderCategorizedPlayBoard(picks, emptyMessage){
   if(!picks.length) return `<p class="subtle">${emptyMessage}</p>`;
   const columns = ['First Five','Moneyline','Over','Under','Spread'];
@@ -1325,6 +1392,7 @@ function boot(){
   safeRender('journal', renderJournal);
   safeRender('series', renderSeries);
   safeRender('performance', renderPerformanceLab);
+  safeRender('f5 performance lab', renderF5PerformanceLab);
   safeRender('model center', initPremiumModelCenter);
   safeRender('college football props', initCollegeFootballProps);
   safeRender('home stats', ()=>{
