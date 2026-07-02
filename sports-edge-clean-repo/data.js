@@ -16526,3 +16526,1406 @@ const ncaaFootballPropRows = [
     "year": "2025"
   }
 ];
+
+// V42 F5 Performance Lab database. This is the dedicated ledger for every F5 play produced by the AI weights/prompts.
+const mlbTeams = [
+  {
+    "abbr": "ARI",
+    "name": "Arizona Diamondbacks"
+  },
+  {
+    "abbr": "ATL",
+    "name": "Atlanta Braves"
+  },
+  {
+    "abbr": "BAL",
+    "name": "Baltimore Orioles"
+  },
+  {
+    "abbr": "BOS",
+    "name": "Boston Red Sox"
+  },
+  {
+    "abbr": "CHC",
+    "name": "Chicago Cubs"
+  },
+  {
+    "abbr": "CWS",
+    "name": "Chicago White Sox"
+  },
+  {
+    "abbr": "CIN",
+    "name": "Cincinnati Reds"
+  },
+  {
+    "abbr": "CLE",
+    "name": "Cleveland Guardians"
+  },
+  {
+    "abbr": "COL",
+    "name": "Colorado Rockies"
+  },
+  {
+    "abbr": "DET",
+    "name": "Detroit Tigers"
+  },
+  {
+    "abbr": "HOU",
+    "name": "Houston Astros"
+  },
+  {
+    "abbr": "KC",
+    "name": "Kansas City Royals"
+  },
+  {
+    "abbr": "LAA",
+    "name": "Los Angeles Angels"
+  },
+  {
+    "abbr": "LAD",
+    "name": "Los Angeles Dodgers"
+  },
+  {
+    "abbr": "MIA",
+    "name": "Miami Marlins"
+  },
+  {
+    "abbr": "MIL",
+    "name": "Milwaukee Brewers"
+  },
+  {
+    "abbr": "MIN",
+    "name": "Minnesota Twins"
+  },
+  {
+    "abbr": "NYM",
+    "name": "New York Mets"
+  },
+  {
+    "abbr": "NYY",
+    "name": "New York Yankees"
+  },
+  {
+    "abbr": "OAK",
+    "name": "Oakland Athletics"
+  },
+  {
+    "abbr": "PHI",
+    "name": "Philadelphia Phillies"
+  },
+  {
+    "abbr": "PIT",
+    "name": "Pittsburgh Pirates"
+  },
+  {
+    "abbr": "SD",
+    "name": "San Diego Padres"
+  },
+  {
+    "abbr": "SF",
+    "name": "San Francisco Giants"
+  },
+  {
+    "abbr": "SEA",
+    "name": "Seattle Mariners"
+  },
+  {
+    "abbr": "STL",
+    "name": "St. Louis Cardinals"
+  },
+  {
+    "abbr": "TB",
+    "name": "Tampa Bay Rays"
+  },
+  {
+    "abbr": "TEX",
+    "name": "Texas Rangers"
+  },
+  {
+    "abbr": "TOR",
+    "name": "Toronto Blue Jays"
+  },
+  {
+    "abbr": "WSH",
+    "name": "Washington Nationals"
+  }
+];
+
+const f5PerformanceBets = [
+  {
+    "id": "f5-001",
+    "team": "ATL",
+    "teamName": "Atlanta Braves",
+    "bet": "ATL Braves +.5",
+    "date": "5/4/2026",
+    "odds": "+100",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.68
+  },
+  {
+    "id": "f5-002",
+    "team": "DET",
+    "teamName": "Detroit Tigers",
+    "bet": "DET Tigers -.5",
+    "date": "5/5/2026",
+    "odds": "-140",
+    "result": -1.4,
+    "outcome": "loss",
+    "score": 7.14
+  },
+  {
+    "id": "f5-003",
+    "team": "LAD",
+    "teamName": "Los Angeles Dodgers",
+    "bet": "LAD Dodgers -.5",
+    "date": "5/5/2026",
+    "odds": "-135",
+    "result": -1.35,
+    "outcome": "loss",
+    "score": 6.83
+  },
+  {
+    "id": "f5-004",
+    "team": "ATL",
+    "teamName": "Atlanta Braves",
+    "bet": "ATL Braves +.5",
+    "date": "5/5/2026",
+    "odds": "-135",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.42
+  },
+  {
+    "id": "f5-005",
+    "team": "TB",
+    "teamName": "Tampa Bay Rays",
+    "bet": "TB Rays -.5",
+    "date": "5/6/2026",
+    "odds": "+105",
+    "result": 1.05,
+    "outcome": "win",
+    "score": 7.47
+  },
+  {
+    "id": "f5-006",
+    "team": "CHC",
+    "teamName": "Chicago Cubs",
+    "bet": "CHC Cubs -.5",
+    "date": "5/7/2026",
+    "odds": "-130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.4
+  },
+  {
+    "id": "f5-007",
+    "team": "NYY",
+    "teamName": "New York Yankees",
+    "bet": "NYY Yankees -.5",
+    "date": "5/7/2026",
+    "odds": "-120",
+    "result": -1.2,
+    "outcome": "loss",
+    "score": 7.15
+  },
+  {
+    "id": "f5-008",
+    "team": "PIT",
+    "teamName": "Pittsburgh Pirates",
+    "bet": "PIT Pirates +.5",
+    "date": "5/7/2026",
+    "odds": "-125",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.44
+  },
+  {
+    "id": "f5-009",
+    "team": "SEA",
+    "teamName": "Seattle Mariners",
+    "bet": "SEA Mariners -.5",
+    "date": "5/8/2026",
+    "odds": "-105",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.67
+  },
+  {
+    "id": "f5-010",
+    "team": "CHC",
+    "teamName": "Chicago Cubs",
+    "bet": "CHC Cubs -.5",
+    "date": "5/9/2026",
+    "odds": "-100",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 7.16
+  },
+  {
+    "id": "f5-011",
+    "team": "NYY",
+    "teamName": "New York Yankees",
+    "bet": "NYY Yankees -.5",
+    "date": "5/9/2026",
+    "odds": "-120",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.29
+  },
+  {
+    "id": "f5-012",
+    "team": "TB",
+    "teamName": "Tampa Bay Rays",
+    "bet": "TB Rays +.5",
+    "date": "5/11/2026",
+    "odds": "-130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.94
+  },
+  {
+    "id": "f5-013",
+    "team": "SEA",
+    "teamName": "Seattle Mariners",
+    "bet": "SEA Mariners -.5",
+    "date": "5/11/2026",
+    "odds": "+105",
+    "result": 1.05,
+    "outcome": "win",
+    "score": 6.82
+  },
+  {
+    "id": "f5-014",
+    "team": "TB",
+    "teamName": "Tampa Bay Rays",
+    "bet": "TB Rays -.5",
+    "date": "5/12/2026",
+    "odds": "+110",
+    "result": 1.1,
+    "outcome": "win",
+    "score": 6.45
+  },
+  {
+    "id": "f5-015",
+    "team": "PIT",
+    "teamName": "Pittsburgh Pirates",
+    "bet": "PIT Pirates -.5",
+    "date": "5/13/2026",
+    "odds": "-140",
+    "result": -1.4,
+    "outcome": "loss",
+    "score": 7.53
+  },
+  {
+    "id": "f5-016",
+    "team": "NYY",
+    "teamName": "New York Yankees",
+    "bet": "NYY Yankees -.5",
+    "date": "5/13/2026",
+    "odds": "-115",
+    "result": -1.15,
+    "outcome": "loss",
+    "score": 6.79
+  },
+  {
+    "id": "f5-017",
+    "team": "MIL",
+    "teamName": "Milwaukee Brewers",
+    "bet": "MIL Brewers -.5",
+    "date": "5/14/2026",
+    "odds": "-110",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.4
+  },
+  {
+    "id": "f5-018",
+    "team": "CIN",
+    "teamName": "Cincinnati Reds",
+    "bet": "CIN Reds -.5",
+    "date": "5/14/2026",
+    "odds": "-115",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.27
+  },
+  {
+    "id": "f5-019",
+    "team": "NYM",
+    "teamName": "New York Mets",
+    "bet": "NYM Mets -.5",
+    "date": "5/14/2026",
+    "odds": "-120",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.39
+  },
+  {
+    "id": "f5-020",
+    "team": "NYY",
+    "teamName": "New York Yankees",
+    "bet": "NYY Yankees -.5",
+    "date": "5/15/2026",
+    "odds": "-130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.72
+  },
+  {
+    "id": "f5-021",
+    "team": "ATL",
+    "teamName": "Atlanta Braves",
+    "bet": "ATL Braves -.5",
+    "date": "5/15/2026",
+    "odds": "-120",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.79
+  },
+  {
+    "id": "f5-022",
+    "team": "TOR",
+    "teamName": "Toronto Blue Jays",
+    "bet": "TOR Blue Jays -.5",
+    "date": "5/15/2026",
+    "odds": "+110",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.62
+  },
+  {
+    "id": "f5-023",
+    "team": "PIT",
+    "teamName": "Pittsburgh Pirates",
+    "bet": "PIT Pirates -.5",
+    "date": "5/17/2026",
+    "odds": "-115",
+    "result": -1.15,
+    "outcome": "loss",
+    "score": 7.51
+  },
+  {
+    "id": "f5-024",
+    "team": "TB",
+    "teamName": "Tampa Bay Rays",
+    "bet": "TB Rays -.5",
+    "date": "5/17/2026",
+    "odds": "-125",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.91
+  },
+  {
+    "id": "f5-025",
+    "team": "SEA",
+    "teamName": "Seattle Mariners",
+    "bet": "SEA Mariners -.5",
+    "date": "5/17/2026",
+    "odds": "-125",
+    "result": -1.25,
+    "outcome": "loss",
+    "score": 6.39
+  },
+  {
+    "id": "f5-026",
+    "team": "CHC",
+    "teamName": "Chicago Cubs",
+    "bet": "CHC Cubs -.5",
+    "date": "5/18/2026",
+    "odds": "-130",
+    "result": -1.3,
+    "outcome": "loss",
+    "score": 7.97
+  },
+  {
+    "id": "f5-027",
+    "team": "TB",
+    "teamName": "Tampa Bay Rays",
+    "bet": "TB Rays -.5",
+    "date": "5/18/2026",
+    "odds": "-100",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.72
+  },
+  {
+    "id": "f5-028",
+    "team": "SD",
+    "teamName": "San Diego Padres",
+    "bet": "SD Padres +.5",
+    "date": "5/18/2026",
+    "odds": "-130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.59
+  },
+  {
+    "id": "f5-029",
+    "team": "CLE",
+    "teamName": "Cleveland Guardians",
+    "bet": "CLE Guardians -.5",
+    "date": "5/19/2026",
+    "odds": "+105",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 7.2
+  },
+  {
+    "id": "f5-030",
+    "team": "MIL",
+    "teamName": "Milwaukee Brewers",
+    "bet": "MIL Brewers -.5",
+    "date": "5/19/2026",
+    "odds": "+105",
+    "result": 1.05,
+    "outcome": "win",
+    "score": 7.01
+  },
+  {
+    "id": "f5-031",
+    "team": "BOS",
+    "teamName": "Boston Red Sox",
+    "bet": "BOS Red Sox -.5",
+    "date": "5/19/2026",
+    "odds": "-105",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.5
+  },
+  {
+    "id": "f5-032",
+    "team": "PIT",
+    "teamName": "Pittsburgh Pirates",
+    "bet": "PIT Pirates -.5",
+    "date": "5/21/2026",
+    "odds": "-100",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.61
+  },
+  {
+    "id": "f5-033",
+    "team": "ATL",
+    "teamName": "Atlanta Braves",
+    "bet": "ATL Braves -.5",
+    "date": "5/21/2026",
+    "odds": "-100",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.67
+  },
+  {
+    "id": "f5-034",
+    "team": "PHI",
+    "teamName": "Philadelphia Phillies",
+    "bet": "PHI Phillies -.5",
+    "date": "5/22/2026",
+    "odds": "-115",
+    "result": -1.15,
+    "outcome": "loss",
+    "score": 6.93
+  },
+  {
+    "id": "f5-035",
+    "team": "ATL",
+    "teamName": "Atlanta Braves",
+    "bet": "ATL Braves -.5",
+    "date": "5/22/2026",
+    "odds": "-135",
+    "result": -1.35,
+    "outcome": "loss",
+    "score": 7.26
+  },
+  {
+    "id": "f5-036",
+    "team": "MIL",
+    "teamName": "Milwaukee Brewers",
+    "bet": "MIL Brewers -.5",
+    "date": "5/22/2026",
+    "odds": "+105",
+    "result": 1.05,
+    "outcome": "win",
+    "score": 6.5
+  },
+  {
+    "id": "f5-037",
+    "team": "PIT",
+    "teamName": "Pittsburgh Pirates",
+    "bet": "PIT Pirates -.5",
+    "date": "5/23/2026",
+    "odds": "-115",
+    "result": -1.15,
+    "outcome": "loss",
+    "score": 7.48
+  },
+  {
+    "id": "f5-038",
+    "team": "PHI",
+    "teamName": "Philadelphia Phillies",
+    "bet": "PHI Phillies -.5",
+    "date": "5/23/2026",
+    "odds": "-130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.82
+  },
+  {
+    "id": "f5-039",
+    "team": "CHC",
+    "teamName": "Chicago Cubs",
+    "bet": "CHC Cubs -.5",
+    "date": "5/23/2026",
+    "odds": "-120",
+    "result": -1.2,
+    "outcome": "loss",
+    "score": 6.14
+  },
+  {
+    "id": "f5-040",
+    "team": "CIN",
+    "teamName": "Cincinnati Reds",
+    "bet": "CIN Reds -.5",
+    "date": "5/26/2026",
+    "odds": "+141",
+    "result": 1.41,
+    "outcome": "win",
+    "score": 7.39
+  },
+  {
+    "id": "f5-041",
+    "team": "NYY",
+    "teamName": "New York Yankees",
+    "bet": "NYY Yankees -.5",
+    "date": "5/26/2026",
+    "odds": "-150",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.02
+  },
+  {
+    "id": "f5-042",
+    "team": "PIT",
+    "teamName": "Pittsburgh Pirates",
+    "bet": "PIT Pirates -.5",
+    "date": "5/28/2026",
+    "odds": "-135",
+    "result": -1.35,
+    "outcome": "loss",
+    "score": 7.53
+  },
+  {
+    "id": "f5-043",
+    "team": "CWS",
+    "teamName": "Chicago White Sox",
+    "bet": "CWS White Sox -.5",
+    "date": "5/28/2026",
+    "odds": "-135",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.71
+  },
+  {
+    "id": "f5-044",
+    "team": "WSH",
+    "teamName": "Washington Nationals",
+    "bet": "WSH Nationals +.5",
+    "date": "5/30/2026",
+    "odds": "-140",
+    "result": -1.4,
+    "outcome": "loss",
+    "score": 7.21
+  },
+  {
+    "id": "f5-045",
+    "team": "CHC",
+    "teamName": "Chicago Cubs",
+    "bet": "CHC Cubs -.5",
+    "date": "5/30/2026",
+    "odds": "-100",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 6.65
+  },
+  {
+    "id": "f5-046",
+    "team": "MIL",
+    "teamName": "Milwaukee Brewers",
+    "bet": "MIL Brewers -.5",
+    "date": "5/31/2026",
+    "odds": "-140",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.12
+  },
+  {
+    "id": "f5-047",
+    "team": "ATL",
+    "teamName": "Atlanta Braves",
+    "bet": "ATL Braves -.5",
+    "date": "5/31/2026",
+    "odds": "+105",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 6.8
+  },
+  {
+    "id": "f5-048",
+    "team": "TB",
+    "teamName": "Tampa Bay Rays",
+    "bet": "TB Rays -.5",
+    "date": "5/31/2026",
+    "odds": "-150",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.42
+  },
+  {
+    "id": "f5-049",
+    "team": "ARI",
+    "teamName": "Arizona Diamondbacks",
+    "bet": "ARI Diamondbacks +.5",
+    "date": "6/2/2026",
+    "odds": "+105",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 6.58
+  },
+  {
+    "id": "f5-050",
+    "team": "SD",
+    "teamName": "San Diego Padres",
+    "bet": "SD Padres +.5",
+    "date": "6/2/2026",
+    "odds": "-100",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.5
+  },
+  {
+    "id": "f5-051",
+    "team": "SEA",
+    "teamName": "Seattle Mariners",
+    "bet": "SEA Mariners -.5",
+    "date": "6/2/2026",
+    "odds": "-135",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.08
+  },
+  {
+    "id": "f5-052",
+    "team": "TB",
+    "teamName": "Tampa Bay Rays",
+    "bet": "TB Rays -.5",
+    "date": "6/5/2026",
+    "odds": "-100",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 8.04
+  },
+  {
+    "id": "f5-053",
+    "team": "SD",
+    "teamName": "San Diego Padres",
+    "bet": "SD Padres -.5",
+    "date": "6/5/2026",
+    "odds": "+105",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 7.43
+  },
+  {
+    "id": "f5-054",
+    "team": "CLE",
+    "teamName": "Cleveland Guardians",
+    "bet": "CLE Guardians -.5",
+    "date": "6/5/2026",
+    "odds": "-140",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.33
+  },
+  {
+    "id": "f5-055",
+    "team": "SEA",
+    "teamName": "Seattle Mariners",
+    "bet": "SEA Mariners -.5",
+    "date": "6/6/2026",
+    "odds": "-105",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.5
+  },
+  {
+    "id": "f5-056",
+    "team": "TB",
+    "teamName": "Tampa Bay Rays",
+    "bet": "TB Rays -.5",
+    "date": "6/6/2026",
+    "odds": "-100",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 7.08
+  },
+  {
+    "id": "f5-057",
+    "team": "CHC",
+    "teamName": "Chicago Cubs",
+    "bet": "CHC Cubs -.5",
+    "date": "6/6/2026",
+    "odds": "-105",
+    "result": -1.05,
+    "outcome": "loss",
+    "score": 7.05
+  },
+  {
+    "id": "f5-058",
+    "team": "ATL",
+    "teamName": "Atlanta Braves",
+    "bet": "ATL Braves -.5",
+    "date": "6/6/2026",
+    "odds": "-115",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.55
+  },
+  {
+    "id": "f5-059",
+    "team": "CWS",
+    "teamName": "Chicago White Sox",
+    "bet": "CWS White Sox +.5",
+    "date": "6/6/2026",
+    "odds": "+105",
+    "result": 1.05,
+    "outcome": "win",
+    "score": 6.33
+  },
+  {
+    "id": "f5-060",
+    "team": "MIL",
+    "teamName": "Milwaukee Brewers",
+    "bet": "MIL Brewers -.5",
+    "date": "6/7/2026",
+    "odds": "-130",
+    "result": -1.3,
+    "outcome": "loss",
+    "score": 7.1
+  },
+  {
+    "id": "f5-061",
+    "team": "HOU",
+    "teamName": "Houston Astros",
+    "bet": "HOU Astros -.5",
+    "date": "6/8/2026",
+    "odds": "+100",
+    "result": -1.3,
+    "outcome": "loss",
+    "score": 8.9
+  },
+  {
+    "id": "f5-062",
+    "team": "PHI",
+    "teamName": "Philadelphia Phillies",
+    "bet": "PHI Phillies -.5",
+    "date": "6/8/2026",
+    "odds": "-130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 8.3
+  },
+  {
+    "id": "f5-063",
+    "team": "SEA",
+    "teamName": "Seattle Mariners",
+    "bet": "SEA Mariners -.5",
+    "date": "6/8/2026",
+    "odds": "+105",
+    "result": 1.05,
+    "outcome": "win",
+    "score": 7.9
+  },
+  {
+    "id": "f5-064",
+    "team": "SEA",
+    "teamName": "Seattle Mariners",
+    "bet": "SEA Mariners -.5",
+    "date": "6/9/2026",
+    "odds": "+100",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.5
+  },
+  {
+    "id": "f5-065",
+    "team": "PIT",
+    "teamName": "Pittsburgh Pirates",
+    "bet": "PIT Pirates +.5",
+    "date": "6/9/2026",
+    "odds": "+120",
+    "result": 1.2,
+    "outcome": "win",
+    "score": 7.3
+  },
+  {
+    "id": "f5-066",
+    "team": "CIN",
+    "teamName": "Cincinnati Reds",
+    "bet": "CIN Reds -.5",
+    "date": "6/9/2026",
+    "odds": "+120",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 7.0
+  },
+  {
+    "id": "f5-067",
+    "team": "CLE",
+    "teamName": "Cleveland Guardians",
+    "bet": "CLE Guardians -.5",
+    "date": "6/10/2026",
+    "odds": "+105",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 7.7
+  },
+  {
+    "id": "f5-068",
+    "team": "SEA",
+    "teamName": "Seattle Mariners",
+    "bet": "SEA Mariners -.5",
+    "date": "6/10/2026",
+    "odds": "+120",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 7.1
+  },
+  {
+    "id": "f5-069",
+    "team": "WSH",
+    "teamName": "Washington Nationals",
+    "bet": "WSH Nationals -.5",
+    "date": "6/10/2026",
+    "odds": "+120",
+    "result": 1.2,
+    "outcome": "win",
+    "score": 6.8
+  },
+  {
+    "id": "f5-070",
+    "team": "LAD",
+    "teamName": "Los Angeles Dodgers",
+    "bet": "LAD Dodgers -.5",
+    "date": "6/11/2026",
+    "odds": "-125",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.14
+  },
+  {
+    "id": "f5-071",
+    "team": "TB",
+    "teamName": "Tampa Bay Rays",
+    "bet": "TB Rays -.5",
+    "date": "6/12/2026",
+    "odds": "-130",
+    "result": -1.3,
+    "outcome": "loss",
+    "score": 7.66
+  },
+  {
+    "id": "f5-072",
+    "team": "ATL",
+    "teamName": "Atlanta Braves",
+    "bet": "ATL Braves +.5",
+    "date": "6/12/2026",
+    "odds": "-100",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 6.51
+  },
+  {
+    "id": "f5-073",
+    "team": "BAL",
+    "teamName": "Baltimore Orioles",
+    "bet": "BAL Orioles -.5",
+    "date": "6/12/2026",
+    "odds": "-100",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.25
+  },
+  {
+    "id": "f5-074",
+    "team": "TEX",
+    "teamName": "Texas Rangers",
+    "bet": "TEX Rangers -.5",
+    "date": "6/13/2026",
+    "odds": "-115",
+    "result": -1.15,
+    "outcome": "loss",
+    "score": 7.4
+  },
+  {
+    "id": "f5-075",
+    "team": "CHC",
+    "teamName": "Chicago Cubs",
+    "bet": "CHC Cubs -.5",
+    "date": "6/13/2026",
+    "odds": "+115",
+    "result": 1.15,
+    "outcome": "win",
+    "score": 7.1
+  },
+  {
+    "id": "f5-076",
+    "team": "NYY",
+    "teamName": "New York Yankees",
+    "bet": "NYY Yankees -.5",
+    "date": "6/13/2026",
+    "odds": "+115",
+    "result": -1.15,
+    "outcome": "loss",
+    "score": 6.9
+  },
+  {
+    "id": "f5-077",
+    "team": "CIN",
+    "teamName": "Cincinnati Reds",
+    "bet": "CIN Reds -.5",
+    "date": "6/15/2026",
+    "odds": "-115",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.71
+  },
+  {
+    "id": "f5-078",
+    "team": "PHI",
+    "teamName": "Philadelphia Phillies",
+    "bet": "PHI Phillies -.5",
+    "date": "6/15/2026",
+    "odds": "-140",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.3
+  },
+  {
+    "id": "f5-079",
+    "team": "CHC",
+    "teamName": "Chicago Cubs",
+    "bet": "CHC Cubs -.5",
+    "date": "6/15/2026",
+    "odds": "-140",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.71
+  },
+  {
+    "id": "f5-080",
+    "team": "TB",
+    "teamName": "Tampa Bay Rays",
+    "bet": "TB Rays +.5",
+    "date": "6/15/2026",
+    "odds": "+130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.45
+  },
+  {
+    "id": "f5-081",
+    "team": "TB",
+    "teamName": "Tampa Bay Rays",
+    "bet": "TB Rays +.5",
+    "date": "6/16/2026",
+    "odds": "-130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.3
+  },
+  {
+    "id": "f5-082",
+    "team": "CLE",
+    "teamName": "Cleveland Guardians",
+    "bet": "CLE Guardians +.5",
+    "date": "6/16/2026",
+    "odds": "-120",
+    "result": -1.2,
+    "outcome": "loss",
+    "score": 6.9
+  },
+  {
+    "id": "f5-083",
+    "team": "CWS",
+    "teamName": "Chicago White Sox",
+    "bet": "CWS White Sox +.5",
+    "date": "6/16/2026",
+    "odds": "-125",
+    "result": -1.25,
+    "outcome": "loss",
+    "score": 6.2
+  },
+  {
+    "id": "f5-084",
+    "team": "MIL",
+    "teamName": "Milwaukee Brewers",
+    "bet": "MIL Brewers -.5",
+    "date": "6/19/2026",
+    "odds": "-130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.5
+  },
+  {
+    "id": "f5-085",
+    "team": "CLE",
+    "teamName": "Cleveland Guardians",
+    "bet": "CLE Guardians +.5",
+    "date": "6/19/2026",
+    "odds": "-145",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.1
+  },
+  {
+    "id": "f5-086",
+    "team": "PIT",
+    "teamName": "Pittsburgh Pirates",
+    "bet": "PIT Pirates -.5",
+    "date": "6/19/2026",
+    "odds": "+105",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 6.7
+  },
+  {
+    "id": "f5-087",
+    "team": "STL",
+    "teamName": "St. Louis Cardinals",
+    "bet": "STL Cardinals",
+    "date": "6/19/2026",
+    "odds": "+125",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 6.5
+  },
+  {
+    "id": "f5-088",
+    "team": "PHI",
+    "teamName": "Philadelphia Phillies",
+    "bet": "PHI Phillies -.5",
+    "date": "6/20/2026",
+    "odds": "-130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.8
+  },
+  {
+    "id": "f5-089",
+    "team": "LAD",
+    "teamName": "Los Angeles Dodgers",
+    "bet": "LAD Dodgers -.5",
+    "date": "6/20/2026",
+    "odds": "-150",
+    "result": -1.5,
+    "outcome": "loss",
+    "score": 7.6
+  },
+  {
+    "id": "f5-090",
+    "team": "HOU",
+    "teamName": "Houston Astros",
+    "bet": "HOU Astros -.5",
+    "date": "6/20/2026",
+    "odds": "-110",
+    "result": -1.1,
+    "outcome": "loss",
+    "score": 6.7
+  },
+  {
+    "id": "f5-091",
+    "team": "ATL",
+    "teamName": "Atlanta Braves",
+    "bet": "ATL Braves -.5",
+    "date": "6/20/2026",
+    "odds": "-110",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.3
+  },
+  {
+    "id": "f5-092",
+    "team": "SF",
+    "teamName": "San Francisco Giants",
+    "bet": "SF Giants -.5",
+    "date": "6/21/2026",
+    "odds": "-115",
+    "result": -1.15,
+    "outcome": "loss",
+    "score": 7.3
+  },
+  {
+    "id": "f5-093",
+    "team": "PHI",
+    "teamName": "Philadelphia Phillies",
+    "bet": "PHI Phillies -.5",
+    "date": "6/21/2026",
+    "odds": "-130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.1
+  },
+  {
+    "id": "f5-094",
+    "team": "CIN",
+    "teamName": "Cincinnati Reds",
+    "bet": "CIN Reds -.5",
+    "date": "6/21/2026",
+    "odds": "-105",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 6.9
+  },
+  {
+    "id": "f5-095",
+    "team": "SEA",
+    "teamName": "Seattle Mariners",
+    "bet": "SEA Mariners -.5",
+    "date": "6/21/2026",
+    "odds": "+110",
+    "result": 1.1,
+    "outcome": "win",
+    "score": 6.6
+  },
+  {
+    "id": "f5-096",
+    "team": "MIL",
+    "teamName": "Milwaukee Brewers",
+    "bet": "MIL Brewers -.5",
+    "date": "6/22/2026",
+    "odds": "-105",
+    "result": -1.05,
+    "outcome": "loss",
+    "score": 7.1
+  },
+  {
+    "id": "f5-097",
+    "team": "TB",
+    "teamName": "Tampa Bay Rays",
+    "bet": "TB Rays -.5",
+    "date": "6/22/2026",
+    "odds": "-135",
+    "result": -1.35,
+    "outcome": "loss",
+    "score": 7.1
+  },
+  {
+    "id": "f5-098",
+    "team": "DET",
+    "teamName": "Detroit Tigers",
+    "bet": "DET Tigers -.5",
+    "date": "6/23/2026",
+    "odds": "-115",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.6
+  },
+  {
+    "id": "f5-099",
+    "team": "BOS",
+    "teamName": "Boston Red Sox",
+    "bet": "BOS Red Sox -.5",
+    "date": "6/23/2026",
+    "odds": "-130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.2
+  },
+  {
+    "id": "f5-100",
+    "team": "CLE",
+    "teamName": "Cleveland Guardians",
+    "bet": "CLE Guardians -.5",
+    "date": "6/23/2026",
+    "odds": "-120",
+    "result": -1.2,
+    "outcome": "loss",
+    "score": 6.8
+  },
+  {
+    "id": "f5-101",
+    "team": "NYY",
+    "teamName": "New York Yankees",
+    "bet": "NYY Yankees -.5",
+    "date": "6/25/2026",
+    "odds": "-110",
+    "result": -1.1,
+    "outcome": "loss",
+    "score": 7.2
+  },
+  {
+    "id": "f5-102",
+    "team": "KC",
+    "teamName": "Kansas City Royals",
+    "bet": "KC Royals +.5",
+    "date": "6/25/2026",
+    "odds": "-130",
+    "result": -1.3,
+    "outcome": "loss",
+    "score": 6.5
+  },
+  {
+    "id": "f5-103",
+    "team": "SEA",
+    "teamName": "Seattle Mariners",
+    "bet": "SEA Mariners -.5",
+    "date": "6/25/2026",
+    "odds": "-110",
+    "result": -1.1,
+    "outcome": "loss",
+    "score": 6.4
+  },
+  {
+    "id": "f5-104",
+    "team": "MIA",
+    "teamName": "Miami Marlins",
+    "bet": "MIA Marlins -.5",
+    "date": "6/26/2026",
+    "odds": "+120",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 6.4
+  },
+  {
+    "id": "f5-105",
+    "team": "TEX",
+    "teamName": "Texas Rangers",
+    "bet": "TEX Rangers -.5",
+    "date": "6/26/2026",
+    "odds": "+110",
+    "result": 1.1,
+    "outcome": "win",
+    "score": 6.5
+  },
+  {
+    "id": "f5-106",
+    "team": "LAD",
+    "teamName": "Los Angeles Dodgers",
+    "bet": "LAD Dodgers -.5",
+    "date": "6/26/2026",
+    "odds": "-105",
+    "result": -1.05,
+    "outcome": "loss",
+    "score": 7.1
+  },
+  {
+    "id": "f5-107",
+    "team": "LAD",
+    "teamName": "Los Angeles Dodgers",
+    "bet": "LAD Dodgers -.5",
+    "date": "6/27/2026",
+    "odds": "-140",
+    "result": -1.4,
+    "outcome": "loss",
+    "score": 8.05
+  },
+  {
+    "id": "f5-108",
+    "team": "TOR",
+    "teamName": "Toronto Blue Jays",
+    "bet": "TOR Blue Jays -.5",
+    "date": "6/27/2026",
+    "odds": "-140",
+    "result": -1.4,
+    "outcome": "loss",
+    "score": 7.08
+  },
+  {
+    "id": "f5-109",
+    "team": "SEA",
+    "teamName": "Seattle Mariners",
+    "bet": "SEA Mariners -.5",
+    "date": "6/27/2026",
+    "odds": "-110",
+    "result": -1.1,
+    "outcome": "loss",
+    "score": 6.33
+  },
+  {
+    "id": "f5-110",
+    "team": "MIL",
+    "teamName": "Milwaukee Brewers",
+    "bet": "MIL Brewers -.5",
+    "date": "6/27/2026",
+    "odds": "-120",
+    "result": -1.2,
+    "outcome": "loss",
+    "score": 6.2
+  },
+  {
+    "id": "f5-111",
+    "team": "NYY",
+    "teamName": "New York Yankees",
+    "bet": "NYY Yankees -.5",
+    "date": "6/28/2026",
+    "odds": "-110",
+    "result": -1.1,
+    "outcome": "loss",
+    "score": 6.3
+  },
+  {
+    "id": "f5-112",
+    "team": "LAD",
+    "teamName": "Los Angeles Dodgers",
+    "bet": "LAD Dodgers -.5",
+    "date": "6/28/2026",
+    "odds": "-130",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.6
+  },
+  {
+    "id": "f5-113",
+    "team": "HOU",
+    "teamName": "Houston Astros",
+    "bet": "HOU Astros -.5",
+    "date": "6/28/2026",
+    "odds": "-140",
+    "result": -1.4,
+    "outcome": "loss",
+    "score": 6.15
+  },
+  {
+    "id": "f5-114",
+    "team": "MIA",
+    "teamName": "Miami Marlins",
+    "bet": "MIA Marlins -.5",
+    "date": "6/29/2026",
+    "odds": "-115",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.78
+  },
+  {
+    "id": "f5-115",
+    "team": "SEA",
+    "teamName": "Seattle Mariners",
+    "bet": "SEA Mariners -.5",
+    "date": "6/29/2026",
+    "odds": "-145",
+    "result": 1.0,
+    "outcome": "win",
+    "score": 7.98
+  },
+  {
+    "id": "f5-116",
+    "team": "TEX",
+    "teamName": "Texas Rangers",
+    "bet": "TEX Rangers -.5",
+    "date": "6/30/2026",
+    "odds": "+105",
+    "result": -1.0,
+    "outcome": "loss",
+    "score": 7.0
+  }
+];
