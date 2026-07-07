@@ -797,34 +797,73 @@ function explicitSituationTagsForPick(p){
   });
   return tags;
 }
-function matchedTrendEvidenceForPick(p, limit=3){
+function explicitGameLogTrendTagsForPick(p){
+  const raw = [p.pick, p.edge, p.rank, ...(Array.isArray(p.why) ? p.why : [])].join(' ').toUpperCase();
+  const tags = [];
+  if(/PREVIOUSLY\s+SCORED\s+0|PREV[_\s-]*SCRD\s+0|PREV[_\s-]*SCORED\s+0/.test(raw)) tags.push('PREV_SCORED 0');
+  if(/PREVIOUSLY\s+SCORED\s+10\+|PREV[_\s-]*SCRD\s+10\+|PREV[_\s-]*SCORED\s+10\+/.test(raw)) tags.push('PREV_SCORED 10+');
+  if(/PREVIOUSLY\s+ALLOWED\s+0|ALLOWED\s+0|PREV[_\s-]*ALLOWED\s+0/.test(raw)) tags.push('PREV_ALLOWED 0');
+  if(/PREVIOUSLY\s+ALLOWED\s+10\+|ALLOWED\s+10\+|PREV[_\s-]*ALLOWED\s+10\+/.test(raw)) tags.push('PREV_ALLOWED 10+');
+  if(/\bSWEEP\b/.test(raw)) tags.push('SWEEP');
+  if(/\bATS\b|\bAT S\b|\bAVOID\s+THE\s+SWEEP\b/.test(raw)) tags.push('AVOID SWEEP');
+  return uniq(tags);
+}
+function consumerReasoningNotes(p){
+  const blocked = [
+    'TREND TAG PRESERVED FOR MATCHED EVIDENCE',
+    'RESULT INTENTIONALLY LEFT UNVERIFIED',
+    'UNLESS IT CAN BE GRADED WITH 100% CONFIDENCE'
+  ];
+  return (Array.isArray(p.why) ? p.why : []).filter(Boolean).filter(note=>{
+    const upper = String(note).toUpperCase();
+    return !blocked.some(x=>upper.includes(x));
+  });
+}
+function trendEvidenceLabel(row){
+  const rate = pct(row.hitRate);
+  const rateText = rate === null ? 'Game-log match' : `${row.hitRate} hit rate`;
+  const duration = row.duration && row.duration !== '-' ? ` • ${row.duration}` : '';
+  const opponent = row.opponent && row.opponent !== '-' ? ` • ${row.opponent}` : '';
+  const notes = row.notes && row.notes !== '-' ? ` • ${row.notes}` : '';
+  return `${rateText}${duration}${opponent}${notes}`;
+}
+function matchedTrendEvidenceForPick(p, limit=5){
   const teams = teamsFromPickText(p.pick);
-  const desiredStyle = trendEvidenceTypeForPick(p);
-  if(!teams.length || !desiredStyle) return [];
-  const explicitTags = explicitSituationTagsForPick(p);
-  // Accuracy-first rule: never auto-attach situational evidence like AFTER A WIN/LOSS unless
-  // the pick itself explicitly carries that exact context. This prevents false trend matches.
-  const rows = trendRows.map(r=>({...r, normalizedStyle: normalizeStyleKey(r.style)})).filter(r=>{
+  if(!teams.length) return [];
+  const explicitGameLogTags = explicitGameLogTrendTagsForPick(p);
+  const explicitSituations = explicitSituationTagsForPick(p);
+  const desiredMarketStyle = trendEvidenceTypeForPick(p);
+  const rows = trendRows.map(r=>({...r, normalizedStyle: normalizeStyleKey(r.style), hitRateNumber: pct(r.hitRate)})).filter(r=>{
     if(!teams.includes(r.team)) return false;
-    if(pct(r.hitRate) === null) return false;
-    if(desiredStyle === 'ML'){
-      if(r.normalizedStyle !== 'ML') return false;
-    } else if(r.normalizedStyle !== desiredStyle){
-      return false;
-    }
     const situation = String(r.situation || '').toUpperCase();
-    if(situation && explicitTags.length){
-      return explicitTags.some(tag => situation.includes(tag));
+    const exactGameLogMatch = explicitGameLogTags.includes(r.normalizedStyle);
+    const marketRateMatch = desiredMarketStyle && r.normalizedStyle === desiredMarketStyle && r.hitRateNumber !== null;
+    if(!exactGameLogMatch && !marketRateMatch) return false;
+    if(marketRateMatch && situation){
+      if(!explicitSituations.length) return false;
+      return explicitSituations.some(tag => situation.includes(tag));
     }
-    if(situation) return false;
     return true;
   });
-  return rows.sort((a,b)=>(pct(b.hitRate)||0)-(pct(a.hitRate)||0)).slice(0,limit);
+  return rows.sort((a,b)=>{
+    const aExact = explicitGameLogTags.includes(a.normalizedStyle) ? 1 : 0;
+    const bExact = explicitGameLogTags.includes(b.normalizedStyle) ? 1 : 0;
+    if(aExact !== bExact) return bExact - aExact;
+    const ap = a.hitRateNumber ?? -1;
+    const bp = b.hitRateNumber ?? -1;
+    if(ap !== bp) return bp - ap;
+    return trendDateSortValue(b)-trendDateSortValue(a);
+  }).slice(0,limit);
 }
 function trendEvidenceHtml(p){
   const trends = matchedTrendEvidenceForPick(p);
   if(!trends.length) return '';
-  return `<div class="trend-evidence"><strong>Matched Trend Evidence</strong><ul class="clean evidence-list">${trends.map(t=>`<li><b>${t.team} ${trendDisplayStyle(t.style)}</b> ${t.situation || ''} — <span>${t.hitRate}</span> <small>${t.duration || ''}</small></li>`).join('')}</ul></div>`;
+  return `<div class="trend-evidence"><strong>Matched Trend Evidence</strong><p class="subtle">These are stored database rows tied to the same team and trend/environment tag on this pick.</p><ul class="clean evidence-list">${trends.map(t=>`<li><b>${t.team} ${trendDisplayStyle(t.style)}</b> ${t.situation || ''} — <span>${trendEvidenceLabel(t)}</span><small>${formatTrendDate(t.date)}</small></li>`).join('')}</ul></div>`;
+}
+function trendEvidenceCardSummary(p){
+  const trends = matchedTrendEvidenceForPick(p, 2);
+  if(!trends.length) return '';
+  return `<div class="matched-trend-card"><strong>Matched Trend Evidence</strong>${trends.map(t=>`<span>${t.team} ${trendDisplayStyle(t.style)}${t.situation ? ' • ' + t.situation : ''} — ${pct(t.hitRate)===null ? 'game-log match' : t.hitRate}</span>`).join('')}</div>`;
 }
 function slatePlayCard(p){
   const st = normalizedPickStatus(p);
@@ -835,7 +874,7 @@ function slatePlayCard(p){
     <h3>${cleanPickTitle(p)}</h3>
     ${matchupSubtitleHtml(p)}
     <div class="meta"><span class="pill">${bettorCategory(p)}</span><span class="pill">Odds ${p.odds || '-'}</span><span class="pill">${explicitUnitSize(p)?String(p.units).trim():'No unit size'}</span></div>
-    <p class="card-summary">${matchedTrendEvidenceForPick(p).length ? 'Matched trend evidence available.' : (compactWhy(p)[0] || 'Tracked by Sports Edge.')}</p>
+    ${trendEvidenceCardSummary(p) || `<p class="card-summary">${consumerReasoningNotes(p)[0] || compactWhy(p)[0] || 'Tracked by Sports Edge.'}</p>`}
     <button class="secondary details-cta" onclick="openPick(${dailyPicks.indexOf(p)})">Open Bet Details</button>
   </article>`;
 }
@@ -1151,7 +1190,8 @@ function openPick(i){
   const breakdown=Object.entries(p.breakdown||{}).map(([k,v])=>`<div><strong>${k}</strong><br>${v}</div>`).join('')||'<p>No component detail entered yet.</p>';
   const scoreMeta = typeof p.score === 'number' ? `<span class="pill">Score ${p.score}</span>` : `<span class="pill ${'status-'+slugStatus(st)}">Result ${pickScoreDisplay(p)}</span>`;
   const trendHtml = trendEvidenceHtml(p);
-  const reasoningHtml = (p.why||[]).length ? `<div class="reason-block"><strong>Reasoning Notes</strong><ul class="clean">${(p.why||[]).map(w=>`<li>${w}</li>`).join('')}</ul></div>` : '';
+  const consumerWhy = consumerReasoningNotes(p);
+  const reasoningHtml = consumerWhy.length ? `<div class="reason-block"><strong>Reasoning Notes</strong><ul class="clean">${consumerWhy.map(w=>`<li>${w}</li>`).join('')}</ul></div>` : '';
   const detailSections = [
     trendHtml ? detailAccordion('Matched Game Log / Trend Evidence', trendHtml, true) : '',
     reasoningHtml ? detailAccordion('Reasoning Notes', reasoningHtml, !trendHtml) : '',
