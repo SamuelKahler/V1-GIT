@@ -1003,12 +1003,25 @@ function renderF5PerformanceLab(){
 }
 
 
-function renderCategorizedPlayBoard(picks, emptyMessage){
+function isWaitForValuePick(p){
+  const raw = [p.status, p.pick, p.edge, p.rank, ...(Array.isArray(p.why) ? p.why : [])].join(' ').toUpperCase();
+  return raw.includes('LIVE') || raw.includes('WAIT FOR VALUE') || raw.includes('IN-GAME') || raw.includes('IN GAME');
+}
+function isMainBoardPick(p){ return !isWaitForValuePick(p); }
+function renderCategorizedPlayBoard(picks, emptyMessage, options={}){
+  const includeLiveLooks = options.includeLiveLooks !== false;
   if(!picks.length) return `<p class="subtle">${emptyMessage}</p>`;
-  const columns = ['First Five','Moneyline','Over','Under','Spread'];
+  const columns = includeLiveLooks ? ['Wait For Value / Live Looks','First Five','Moneyline','Over','Under','Spread'] : ['First Five','Moneyline','Over','Under','Spread'];
   const by = Object.fromEntries(columns.map(c=>[c, []]));
-  picks.filter(isClassifiedPick).forEach(p=>{ const cat = bettorCategory(p); if(by[cat]) by[cat].push(p); });
-  return `<div class="pick-column-board">${columns.map(cat=>`<section class="pick-column"><div class="pick-column-head"><h3>${cat === 'First Five' ? 'F5' : cat === 'Moneyline' ? 'ML' : cat}</h3><span>${by[cat].length}</span></div><div class="pick-column-list">${by[cat].length ? by[cat].map(slatePlayCard).join('') : '<p class="subtle small-empty">No plays</p>'}</div></section>`).join('')}</div>`;
+  picks.filter(isClassifiedPick).forEach(p=>{
+    const cat = isWaitForValuePick(p) && includeLiveLooks ? 'Wait For Value / Live Looks' : bettorCategory(p);
+    if(by[cat]) by[cat].push(p);
+  });
+  return `<div class="pick-column-board">${columns.map(cat=>{
+    const label = cat === 'First Five' ? 'F5' : cat === 'Moneyline' ? 'ML' : cat === 'Wait For Value / Live Looks' ? 'Wait For Value' : cat;
+    const helper = cat === 'Wait For Value / Live Looks' ? '<small>LIVE-tagged plays to monitor in-game for better value.</small>' : '';
+    return `<section class="pick-column ${cat === 'Wait For Value / Live Looks' ? 'wait-value-column' : ''}"><div class="pick-column-head"><h3>${label}</h3><span>${by[cat].length}</span>${helper}</div><div class="pick-column-list">${by[cat].length ? by[cat].map(slatePlayCard).join('') : '<p class="subtle small-empty">No plays</p>'}</div></section>`;
+  }).join('')}</div>`;
 }
 
 function renderHomeDailyDashboard(){
@@ -1078,15 +1091,18 @@ function renderPicks(){
   const currentSlate = picks.filter(p=>dateKey(parseSlateDate(p.slate))===latest);
   const nonSeriesCurrent = currentSlate.filter(p=>!isSeriesPick(p));
   const classifiedCurrent = nonSeriesCurrent.filter(isClassifiedPick);
-  const official = classifiedCurrent.filter(isOfficialPlay);
-  const research = classifiedCurrent.filter(isResearchPlay);
+  const waitForValue = classifiedCurrent.filter(isWaitForValuePick);
+  const regularCurrent = classifiedCurrent.filter(isMainBoardPick);
+  const official = regularCurrent.filter(isOfficialPlay);
+  const research = regularCurrent.filter(isResearchPlay);
   const archive = picks.filter(p=>dateKey(parseSlateDate(p.slate))!==latest && isClassifiedPick(p));
 
-  const officialHtml = `<section class="pick-section"><div class="board-header"><div><p class="eyebrow">Money On It</p><h3>Official Plays</h3><p>Only plays with unit sizes attached. These are the plays users should treat as official card plays.</p></div></div>${renderCategorizedPlayBoard(official, 'No unit-sized official plays for the latest slate yet.')}</section>`;
-  const researchHtml = `<section class="pick-section"><div class="board-header research-header"><div><p class="eyebrow">Found Edge</p><h3>Research Plays</h3><p>These are plays the app identified or you entered, but they are not official bets until a unit size is attached.</p></div></div>${renderCategorizedPlayBoard(research, 'No research plays for the latest slate.')}</section>`;
+  const officialHtml = `<section class="pick-section"><div class="board-header"><div><p class="eyebrow">Money On It</p><h3>Official Plays</h3><p>Only non-live plays with unit sizes attached. These are the plays users should treat as official card plays before the game.</p></div></div>${renderCategorizedPlayBoard(official, 'No unit-sized official plays for the latest slate yet.', {includeLiveLooks:false})}</section>`;
+  const waitValueHtml = `<section class="pick-section wait-value-section"><div class="board-header research-header"><div><p class="eyebrow">In-Game Watchlist</p><h3>Wait For Value / Live Looks</h3><p>These picks were tagged LIVE. They should be monitored during the game for better value instead of treated like normal pregame bets.</p></div></div>${renderCategorizedPlayBoard(waitForValue, 'No LIVE / wait-for-value plays for the latest slate.', {includeLiveLooks:true})}</section>`;
+  const researchHtml = `<section class="pick-section"><div class="board-header research-header"><div><p class="eyebrow">Found Edge</p><h3>Research Plays</h3><p>These are non-live plays the app identified or you entered, but they are not official bets until a unit size is attached.</p></div></div>${renderCategorizedPlayBoard(research, 'No research plays for the latest slate.', {includeLiveLooks:false})}</section>`;
   const archiveHtml = `<section class="pick-section"><h3>Historical Results Archive</h3>${groupBySlate(archive).map(([slate,items])=>`<details class="date-group"><summary>${slate} <span>${items.length} picks</span></summary><div class="archive-list">${items.map(p=>archiveRow(p)).join('')}</div></details>`).join('')}</section>`;
   $('#picksGrid').className = 'picks-dashboard';
-  $('#picksGrid').innerHTML = officialHtml + researchHtml + archiveHtml;
+  $('#picksGrid').innerHTML = officialHtml + waitValueHtml + researchHtml + archiveHtml;
   if($('#homePicks')) $('#homePicks').textContent=dailyPicks.length;
   renderHomeDailyDashboard();
 }
