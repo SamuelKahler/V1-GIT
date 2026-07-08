@@ -1,10 +1,11 @@
-// V44.1 Sports Edge Verified Grading Engine
+// V44.2 Sports Edge Verified July Bulk Grading Engine
 // Location in repo: sports-edge-clean-repo/api/grade-picks.js
-// Purpose: server-side verified MLB grading helper.
+// Purpose: server-side verified MLB grading helper + July bulk grading test.
 // IMPORTANT: Do not paste API keys in this file. Vercel reads ODDS_API_KEY from Environment Variables.
 
 const MLB_TEAM_ABBR = {
   'Arizona Diamondbacks': 'ARI',
+  'Atlanta Braves': 'ATL',
   'Athletics': "A's",
   'Oakland Athletics': "A's",
   'Baltimore Orioles': 'BAL',
@@ -37,13 +38,102 @@ const MLB_TEAM_ABBR = {
 };
 
 const TEAM_ALIASES = {
-  ARI: 'ARI', BAL: 'BAL', BOS: 'BOS', CHC: 'CHC', CWS: 'CWS', CIN: 'CIN', CLE: 'CLE', COL: 'COL', DET: 'DET', HOU: 'HOU', KC: 'KC', LAA: 'LAA', LAD: 'LAD', MIA: 'MIA', MIL: 'MIL', MIN: 'MIN', NYM: 'NYM', NYY: 'NYY', PHI: 'PHI', PIT: 'PIT', SD: 'SD', SF: 'SF', SEA: 'SEA', STL: 'STL', TB: 'TB', TEX: 'TEX', TOR: 'TOR', WSH: 'WSH',
-  ATH: "A's", OAK: "A's", AS: "A's", A: "A's",
-  RAYS: 'TB', MARLINS: 'MIA', BREWERS: 'MIL', CUBS: 'CHC', METS: 'NYM', GUARDIANS: 'CLE', DODGERS: 'LAD', TWINS: 'MIN', CARDINALS: 'STL', ASTROS: 'HOU', BLUEJAYS: 'TOR', 'BLUE JAYS': 'TOR', REDS: 'CIN', WHITESOX: 'CWS', 'WHITE SOX': 'CWS', PADRES: 'SD', BRAVES: 'ATL', MARINERS: 'SEA', PIRATES: 'PIT', PHILLIES: 'PHI', GIANTS: 'SF', ATHLETICS: "A's", ANGELS: 'LAA', ORIOLES: 'BAL', RANGERS: 'TEX', ROCKIES: 'COL', DIAMONDBACKS: 'ARI', NATIONALS: 'WSH', TIGERS: 'DET', YANKEES: 'NYY', ROYALS: 'KC', REDSOX: 'BOS', 'RED SOX': 'BOS'
+  ARI: 'ARI', ATL: 'ATL', BAL: 'BAL', BOS: 'BOS', CHC: 'CHC', CWS: 'CWS', CIN: 'CIN', CLE: 'CLE', COL: 'COL', DET: 'DET', HOU: 'HOU', KC: 'KC', LAA: 'LAA', LAD: 'LAD', MIA: 'MIA', MIL: 'MIL', MIN: 'MIN', NYM: 'NYM', NYY: 'NYY', PHI: 'PHI', PIT: 'PIT', SD: 'SD', SF: 'SF', SEA: 'SEA', STL: 'STL', TB: 'TB', TEX: 'TEX', TOR: 'TOR', WSH: 'WSH',
+  ATH: "A's", OAK: "A's", AS: "A's", A: "A's", ATHLETICS: "A's",
+  RAYS: 'TB', MARLINS: 'MIA', BREWERS: 'MIL', CUBS: 'CHC', METS: 'NYM', GUARDIANS: 'CLE', DODGERS: 'LAD', TWINS: 'MIN', CARDINALS: 'STL', ASTROS: 'HOU', BLUEJAYS: 'TOR', 'BLUE JAYS': 'TOR', REDS: 'CIN', WHITESOX: 'CWS', 'WHITE SOX': 'CWS', PADRES: 'SD', BRAVES: 'ATL', MARINERS: 'SEA', PIRATES: 'PIT', PHILLIES: 'PHI', GIANTS: 'SF', ANGELS: 'LAA', ORIOLES: 'BAL', RANGERS: 'TEX', ROCKIES: 'COL', DIAMONDBACKS: 'ARI', NATIONALS: 'WSH', TIGERS: 'DET', YANKEES: 'NYY', ROYALS: 'KC', REDSOX: 'BOS', 'RED SOX': 'BOS'
 };
 
+const JULY_PICKS = [
+  // 07/01
+  {date:'2026-07-01', rawPick:'CWS / BAL O10', notes:'LIVE'},
+  {date:'2026-07-01', rawPick:'CWS ML', odds:'+115', trendTags:['SWEEP'], notes:'LIVE'},
+  {date:'2026-07-01', rawPick:'TEX ML', odds:'+103', units:'.35U', trendTags:['SWEEP']},
+  {date:'2026-07-01', rawPick:'DET ML', odds:'+119', trendTags:['SWEEP']},
+  {date:'2026-07-01', rawPick:'DET / NYY O9.5', odds:'-123', notes:'LIVE'},
+  {date:'2026-07-01', rawPick:'F5 SD +.5', odds:'-125', notes:'LIVE'},
+  {date:'2026-07-01', rawPick:'SD ML', odds:'+105', trendTags:['AtS'], notes:'LIVE'},
+  {date:'2026-07-01', rawPick:'SD / CHC O11.5', odds:'-118', notes:'LIVE'},
+  {date:'2026-07-01', rawPick:'PIT ML', odds:'+115', trendTags:['PREV_SCORED 0'], notes:'LIVE'},
+  {date:'2026-07-01', rawPick:'PIT / PHI O8', odds:'-115', notes:'LIVE'},
+  {date:'2026-07-01', rawPick:'TOR ML', odds:'-115'},
+  {date:'2026-07-01', rawPick:'STL / ATL U9', odds:'-105'},
+  {date:'2026-07-01', rawPick:'TB / KC U10.5', odds:'-110', notes:'LIVE'},
+  {date:'2026-07-01', rawPick:'F5 TB -.5', odds:'+100'},
+  {date:'2026-07-01', rawPick:'STL / ATL U9', odds:'-119', units:'.35U'},
+  {date:'2026-07-01', rawPick:'MIL ML', odds:'-162', notes:'LIVE'},
+  {date:'2026-07-01', rawPick:'MIN / HOU O8.5', odds:'-110', units:'.7U'},
+  {date:'2026-07-01', rawPick:'F5 MIA -.5', odds:'-120', units:'.55U', notes:'LIVE'},
+
+  // 07/02
+  {date:'2026-07-02', rawPick:'PIT ML', odds:'+110', trendTags:['ALLOWED 10+']},
+  {date:'2026-07-02', rawPick:'F5 MIL -.5', odds:'-125', notes:'LIVE'},
+  {date:'2026-07-02', rawPick:'MIA / COL O12.5', odds:'-105', units:'.5U'},
+  {date:'2026-07-02', rawPick:'CLE ML', odds:'+100', notes:'LIVE'},
+  {date:'2026-07-02', rawPick:'STL / ATL U9', odds:'-110'},
+  {date:'2026-07-02', rawPick:'TB / KC O10.5', odds:'-105'},
+  {date:'2026-07-02', rawPick:'F5 TEX -.5', odds:'+120'},
+  {date:'2026-07-02', rawPick:'LAA ML', odds:'+162'},
+  {date:'2026-07-02', rawPick:'LAA / SEA U7.5', odds:'-110'},
+  {date:'2026-07-02', rawPick:'F5 SEA -.5', odds:'-140'},
+
+  // 07/03
+  {date:'2026-07-03', rawPick:'STL / CHC O10.5', odds:'-105', notes:'LIVE'},
+  {date:'2026-07-03', rawPick:'PIT / WSH O9.5', odds:'-105'},
+  {date:'2026-07-03', rawPick:'MIN / NYY O9.5', odds:'-105', notes:'LIVE'},
+  {date:'2026-07-03', rawPick:'F5 TB -.5', odds:'+115', units:'.35U'},
+  {date:'2026-07-03', rawPick:'MIA / A\'s O10.5', odds:'-110'},
+  {date:'2026-07-03', rawPick:'MIL ML', odds:'-161'},
+  {date:'2026-07-03', rawPick:'SEA ML', odds:'+109'},
+  {date:'2026-07-03', rawPick:'TOR / SEA U7', odds:'-102'},
+
+  // 07/04
+  {date:'2026-07-04', rawPick:'MIN / NYY O10.5', odds:'-105', units:'.35U', notes:'LIVE; opened O10 -105'},
+  {date:'2026-07-04', rawPick:'TEX ML', odds:'+106', units:'.4U', notes:'LIVE; opened -102'},
+  {date:'2026-07-04', rawPick:'DET / TEX U8', odds:'-114', notes:'LIVE'},
+  {date:'2026-07-04', rawPick:'SEA ML', odds:'-160', trendTags:['PREV_SCORED 0']},
+  {date:'2026-07-04', rawPick:'F5 SEA -.5', odds:'-125', notes:'LIVE'},
+  {date:'2026-07-04', rawPick:'TOR / SEA U7.5', odds:'-105'},
+  {date:'2026-07-04', rawPick:'CIN ML', odds:'-120', trendTags:['PREV_SCORED 0']},
+  {date:'2026-07-04', rawPick:'BAL / CIN O9', odds:'-125'},
+  {date:'2026-07-04', rawPick:'CHC ML', odds:'-166', trendTags:['PREV_ALLOWED 10+']},
+  {date:'2026-07-04', rawPick:'F5 ATL -.5', odds:'-130'},
+  {date:'2026-07-04', rawPick:'BOS / LAA U8.5', odds:'-115', units:'.5U'},
+  {date:'2026-07-04', rawPick:"A's ML", odds:'+105', trendTags:['ALLOWED 10+']},
+  {date:'2026-07-04', rawPick:"MIA / A's O11", odds:'-105', notes:'LIVE'},
+  {date:'2026-07-04', rawPick:'MIL / ARI U9', odds:'-105'},
+  {date:'2026-07-04', rawPick:'F5 MIL -.5', odds:'-120'},
+
+  // 07/05
+  {date:'2026-07-05', rawPick:'ATL ML', odds:'-123', notes:'LIVE'},
+  {date:'2026-07-05', rawPick:'NYM / ATL U9', odds:'-120', units:'.25U', notes:'LIVE; opened U9.5 -110'},
+  {date:'2026-07-05', rawPick:'PIT / WSH O9.5', odds:'-110', notes:'LIVE'},
+  {date:'2026-07-05', rawPick:'MIN / NYY O8', odds:'-110', notes:'LIVE'},
+  {date:'2026-07-05', rawPick:'CHC ML', odds:'-150', trendTags:['PREV_SCORED 0','AtS'], notes:'LIVE'},
+  {date:'2026-07-05', rawPick:'PHI / KC U10', odds:'-108', notes:'LIVE'},
+  {date:'2026-07-05', rawPick:'TEX ML', odds:'+105', trendTags:['PREV_SCORED 0']},
+
+  // 07/06
+  {date:'2026-07-06', rawPick:'HOU / WSH O9.5', odds:'-120'},
+  {date:'2026-07-06', rawPick:'MIL / STL U8', odds:'-110'},
+  {date:'2026-07-06', rawPick:'TOR / SF U7.5', odds:'-105', notes:'LIVE'},
+
+  // 07/07
+  {date:'2026-07-07', rawPick:'BAL ML', odds:'+100'},
+  {date:'2026-07-07', rawPick:'ATL / PIT O8', odds:'-105', notes:'LIVE'},
+  {date:'2026-07-07', rawPick:'SEA / MIA O8', odds:'-107'},
+  {date:'2026-07-07', rawPick:"A's / DET O8", odds:'-110'},
+  {date:'2026-07-07', rawPick:'HOU ML', odds:'+105', trendTags:['ALLOWED 10+'], notes:'LIVE'},
+  {date:'2026-07-07', rawPick:'HOU / WSH O9', odds:'-115', notes:'LIVE'},
+  {date:'2026-07-07', rawPick:'F5 PHI -.5', odds:'-125', notes:'LIVE'},
+  {date:'2026-07-07', rawPick:'BOS / CWS O8.5', odds:'+100'},
+  {date:'2026-07-07', rawPick:'CLE ML', odds:'-101', trendTags:['NO CLV']},
+  {date:'2026-07-07', rawPick:'SD ML', odds:'-127', trendTags:['PREV_SCORED 0']},
+  {date:'2026-07-07', rawPick:'ARI / SD U8.5', odds:'-105'},
+  {date:'2026-07-07', rawPick:'TOR ML', odds:'-118', trendTags:['PREV_ALLOWED 10+']}
+];
+
 function normalizeTeam(value) {
-  const raw = String(value || '').trim();
+  const raw = String(value || '').trim().replace(/[’]/g, "'");
   if (!raw) return '';
   if (MLB_TEAM_ABBR[raw]) return MLB_TEAM_ABBR[raw];
   const cleaned = raw.toUpperCase().replace(/[^A-Z ]/g, '').replace(/\s+/g, ' ').trim();
@@ -86,11 +176,7 @@ function convertMlbGame(game) {
     awayScore,
     homeScore,
     totalRuns: awayScore + homeScore,
-    f5: {
-      away: sumFirstFive(awayInnings),
-      home: sumFirstFive(homeInnings),
-      available: innings.length >= 5
-    },
+    f5: { away: sumFirstFive(awayInnings), home: sumFirstFive(homeInnings), available: innings.length >= 5 },
     innings: { away: awayInnings, home: homeInnings }
   };
 }
@@ -117,17 +203,13 @@ function findGameForTeams(games, a, b) {
 
 function scoreFor(game, team, market) {
   const target = normalizeTeam(team);
-  if (market === 'F5_SPREAD' || market === 'F5_ML') {
-    return target === game.away ? game.f5.away : target === game.home ? game.f5.home : null;
-  }
+  if (market === 'F5_SPREAD' || market === 'F5_ML') return target === game.away ? game.f5.away : target === game.home ? game.f5.home : null;
   return target === game.away ? game.awayScore : target === game.home ? game.homeScore : null;
 }
 
 function oppScoreFor(game, team, market) {
   const target = normalizeTeam(team);
-  if (market === 'F5_SPREAD' || market === 'F5_ML') {
-    return target === game.away ? game.f5.home : target === game.home ? game.f5.away : null;
-  }
+  if (market === 'F5_SPREAD' || market === 'F5_ML') return target === game.away ? game.f5.home : target === game.home ? game.f5.away : null;
   return target === game.away ? game.homeScore : target === game.home ? game.awayScore : null;
 }
 
@@ -135,17 +217,16 @@ function gradePick({ market, team, opponent, side, line }, games) {
   const normalizedMarket = String(market || '').toUpperCase();
   const normalizedSide = String(side || '').toUpperCase();
   const numericLine = Number(line);
-  let game = opponent ? findGameForTeams(games, team, opponent) : findGameForTeam(games, team);
+  const game = opponent ? findGameForTeams(games, team, opponent) : findGameForTeam(games, team);
 
   if (!game) return { status: 'UNVERIFIED', reason: 'No matching MLB game found for this date/team.' };
   if (!game.isFinal) return { status: 'UNVERIFIED', reason: `Game is not final yet. Current status: ${game.status}.`, game };
-  if ((normalizedMarket === 'F5_SPREAD' || normalizedMarket === 'F5_ML') && !game.f5.available) {
-    return { status: 'UNVERIFIED', reason: 'First-five innings are not fully available from the official linescore.', game };
-  }
+  if ((normalizedMarket === 'F5_SPREAD' || normalizedMarket === 'F5_ML' || normalizedMarket === 'F5_TOTAL') && !game.f5.available) return { status: 'UNVERIFIED', reason: 'First-five innings are not fully available from the official linescore.', game };
 
   if (normalizedMarket === 'ML' || normalizedMarket === 'MONEYLINE' || normalizedMarket === 'F5_ML') {
-    const scored = scoreFor(game, team, normalizedMarket === 'F5_ML' ? 'F5_ML' : 'ML');
-    const allowed = oppScoreFor(game, team, normalizedMarket === 'F5_ML' ? 'F5_ML' : 'ML');
+    const marketType = normalizedMarket === 'F5_ML' ? 'F5_ML' : 'ML';
+    const scored = scoreFor(game, team, marketType);
+    const allowed = oppScoreFor(game, team, marketType);
     if (scored === allowed) return { status: 'PUSH', reason: `Verified tie for ${normalizeTeam(team)} in ${normalizedMarket}.`, game };
     return { status: scored > allowed ? 'WIN' : 'LOSS', reason: `Verified ${normalizedMarket}: ${normalizeTeam(team)} ${scored}, opponent ${allowed}.`, game };
   }
@@ -175,15 +256,18 @@ function gradePick({ market, team, opponent, side, line }, games) {
     return { status: adjusted > 0 ? 'WIN' : 'LOSS', reason: `Verified ${normalizedMarket}: ${normalizeTeam(team)} ${scored}, opponent ${allowed}, line ${numericLine}.`, game };
   }
 
-  return { status: 'UNVERIFIED', reason: `Market ${normalizedMarket || '(missing)'} is not supported in V44.1 yet.`, game };
+  return { status: 'UNVERIFIED', reason: `Market ${normalizedMarket || '(missing)'} is not supported in V44.2 yet.`, game };
 }
 
 function parseRawPick(rawPick) {
-  const text = String(rawPick || '').trim().replace(/_/g, ' ');
+  const text = String(rawPick || '').trim().replace(/[’]/g, "'").replace(/_/g, ' ').replace(/\*/g, '').replace(/\s+/g, ' ');
   if (!text) return null;
 
   const f5Spread = text.match(/^F5\s+([A-Za-z'.]+)\s*([+-])\s*\.?5/i);
   if (f5Spread) return { market: 'F5_SPREAD', team: f5Spread[1], line: f5Spread[2] === '+' ? 0.5 : -0.5 };
+
+  const f5Ml = text.match(/^F5\s+([A-Za-z'.]+)\s+ML\b/i);
+  if (f5Ml) return { market: 'F5_ML', team: f5Ml[1] };
 
   const total = text.match(/^([A-Za-z'.]+)\s*\/\s*([A-Za-z'.]+)\s+([ou])\s*([0-9]+(?:\.[0-9])?)/i);
   if (total) return { market: 'TOTAL', team: total[1], opponent: total[2], side: total[3], line: total[4] };
@@ -197,10 +281,33 @@ function parseRawPick(rawPick) {
   return null;
 }
 
+function summarize(results) {
+  const summary = { total: results.length, WIN: 0, LOSS: 0, PUSH: 0, NO_ACTION: 0, UNVERIFIED: 0, PARSE_FAILED: 0 };
+  for (const r of results) {
+    const key = r.grading?.status || (r.parsedPick ? 'UNVERIFIED' : 'PARSE_FAILED');
+    if (summary[key] === undefined) summary[key] = 0;
+    summary[key] += 1;
+  }
+  summary.graded = summary.WIN + summary.LOSS + summary.PUSH + summary.NO_ACTION;
+  summary.record = `${summary.WIN}-${summary.LOSS}`;
+  summary.winRate = summary.WIN + summary.LOSS ? `${((summary.WIN / (summary.WIN + summary.LOSS)) * 100).toFixed(1)}%` : 'N/A';
+  return summary;
+}
+
 async function maybeFetchOdds() {
   const key = process.env.ODDS_API_KEY;
   if (!key) return { configured: false, message: 'ODDS_API_KEY is not configured in Vercel yet.' };
-  return { configured: true, message: 'ODDS_API_KEY is configured. Odds fetch is intentionally off in V44.1 test mode to preserve quota.' };
+  return { configured: true, message: 'ODDS_API_KEY is configured. Odds fetch is intentionally off in V44.2 test mode to preserve quota.' };
+}
+
+async function gradeDate(date, picksForDate) {
+  const { sourceUrl, games } = await fetchMlbGames(date);
+  const results = picksForDate.map(pick => {
+    const parsedPick = parseRawPick(pick.rawPick);
+    const grading = parsedPick ? gradePick(parsedPick, games) : { status: 'UNVERIFIED', reason: 'Could not parse this pick safely.' };
+    return { ...pick, parsedPick, grading };
+  });
+  return { date, sourceUrl, gameCount: games.length, results, summary: summarize(results) };
 }
 
 export default async function handler(req, res) {
@@ -211,27 +318,45 @@ export default async function handler(req, res) {
 
   try {
     const query = req.query || Object.fromEntries(new URL(req.url, 'http://localhost').searchParams.entries());
+    const odds = await maybeFetchOdds();
+
+    if (query.month === '2026-07' || query.july === 'true') {
+      const dates = [...new Set(JULY_PICKS.map(p => p.date))].sort();
+      const dateBatches = [];
+      for (const date of dates) dateBatches.push(await gradeDate(date, JULY_PICKS.filter(p => p.date === date)));
+      const allResults = dateBatches.flatMap(batch => batch.results.map(r => ({ date: batch.date, ...r })));
+      return res.status(200).json({
+        ok: true,
+        version: 'V44.2',
+        mode: 'july-bulk-grading',
+        source: 'Official MLB Stats API',
+        oddsApi: odds,
+        dateRange: '2026-07-01 through 2026-07-07',
+        summary: summarize(allResults),
+        dateBatches,
+        truthRule: 'Only grade when official MLB data is final and complete. Otherwise return UNVERIFIED. DISREGARD picks were excluded.'
+      });
+    }
+
     const date = toIsoDate(query.date || new Date().toISOString().slice(0, 10));
     if (!date) return res.status(400).json({ ok: false, error: 'Missing or invalid date. Use YYYY-MM-DD.' });
 
-    const { sourceUrl, games } = await fetchMlbGames(date);
-    const odds = await maybeFetchOdds();
+    if (query.bulk === 'true') {
+      const picks = JULY_PICKS.filter(p => p.date === date);
+      const batch = await gradeDate(date, picks);
+      return res.status(200).json({ ok: true, version: 'V44.2', mode: 'single-date-bulk-grading', source: 'Official MLB Stats API', oddsApi: odds, ...batch, truthRule: 'Only grade when official MLB data is final and complete. Otherwise return UNVERIFIED.' });
+    }
 
+    const { sourceUrl, games } = await fetchMlbGames(date);
     let grading = null;
     const parsed = query.rawPick ? parseRawPick(query.rawPick) : null;
-    const direct = query.market ? {
-      market: query.market,
-      team: query.team,
-      opponent: query.opponent,
-      side: query.side,
-      line: query.line
-    } : null;
+    const direct = query.market ? { market: query.market, team: query.team, opponent: query.opponent, side: query.side, line: query.line } : null;
     const pick = direct || parsed;
     if (pick) grading = gradePick(pick, games);
 
     return res.status(200).json({
       ok: true,
-      version: 'V44.1',
+      version: 'V44.2',
       date,
       source: 'Official MLB Stats API',
       sourceUrl,
@@ -243,6 +368,6 @@ export default async function handler(req, res) {
       truthRule: 'Only grade when official MLB data is final and complete. Otherwise return UNVERIFIED.'
     });
   } catch (error) {
-    return res.status(500).json({ ok: false, version: 'V44.1', error: error.message });
+    return res.status(500).json({ ok: false, version: 'V44.2', error: error.message });
   }
 }
