@@ -1,1 +1,248 @@
+// V44.1 Sports Edge Verified Grading Engine
+// Location in repo: sports-edge-clean-repo/api/grade-picks.js
+// Purpose: server-side verified MLB grading helper.
+// IMPORTANT: Do not paste API keys in this file. Vercel reads ODDS_API_KEY from Environment Variables.
 
+const MLB_TEAM_ABBR = {
+  'Arizona Diamondbacks': 'ARI',
+  'Athletics': "A's",
+  'Oakland Athletics': "A's",
+  'Baltimore Orioles': 'BAL',
+  'Boston Red Sox': 'BOS',
+  'Chicago Cubs': 'CHC',
+  'Chicago White Sox': 'CWS',
+  'Cincinnati Reds': 'CIN',
+  'Cleveland Guardians': 'CLE',
+  'Colorado Rockies': 'COL',
+  'Detroit Tigers': 'DET',
+  'Houston Astros': 'HOU',
+  'Kansas City Royals': 'KC',
+  'Los Angeles Angels': 'LAA',
+  'Los Angeles Dodgers': 'LAD',
+  'Miami Marlins': 'MIA',
+  'Milwaukee Brewers': 'MIL',
+  'Minnesota Twins': 'MIN',
+  'New York Mets': 'NYM',
+  'New York Yankees': 'NYY',
+  'Philadelphia Phillies': 'PHI',
+  'Pittsburgh Pirates': 'PIT',
+  'San Diego Padres': 'SD',
+  'San Francisco Giants': 'SF',
+  'Seattle Mariners': 'SEA',
+  'St. Louis Cardinals': 'STL',
+  'Tampa Bay Rays': 'TB',
+  'Texas Rangers': 'TEX',
+  'Toronto Blue Jays': 'TOR',
+  'Washington Nationals': 'WSH'
+};
+
+const TEAM_ALIASES = {
+  ARI: 'ARI', BAL: 'BAL', BOS: 'BOS', CHC: 'CHC', CWS: 'CWS', CIN: 'CIN', CLE: 'CLE', COL: 'COL', DET: 'DET', HOU: 'HOU', KC: 'KC', LAA: 'LAA', LAD: 'LAD', MIA: 'MIA', MIL: 'MIL', MIN: 'MIN', NYM: 'NYM', NYY: 'NYY', PHI: 'PHI', PIT: 'PIT', SD: 'SD', SF: 'SF', SEA: 'SEA', STL: 'STL', TB: 'TB', TEX: 'TEX', TOR: 'TOR', WSH: 'WSH',
+  ATH: "A's", OAK: "A's", AS: "A's", A: "A's",
+  RAYS: 'TB', MARLINS: 'MIA', BREWERS: 'MIL', CUBS: 'CHC', METS: 'NYM', GUARDIANS: 'CLE', DODGERS: 'LAD', TWINS: 'MIN', CARDINALS: 'STL', ASTROS: 'HOU', BLUEJAYS: 'TOR', 'BLUE JAYS': 'TOR', REDS: 'CIN', WHITESOX: 'CWS', 'WHITE SOX': 'CWS', PADRES: 'SD', BRAVES: 'ATL', MARINERS: 'SEA', PIRATES: 'PIT', PHILLIES: 'PHI', GIANTS: 'SF', ATHLETICS: "A's", ANGELS: 'LAA', ORIOLES: 'BAL', RANGERS: 'TEX', ROCKIES: 'COL', DIAMONDBACKS: 'ARI', NATIONALS: 'WSH', TIGERS: 'DET', YANKEES: 'NYY', ROYALS: 'KC', REDSOX: 'BOS', 'RED SOX': 'BOS'
+};
+
+function normalizeTeam(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (MLB_TEAM_ABBR[raw]) return MLB_TEAM_ABBR[raw];
+  const cleaned = raw.toUpperCase().replace(/[^A-Z ]/g, '').replace(/\s+/g, ' ').trim();
+  return TEAM_ALIASES[cleaned] || cleaned.slice(0, 3);
+}
+
+function toIsoDate(value) {
+  const raw = String(value || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0, 10);
+}
+
+function sumFirstFive(runsByInning) {
+  return runsByInning.slice(0, 5).reduce((total, inning) => total + (Number(inning?.runs) || 0), 0);
+}
+
+function convertMlbGame(game) {
+  const awayName = game?.teams?.away?.team?.name || '';
+  const homeName = game?.teams?.home?.team?.name || '';
+  const away = MLB_TEAM_ABBR[awayName] || normalizeTeam(awayName);
+  const home = MLB_TEAM_ABBR[homeName] || normalizeTeam(homeName);
+  const linescore = game?.linescore || {};
+  const innings = Array.isArray(linescore.innings) ? linescore.innings : [];
+  const awayInnings = innings.map(i => ({ inning: i.num, runs: i.away?.runs ?? 0 }));
+  const homeInnings = innings.map(i => ({ inning: i.num, runs: i.home?.runs ?? 0 }));
+  const awayScore = Number(game?.teams?.away?.score ?? linescore.teams?.away?.runs ?? 0);
+  const homeScore = Number(game?.teams?.home?.score ?? linescore.teams?.home?.runs ?? 0);
+  const isFinal = /final|game over|completed/i.test(game?.status?.detailedState || game?.status?.abstractGameState || '');
+  return {
+    gamePk: game.gamePk,
+    gameDate: game.gameDate,
+    status: game?.status?.detailedState || game?.status?.abstractGameState || 'Unknown',
+    isFinal,
+    away,
+    home,
+    awayName,
+    homeName,
+    awayScore,
+    homeScore,
+    totalRuns: awayScore + homeScore,
+    f5: {
+      away: sumFirstFive(awayInnings),
+      home: sumFirstFive(homeInnings),
+      available: innings.length >= 5
+    },
+    innings: { away: awayInnings, home: homeInnings }
+  };
+}
+
+async function fetchMlbGames(date) {
+  const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${encodeURIComponent(date)}&hydrate=linescore,team`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`MLB Stats API error ${response.status}`);
+  const data = await response.json();
+  const games = (data?.dates || []).flatMap(day => day.games || []).map(convertMlbGame);
+  return { sourceUrl: url, games };
+}
+
+function findGameForTeam(games, team) {
+  const target = normalizeTeam(team);
+  return games.find(g => g.away === target || g.home === target);
+}
+
+function findGameForTeams(games, a, b) {
+  const aa = normalizeTeam(a);
+  const bb = normalizeTeam(b);
+  return games.find(g => [g.away, g.home].includes(aa) && [g.away, g.home].includes(bb));
+}
+
+function scoreFor(game, team, market) {
+  const target = normalizeTeam(team);
+  if (market === 'F5_SPREAD' || market === 'F5_ML') {
+    return target === game.away ? game.f5.away : target === game.home ? game.f5.home : null;
+  }
+  return target === game.away ? game.awayScore : target === game.home ? game.homeScore : null;
+}
+
+function oppScoreFor(game, team, market) {
+  const target = normalizeTeam(team);
+  if (market === 'F5_SPREAD' || market === 'F5_ML') {
+    return target === game.away ? game.f5.home : target === game.home ? game.f5.away : null;
+  }
+  return target === game.away ? game.homeScore : target === game.home ? game.awayScore : null;
+}
+
+function gradePick({ market, team, opponent, side, line }, games) {
+  const normalizedMarket = String(market || '').toUpperCase();
+  const normalizedSide = String(side || '').toUpperCase();
+  const numericLine = Number(line);
+  let game = opponent ? findGameForTeams(games, team, opponent) : findGameForTeam(games, team);
+
+  if (!game) return { status: 'UNVERIFIED', reason: 'No matching MLB game found for this date/team.' };
+  if (!game.isFinal) return { status: 'UNVERIFIED', reason: `Game is not final yet. Current status: ${game.status}.`, game };
+  if ((normalizedMarket === 'F5_SPREAD' || normalizedMarket === 'F5_ML') && !game.f5.available) {
+    return { status: 'UNVERIFIED', reason: 'First-five innings are not fully available from the official linescore.', game };
+  }
+
+  if (normalizedMarket === 'ML' || normalizedMarket === 'MONEYLINE' || normalizedMarket === 'F5_ML') {
+    const scored = scoreFor(game, team, normalizedMarket === 'F5_ML' ? 'F5_ML' : 'ML');
+    const allowed = oppScoreFor(game, team, normalizedMarket === 'F5_ML' ? 'F5_ML' : 'ML');
+    if (scored === allowed) return { status: 'PUSH', reason: `Verified tie for ${normalizeTeam(team)} in ${normalizedMarket}.`, game };
+    return { status: scored > allowed ? 'WIN' : 'LOSS', reason: `Verified ${normalizedMarket}: ${normalizeTeam(team)} ${scored}, opponent ${allowed}.`, game };
+  }
+
+  if (normalizedMarket === 'TOTAL' || normalizedMarket === 'OVER_UNDER') {
+    if (!Number.isFinite(numericLine)) return { status: 'UNVERIFIED', reason: 'Total line missing or invalid.', game };
+    const runs = game.totalRuns;
+    if (runs === numericLine) return { status: 'PUSH', reason: `Verified total ${runs} pushed ${numericLine}.`, game };
+    const won = normalizedSide.startsWith('O') ? runs > numericLine : runs < numericLine;
+    return { status: won ? 'WIN' : 'LOSS', reason: `Verified total runs ${runs} ${won ? 'beat' : 'did not beat'} ${normalizedSide}${numericLine}.`, game };
+  }
+
+  if (normalizedMarket === 'F5_TOTAL') {
+    if (!Number.isFinite(numericLine)) return { status: 'UNVERIFIED', reason: 'F5 total line missing or invalid.', game };
+    const runs = game.f5.away + game.f5.home;
+    if (runs === numericLine) return { status: 'PUSH', reason: `Verified F5 total ${runs} pushed ${numericLine}.`, game };
+    const won = normalizedSide.startsWith('O') ? runs > numericLine : runs < numericLine;
+    return { status: won ? 'WIN' : 'LOSS', reason: `Verified F5 total runs ${runs} ${won ? 'beat' : 'did not beat'} ${normalizedSide}${numericLine}.`, game };
+  }
+
+  if (normalizedMarket === 'SPREAD' || normalizedMarket === 'RUNLINE' || normalizedMarket === 'F5_SPREAD') {
+    if (!Number.isFinite(numericLine)) return { status: 'UNVERIFIED', reason: 'Spread line missing or invalid.', game };
+    const scored = scoreFor(game, team, normalizedMarket);
+    const allowed = oppScoreFor(game, team, normalizedMarket);
+    const adjusted = scored - allowed + numericLine;
+    if (adjusted === 0) return { status: 'PUSH', reason: `Verified margin pushed line ${numericLine}.`, game };
+    return { status: adjusted > 0 ? 'WIN' : 'LOSS', reason: `Verified ${normalizedMarket}: ${normalizeTeam(team)} ${scored}, opponent ${allowed}, line ${numericLine}.`, game };
+  }
+
+  return { status: 'UNVERIFIED', reason: `Market ${normalizedMarket || '(missing)'} is not supported in V44.1 yet.`, game };
+}
+
+function parseRawPick(rawPick) {
+  const text = String(rawPick || '').trim().replace(/_/g, ' ');
+  if (!text) return null;
+
+  const f5Spread = text.match(/^F5\s+([A-Za-z'.]+)\s*([+-])\s*\.?5/i);
+  if (f5Spread) return { market: 'F5_SPREAD', team: f5Spread[1], line: f5Spread[2] === '+' ? 0.5 : -0.5 };
+
+  const total = text.match(/^([A-Za-z'.]+)\s*\/\s*([A-Za-z'.]+)\s+([ou])\s*([0-9]+(?:\.[0-9])?)/i);
+  if (total) return { market: 'TOTAL', team: total[1], opponent: total[2], side: total[3], line: total[4] };
+
+  const ml = text.match(/^([A-Za-z'.]+)\s+ML\b/i);
+  if (ml) return { market: 'ML', team: ml[1] };
+
+  const spread = text.match(/^([A-Za-z'.]+)\s*([+-])\s*\.?5/i);
+  if (spread) return { market: 'SPREAD', team: spread[1], line: spread[2] === '+' ? 0.5 : -0.5 };
+
+  return null;
+}
+
+async function maybeFetchOdds() {
+  const key = process.env.ODDS_API_KEY;
+  if (!key) return { configured: false, message: 'ODDS_API_KEY is not configured in Vercel yet.' };
+  return { configured: true, message: 'ODDS_API_KEY is configured. Odds fetch is intentionally off in V44.1 test mode to preserve quota.' };
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  try {
+    const query = req.query || Object.fromEntries(new URL(req.url, 'http://localhost').searchParams.entries());
+    const date = toIsoDate(query.date || new Date().toISOString().slice(0, 10));
+    if (!date) return res.status(400).json({ ok: false, error: 'Missing or invalid date. Use YYYY-MM-DD.' });
+
+    const { sourceUrl, games } = await fetchMlbGames(date);
+    const odds = await maybeFetchOdds();
+
+    let grading = null;
+    const parsed = query.rawPick ? parseRawPick(query.rawPick) : null;
+    const direct = query.market ? {
+      market: query.market,
+      team: query.team,
+      opponent: query.opponent,
+      side: query.side,
+      line: query.line
+    } : null;
+    const pick = direct || parsed;
+    if (pick) grading = gradePick(pick, games);
+
+    return res.status(200).json({
+      ok: true,
+      version: 'V44.1',
+      date,
+      source: 'Official MLB Stats API',
+      sourceUrl,
+      oddsApi: odds,
+      gameCount: games.length,
+      games,
+      parsedPick: pick,
+      grading,
+      truthRule: 'Only grade when official MLB data is final and complete. Otherwise return UNVERIFIED.'
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, version: 'V44.1', error: error.message });
+  }
+}
