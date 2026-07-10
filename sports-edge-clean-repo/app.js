@@ -819,52 +819,112 @@ function consumerReasoningNotes(p){
     return !blocked.some(x=>upper.includes(x));
   });
 }
+function trendEvidenceRecord(row){
+  const wins = Array.isArray(row.winEvidence) ? row.winEvidence.length : 0;
+  const losses = Array.isArray(row.lossEvidence) ? row.lossEvidence.length : 0;
+  const total = wins + losses;
+  const rate = total ? ((wins / total) * 100).toFixed(1) + '%' : null;
+  return { wins, losses, total, rate };
+}
+function trendEvidenceConfidence(row){
+  const rate = pct(row.hitRate);
+  const rec = trendEvidenceRecord(row);
+  const score = rate !== null ? rate : rec.rate ? parseFloat(rec.rate) : 0;
+  if(score >= 70) return 'Strong';
+  if(score >= 65) return 'High';
+  if(score >= 60) return 'Medium+';
+  if(score >= 55) return 'Medium';
+  return 'Developing';
+}
 function trendEvidenceLabel(row){
   const rate = pct(row.hitRate);
-  const rateText = rate === null ? 'Game-log match' : `${row.hitRate} hit rate`;
+  const rec = trendEvidenceRecord(row);
+  const rateText = rate === null ? (rec.total ? `${rec.wins}-${rec.losses} game-log record` : 'Stored game-log match') : `${row.hitRate} hit rate`;
   const duration = row.duration && row.duration !== '-' ? ` • ${row.duration}` : '';
   const opponent = row.opponent && row.opponent !== '-' ? ` • ${row.opponent}` : '';
   const notes = row.notes && row.notes !== '-' ? ` • ${row.notes}` : '';
   return `${rateText}${duration}${opponent}${notes}`;
 }
-function matchedTrendEvidenceForPick(p, limit=5){
+function normalizedPickResearchText(p){
+  return [p.pick, p.edge, p.rank, ...(Array.isArray(p.why) ? p.why : [])].join(' ').toUpperCase();
+}
+function trendRowQualifiesForPick(row, p, teams, explicitGameLogTags, explicitSituations, desiredMarketStyle){
+  if(!teams.includes(row.team)) return false;
+  const situation = String(row.situation || '').toUpperCase();
+  const notes = String(row.notes || '').toUpperCase();
+  const style = row.normalizedStyle;
+  const pickText = normalizedPickResearchText(p);
+  const exactGameLogMatch = explicitGameLogTags.includes(style);
+  const marketStyleMatch = desiredMarketStyle && style === desiredMarketStyle && row.hitRateNumber !== null;
+  const directSituationMatch = explicitSituations.length ? explicitSituations.some(tag => situation.includes(tag) || notes.includes(tag)) : false;
+  const divisionMatch = pickText.includes('DIVISION') && (situation.includes('DIVISION') || notes.includes('DIVISION'));
+  const noRestMatch = pickText.includes('NO REST') && situation.includes('NO REST');
+  const oneDayRestMatch = pickText.includes('1-DAY REST') && situation.includes('1-DAY REST');
+  if(exactGameLogMatch) return true;
+  if(marketStyleMatch && (directSituationMatch || divisionMatch || noRestMatch || oneDayRestMatch)) return true;
+  return false;
+}
+function matchedTrendEvidenceForPick(p, limit=8){
   const teams = teamsFromPickText(p.pick);
   if(!teams.length) return [];
   const explicitGameLogTags = explicitGameLogTrendTagsForPick(p);
   const explicitSituations = explicitSituationTagsForPick(p);
   const desiredMarketStyle = trendEvidenceTypeForPick(p);
-  const rows = trendRows.map(r=>({...r, normalizedStyle: normalizeStyleKey(r.style), hitRateNumber: pct(r.hitRate)})).filter(r=>{
-    if(!teams.includes(r.team)) return false;
-    const situation = String(r.situation || '').toUpperCase();
-    const exactGameLogMatch = explicitGameLogTags.includes(r.normalizedStyle);
-    const marketRateMatch = desiredMarketStyle && r.normalizedStyle === desiredMarketStyle && r.hitRateNumber !== null;
-    if(!exactGameLogMatch && !marketRateMatch) return false;
-    if(marketRateMatch && situation){
-      if(!explicitSituations.length) return false;
-      return explicitSituations.some(tag => situation.includes(tag));
-    }
-    return true;
-  });
+  const rows = trendRows.map(r=>({
+    ...r,
+    normalizedStyle: normalizeStyleKey(r.style),
+    hitRateNumber: pct(r.hitRate)
+  })).filter(r=>trendRowQualifiesForPick(r, p, teams, explicitGameLogTags, explicitSituations, desiredMarketStyle));
   return rows.sort((a,b)=>{
     const aExact = explicitGameLogTags.includes(a.normalizedStyle) ? 1 : 0;
     const bExact = explicitGameLogTags.includes(b.normalizedStyle) ? 1 : 0;
     if(aExact !== bExact) return bExact - aExact;
+    const aSituation = explicitSituations.some(tag => String(a.situation||'').toUpperCase().includes(tag)) ? 1 : 0;
+    const bSituation = explicitSituations.some(tag => String(b.situation||'').toUpperCase().includes(tag)) ? 1 : 0;
+    if(aSituation !== bSituation) return bSituation - aSituation;
     const ap = a.hitRateNumber ?? -1;
     const bp = b.hitRateNumber ?? -1;
     if(ap !== bp) return bp - ap;
     return trendDateSortValue(b)-trendDateSortValue(a);
   }).slice(0,limit);
 }
+function trendEvidenceTitle(row){
+  return `${row.team} ${trendDisplayStyle(row.style)}${row.situation ? ' — ' + row.situation : ''}`;
+}
+function trendEvidenceMetric(row){
+  const rec = trendEvidenceRecord(row);
+  if(pct(row.hitRate) !== null) return `${row.hitRate} hit rate${row.duration && row.duration !== '-' ? ' • ' + row.duration : ''}`;
+  if(rec.total) return `${rec.wins}-${rec.losses} game-log record • ${rec.rate}`;
+  return 'Stored trend match';
+}
+function trendEvidenceWhyLine(row, p){
+  const style = trendDisplayStyle(row.style);
+  const situation = row.situation && row.situation !== '-' ? row.situation : 'stored environment';
+  const market = trendEvidenceTypeForPick(p) || style;
+  return `This pick is being checked against a stored ${row.team} ${market} / ${style} profile in the ${situation} environment.`;
+}
+function trendEvidenceHistoryHtml(row){
+  const wins = Array.isArray(row.winEvidence) ? row.winEvidence : [];
+  const losses = Array.isArray(row.lossEvidence) ? row.lossEvidence : [];
+  const support = String(row.supportingGames || '').trim();
+  const examples = String(row.additionalExamples || '').trim();
+  const fallbackWins = wins.length ? wins : (support && support !== '-' ? support.split(';').map(x=>x.trim()).filter(Boolean) : []);
+  const fallbackLosses = losses.length ? losses : (examples && examples !== '-' ? examples.split(';').map(x=>x.trim()).filter(Boolean) : []);
+  const winHtml = fallbackWins.length ? fallbackWins.map(x => `<li><span>WIN / SUPPORT</span> ${x}</li>`).join('') : '<li>No stored winning examples yet.</li>';
+  const lossHtml = fallbackLosses.length ? fallbackLosses.map(x => `<li><span class="loss-word">LOSS / EXAMPLE</span> ${x}</li>`).join('') : '<li>No stored losing examples yet.</li>';
+  return `<details class="trend-history-dropdown"><summary>View same-environment history</summary><div class="trend-history-grid"><div><strong>Support examples</strong><ul class="clean evidence-list">${winHtml}</ul></div><div><strong>Loss / comparison examples</strong><ul class="clean evidence-list">${lossHtml}</ul></div></div></details>`;
+}
 function trendEvidenceHtml(p){
   const trends = matchedTrendEvidenceForPick(p);
-  if(!trends.length) return '';
-  return `<div class="trend-evidence"><strong>Matched Trend Evidence</strong><p class="subtle">These are stored database rows tied to the same team and trend/environment tag on this pick.</p><ul class="clean evidence-list">${trends.map(t=>`<li><b>${t.team} ${trendDisplayStyle(t.style)}</b> ${t.situation || ''} — <span>${trendEvidenceLabel(t)}</span><small>${formatTrendDate(t.date)}</small></li>`).join('')}</ul></div>`;
+  if(!trends.length) return `<div class="trend-evidence empty-evidence"><strong>No matched trend history found yet</strong><p class="subtle">This pick does not currently have enough stored team, market, or environment tags to display same-environment history. It should stay research-only until verified evidence is connected.</p></div>`;
+  return `<div class="trend-evidence upgraded-trend-evidence"><strong>Matched Same-Environment Evidence</strong><p class="subtle">These rows come from the stored Sports Edge trend database and match the team, bet type, trend tag, or environment attached to this pick.</p><div class="trend-evidence-grid">${trends.map(t=>`<article class="trend-proof-card"><div class="trend-proof-top"><b>${trendEvidenceTitle(t)}</b><span>${trendEvidenceConfidence(t)}</span></div><div class="trend-proof-metric">${trendEvidenceMetric(t)}</div><small>${formatTrendDate(t.date)}${t.opponent && t.opponent !== '-' ? ' • ' + t.opponent : ''}</small><p class="trend-proof-why">${trendEvidenceWhyLine(t,p)}</p>${t.notes && t.notes !== '-' ? `<p class="trend-proof-note">${t.notes}</p>` : ''}${trendEvidenceHistoryHtml(t)}</article>`).join('')}</div></div>`;
 }
 function trendEvidenceCardSummary(p){
   const trends = matchedTrendEvidenceForPick(p, 2);
   if(!trends.length) return '';
-  return `<div class="matched-trend-card"><strong>Matched Trend Evidence</strong>${trends.map(t=>`<span>${t.team} ${trendDisplayStyle(t.style)}${t.situation ? ' • ' + t.situation : ''} — ${pct(t.hitRate)===null ? 'game-log match' : t.hitRate}</span>`).join('')}</div>`;
+  return `<div class="matched-trend-card upgraded-card-evidence"><strong>Matched Trend Evidence</strong>${trends.map(t=>`<span>${trendEvidenceTitle(t)} — ${trendEvidenceMetric(t)}</span>`).join('')}<small>Open details to view same-environment history.</small></div>`;
 }
+
 function slatePlayCard(p){
   const st = normalizedPickStatus(p);
   const official = isOfficialPlay(p);
