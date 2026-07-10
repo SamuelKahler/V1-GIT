@@ -88,7 +88,7 @@
 .detail-accordion summary{cursor:pointer;padding:14px 16px;font-weight:900;color:var(--text);list-style:none;display:flex;align-items:center;justify-content:space-between}
 .detail-accordion summary::-webkit-details-marker{display:none}
 .detail-accordion summary:after{content:'+';color:var(--green);font-size:20px}
-.detail-accordion[open] summary:after{content:'âˆ’'}
+.detail-accordion[open] summary:after{content:'Ã¢Ë†â€™'}
 .detail-accordion-body{padding:0 16px 16px;color:var(--muted);line-height:1.55}
 .evidence-list small{display:block;color:var(--muted);margin-top:4px}
 .status-NO-ACTION{color:var(--muted)}
@@ -242,3 +242,32 @@
 .f5-bet-table td:nth-child(6) strong{color:#64a8ff;}
 @media(max-width:1050px){.f5-lab-layout{grid-template-columns:1fr}.f5-summary-row{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:650px){.f5-team-grid,.f5-team-summary,.f5-summary-row{grid-template-columns:1fr}.f5-team-grid{max-height:none}.f5-table-wrap{margin-left:-4px;margin-right:-4px}}
+
+
+/* V50: Todayâ€™s Picks matched trend evidence engine */
+.upgraded-card-evidence{
+  margin:14px 0;
+  padding:13px;
+  border:1px solid rgba(48,215,131,.28);
+  border-radius:16px;
+  background:rgba(48,215,131,.07);
+}
+.upgraded-card-evidence strong{display:block;margin-bottom:8px;color:var(--text)}
+.upgraded-card-evidence span{display:block;color:var(--text);line-height:1.4;margin:5px 0}
+.upgraded-card-evidence small{display:block;color:var(--muted);margin-top:8px}
+.upgraded-trend-evidence{padding:16px}
+.trend-evidence-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px}
+.trend-proof-card{border:1px solid var(--line);border-radius:18px;padding:14px;background:rgba(0,0,0,.18)}
+.trend-proof-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.trend-proof-top b{line-height:1.3}
+.trend-proof-top span{color:var(--gold);white-space:nowrap;font-size:13px;font-weight:900}
+.trend-proof-metric{margin:10px 0 5px;color:var(--green);font-weight:900}
+.trend-proof-why{color:var(--text);line-height:1.45;margin:10px 0 6px}
+.trend-proof-note{color:var(--muted);line-height:1.4;margin:8px 0}
+.trend-history-dropdown{margin-top:10px;border-top:1px solid var(--line);padding-top:9px}
+.trend-history-dropdown summary{cursor:pointer;color:var(--green);font-weight:900;font-size:13px}
+.trend-history-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.trend-history-grid strong{font-size:13px;margin-bottom:6px;color:var(--text)}
+.loss-word{color:var(--red)!important}
+.empty-evidence{border-color:rgba(143,164,181,.24);background:rgba(143,164,181,.06)}
+@media(max-width:700px){.trend-history-grid{grid-template-columns:1fr}}
