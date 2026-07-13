@@ -47,6 +47,93 @@ function teamFromSearch(value){
 }
 let liveState = { games: [], odds: [] };
 
+
+// V50 API integration state: the frontend now reads verified grades from /api/grade-picks
+// and live MLB/odds data from the Vercel API routes. The API key stays server-side in Vercel.
+let apiGradeState = {
+  loading: false,
+  loaded: false,
+  error: '',
+  summary: null,
+  dateBatches: [],
+  resultByKey: {}
+};
+
+function normalizePickKeyText(value){
+  return String(value || '')
+    .replace(/[’]/g, "'")
+    .replace(/_/g, ' ')
+    .replace(/\*/g, '')
+    .replace(/\bNOW\b.*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+}
+function apiGradeKey(date, rawPick){ return `${date}::${normalizePickKeyText(rawPick)}`; }
+function apiResultForPick(p){
+  if(!apiGradeState.loaded) return null;
+  const d = dateKey(parseSlateDate(p?.slate || ''));
+  const candidates = [cleanPickTitle(p), p?.pick, String(p?.pick || '').replace(/\s+[-–—]\s+.+$/,'')];
+  for(const candidate of candidates){
+    const hit = apiGradeState.resultByKey[apiGradeKey(d, candidate)];
+    if(hit) return hit;
+  }
+  return null;
+}
+function apiStatusForPick(p){
+  const hit = apiResultForPick(p);
+  const st = String(hit?.grading?.status || '').toUpperCase();
+  return ['WIN','LOSS','PUSH','NO_ACTION'].includes(st) ? st : null;
+}
+function apiVerificationNoteForPick(p){
+  const hit = apiResultForPick(p);
+  if(!hit) return '';
+  const st = String(hit?.grading?.status || '').toUpperCase();
+  const reason = hit?.grading?.reason || '';
+  const source = hit?.grading?.game ? 'Verified by Official MLB Stats API.' : 'Checked by Sports Edge API.';
+  return `${source} ${st ? st + ': ' : ''}${reason}`.trim();
+}
+function apiGradeSummaryHtml(){
+  if(apiGradeState.loading) return '<div class="api-grade-banner loading"><strong>API Grading:</strong> Checking verified MLB results...</div>';
+  if(apiGradeState.error) return `<div class="api-grade-banner warning"><strong>API Grading:</strong> ${apiGradeState.error}</div>`;
+  if(!apiGradeState.loaded || !apiGradeState.summary) return '<div class="api-grade-banner muted"><strong>API Grading:</strong> Not loaded yet.</div>';
+  const s = apiGradeState.summary;
+  return `<div class="api-grade-banner success"><strong>API Verified July Record:</strong> ${s.record || `${s.WIN || 0}-${s.LOSS || 0}`} ${s.PUSH ? `-${s.PUSH}` : ''} • <b>${s.winRate || 'N/A'}</b> win rate • ${s.total || 0} plays checked • Official MLB Stats API</div>`;
+}
+async function fetchVerifiedGrades(){
+  if(apiGradeState.loading) return;
+  apiGradeState.loading = true;
+  apiGradeState.error = '';
+  try{
+    const res = await fetch('/api/grade-picks?month=2026-07', { cache: 'no-store' });
+    if(!res.ok) throw new Error(`grade-picks returned ${res.status}`);
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || 'grade-picks returned ok:false');
+    const lookup = {};
+    (data.dateBatches || []).forEach(batch => {
+      (batch.results || []).forEach(result => {
+        lookup[apiGradeKey(batch.date || result.date, result.rawPick)] = result;
+      });
+    });
+    apiGradeState = {
+      loading: false,
+      loaded: true,
+      error: '',
+      summary: data.summary || null,
+      dateBatches: data.dateBatches || [],
+      resultByKey: lookup
+    };
+    renderPicks();
+    renderHomeDailyDashboard();
+    renderPerformanceLab();
+  }catch(err){
+    apiGradeState.loading = false;
+    apiGradeState.loaded = false;
+    apiGradeState.error = err.message || 'Could not load verified grades.';
+    renderPicks();
+  }
+}
+
 function normalizeTeamName(name){return String(name||'').trim();}
 function teamAbbr(nameOrAbbr){
   const v = normalizeTeamName(nameOrAbbr);
@@ -488,6 +575,8 @@ function verifiedAutoGrade(p){
   return {status:'UNVERIFIED', reason:'Market type not safely auto-gradable from final score alone.'};
 }
 function verifiedStatusForPick(p){
+  const apiStatus = apiStatusForPick(p);
+  if(apiStatus) return apiStatus;
   const raw = String(p.status || '').toUpperCase();
   if(raw === 'SUCCESS') return 'WIN';
   if(raw === 'LOSS') return 'LOSS';
@@ -497,6 +586,8 @@ function verifiedStatusForPick(p){
   return null;
 }
 function verificationNoteForPick(p){
+  const apiNote = apiVerificationNoteForPick(p);
+  if(apiNote) return apiNote;
   const auto=verifiedAutoGrade(p);
   return auto?.reason || '';
 }
@@ -1184,7 +1275,7 @@ function renderPicks(){
   let picks=dailyPicks.filter(p=>(slate==='all'||p.slate===slate));
   if(status!=='all') picks=picks.filter(p=>normalizedPickStatus(p)===status);
   if(q) picks=picks.filter(p=>JSON.stringify(p).toLowerCase().includes(q));
-  $('#pickSummary').innerHTML = '<div class="board-note"><strong>Today’s Picks</strong><span>Performance record lives only in the Performance Lab so the totals stay synced.</span></div>';
+  $('#pickSummary').innerHTML = '<div class="board-note"><strong>Today’s Picks</strong><span>Performance record lives only in the Performance Lab so the totals stay synced.</span></div>' + apiGradeSummaryHtml();
 
   const latest = latestPickDateKey();
   const currentSlate = picks.filter(p=>dateKey(parseSlateDate(p.slate))===latest);
@@ -1515,6 +1606,7 @@ function boot(){
     const homeTeams=$('#homeTeams'); if(homeTeams) homeTeams.textContent=uniq(trendRows.map(r=>r.team)).length;
     const homeTrendRows=$('#homeTrendRows'); if(homeTrendRows) homeTrendRows.textContent=trendRows.length;
   });
+  safeRender('api verified grades', fetchVerifiedGrades);
 }
 
 // Live feed
@@ -1594,19 +1686,70 @@ function renderOddsLines(odds){
     return `<article class="model-panel"><h3>${awayAbbr} @ ${homeAbbr}</h3><p class="subtle">${fmtTime(o.commence_time)} • ${preferred?.title || preferred?.key || 'Sportsbook'}</p><div class="game-context-grid"><div><strong>${awayAbbr}</strong><small>${awayLabel}</small><span>${fmtOdd(away?.price)}</span></div><div><strong>${homeAbbr}</strong><small>${homeLabel}</small><span>${fmtOdd(home?.price)}</span></div></div><div class="meta"><span class="pill">${awayAbbr}: ${awayLabel}</span><span class="pill">${homeAbbr}: ${homeLabel}</span></div></article>`;
   }).join('');
 }
+
+function normalizeMlbGameForApp(game){
+  const awayTeam = game?.teams?.away?.team || {};
+  const homeTeam = game?.teams?.home?.team || {};
+  const linescore = game?.linescore || {};
+  const statusText = game?.status?.abstractGameState || game?.status?.detailedState || 'Preview';
+  const normalizedStatus = /final|game over|completed/i.test(statusText) ? 'Final' : (/live|in progress/i.test(statusText) ? 'Live' : 'Preview');
+  return {
+    game_pk: String(game?.gamePk || ''),
+    away_team: TEAM_NAME_TO_ABBR[awayTeam.name] || teamAbbr(awayTeam.abbreviation || awayTeam.name),
+    home_team: TEAM_NAME_TO_ABBR[homeTeam.name] || teamAbbr(homeTeam.abbreviation || homeTeam.name),
+    away_team_abbr: TEAM_NAME_TO_ABBR[awayTeam.name] || teamAbbr(awayTeam.abbreviation || awayTeam.name),
+    home_team_abbr: TEAM_NAME_TO_ABBR[homeTeam.name] || teamAbbr(homeTeam.abbreviation || homeTeam.name),
+    away_pitcher: game?.teams?.away?.probablePitcher?.fullName || 'TBD',
+    home_pitcher: game?.teams?.home?.probablePitcher?.fullName || 'TBD',
+    away_score: game?.teams?.away?.score ?? linescore?.teams?.away?.runs ?? 0,
+    home_score: game?.teams?.home?.score ?? linescore?.teams?.home?.runs ?? 0,
+    status: normalizedStatus,
+    inning: linescore?.currentInning ?? 0,
+    inning_half: linescore?.inningHalf || '',
+    game_time: game?.gameDate,
+    gameDate: game?.gameDate
+  };
+}
+function normalizeOddsEventForApp(event){
+  return {
+    event_id: event?.id || '',
+    away_team: event?.away_team || '',
+    home_team: event?.home_team || '',
+    commence_time: event?.commence_time || '',
+    odds_json: event?.bookmakers || [],
+    updated_at: event?.fetchedAt || new Date().toISOString()
+  };
+}
 async function fetchLiveData(){
   try{
-    const res=await fetch('/api/live-data');
-    if(!res.ok) return;
-    const {games,odds,fetchedAt}=await res.json();
-    liveState.games = sortedGames(games || []);
-    liveState.odds = odds || [];
+    const [liveRes, oddsRes] = await Promise.allSettled([
+      fetch('/api/live-data', { cache: 'no-store' }),
+      fetch('/api/odds', { cache: 'no-store' })
+    ]);
+
+    let livePayload = null;
+    let oddsPayload = null;
+
+    if(liveRes.status === 'fulfilled' && liveRes.value.ok) livePayload = await liveRes.value.json();
+    if(oddsRes.status === 'fulfilled' && oddsRes.value.ok) oddsPayload = await oddsRes.value.json();
+
+    const rawGames = livePayload?.games || [];
+    const rawOdds = oddsPayload?.events || oddsPayload?.odds || [];
+
+    liveState.games = sortedGames(rawGames.map(normalizeMlbGameForApp));
+    liveState.odds = rawOdds.map(normalizeOddsEventForApp);
+
     renderLiveScores(liveState.games);
     renderOddsLines(liveState.odds);
     renderTrends();
+
     const el=$('#liveUpdated');
-    if(el) el.textContent='Last updated: '+new Date(fetchedAt).toLocaleTimeString();
-  }catch(e){console.warn('Live data fetch failed:',e);}
+    if(el) el.textContent='Last updated: '+new Date(livePayload?.fetchedAt || oddsPayload?.fetchedAt || new Date()).toLocaleTimeString();
+  }catch(e){
+    console.warn('Live data fetch failed:',e);
+    renderLiveScores(liveState.games || []);
+    renderOddsLines(liveState.odds || []);
+  }
 }
 function initLiveFeed(){fetchLiveData();setInterval(fetchLiveData,60_000);}
 boot();
