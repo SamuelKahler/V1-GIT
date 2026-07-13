@@ -1753,3 +1753,163 @@ async function fetchLiveData(){
 }
 function initLiveFeed(){fetchLiveData();setInterval(fetchLiveData,60_000);}
 boot();
+/* V51 Consumer Experience Rebuild overrides
+   Goal: one clean consumer-facing experience, API-first verification, clean trend evidence,
+   no broken symbols, no vague "developing" language, and consistent pick details. */
+function showPage(page){
+  $$('.page').forEach(p=>p.classList.toggle('active',p.id===page));
+  $$('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===page));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$$('.nav,.jump').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+
+function verifiedStatusForPick(p){
+  const apiStatus = apiStatusForPick(p);
+  if(apiStatus) return apiStatus;
+  const raw = String(p.status || '').toUpperCase();
+  if(raw === 'LIVE' || raw === 'PENDING' || raw === 'ACTIVE') return 'ACTIVE';
+  return null;
+}
+function verificationNoteForPick(p){
+  const apiNote = apiVerificationNoteForPick(p);
+  if(apiNote) return apiNote;
+  const d = dateKey(parseSlateDate(p?.slate || ''));
+  return `API verification pending for ${d}. This pick will display WIN, LOSS, PUSH, or UNVERIFIED after /api/grade-picks returns an official MLB result.`;
+}
+function statusDisplayName(st){
+  if(st === 'UNVERIFIED') return 'API Pending';
+  if(st === 'UNGRADED') return 'API Pending';
+  if(st === 'ACTIVE') return 'Live / Pending';
+  if(st === 'NO_ACTION') return 'No Action';
+  return st;
+}
+function statusDisplayIcon(st){
+  if(st === 'WIN') return 'WIN';
+  if(st === 'LOSS') return 'LOSS';
+  if(st === 'PUSH') return 'PUSH';
+  if(st === 'ACTIVE') return 'LIVE / PENDING';
+  if(st === 'NO_ACTION') return 'NO ACTION';
+  if(st === 'UNVERIFIED' || st === 'UNGRADED') return 'API PENDING';
+  return st;
+}
+function pickScoreDisplay(p){
+  const st = normalizedPickStatus(p);
+  if(typeof p.score === 'number') return p.score.toFixed(2);
+  if(st === 'WIN') return 'WIN';
+  if(st === 'LOSS') return 'LOSS';
+  if(st === 'PUSH') return 'PUSH';
+  if(st === 'ACTIVE') return 'LIVE';
+  if(st === 'NO_ACTION') return 'NA';
+  return 'PENDING';
+}
+function trendEvidenceConfidence(row){
+  const rate = pct(row.hitRate);
+  const rec = trendEvidenceRecord(row);
+  const score = rate !== null ? rate : (rec.rate ? parseFloat(rec.rate) : 0);
+  if(score >= 70) return 'Elite Evidence';
+  if(score >= 65) return 'Strong Evidence';
+  if(score >= 60) return 'Positive Evidence';
+  if(score >= 55) return 'Lean Evidence';
+  if(rec.total > 0) return 'Small Sample';
+  return 'Needs Sample';
+}
+function trendEvidenceMetric(row){
+  const rate = pct(row.hitRate);
+  const rec = trendEvidenceRecord(row);
+  if(rate !== null) return row.hitRate;
+  if(rec.total) return rec.rate || `${rec.wins}-${rec.losses}`;
+  return 'Pending';
+}
+function trendEvidenceRecordClean(row){
+  const rec = trendEvidenceRecord(row);
+  const rateFromRow = pct(row.hitRate);
+  if(rec.total){
+    return { wins:rec.wins, losses:rec.losses, total:rec.total, rate:rec.rate || 'N/A', source:'Game log' };
+  }
+  if(rateFromRow !== null){
+    return { wins:null, losses:null, total:row.duration && row.duration !== '-' ? row.duration : 'Stored trend', rate:row.hitRate, source:'Trend database' };
+  }
+  return { wins:null, losses:null, total:'Needs more rows', rate:'Pending', source:'Trend database' };
+}
+function trendEvidenceHtml(p){
+  const trends = matchedTrendEvidenceForPick(p, 6);
+  if(!trends.length){
+    return `<div class="trend-evidence empty-evidence"><strong>No matched trend evidence yet</strong><p class="subtle">Sports Edge did not find a stored same-environment trend for this pick yet. Keep the pick visible, but do not show a fake hit rate.</p></div>`;
+  }
+  return `<div class="trend-evidence upgraded-trend-evidence"><strong>Matched Trend Evidence</strong><p class="subtle">Same team, market, trend tag, or game environment from the Sports Edge database.</p><div class="trend-evidence-grid">${trends.map(t=>{
+    const rec = trendEvidenceRecordClean(t);
+    const badgeClass = String(trendEvidenceConfidence(t)).includes('Needs') ? 'pending' : (String(trendEvidenceConfidence(t)).includes('Small') || String(trendEvidenceConfidence(t)).includes('Lean') ? 'medium' : '');
+    return `<article class="trend-proof-card clean-proof"><div class="trend-proof-top"><b>${trendEvidenceTitle(t)}</b><span class="proof-badge ${badgeClass}">${trendEvidenceConfidence(t)}</span></div><div class="trend-proof-metrics"><div><small>Hit Rate</small><strong>${rec.rate}</strong></div><div><small>Record</small><strong>${rec.wins!==null ? `${rec.wins}-${rec.losses}` : 'Stored'}</strong></div><div><small>Sample</small><strong>${rec.total}</strong></div></div><p class="subtle"><b>Environment:</b> ${String(t.situation || '-')}</p><p class="subtle"><b>Date:</b> ${formatTrendDate(t.date)}${t.opponent && t.opponent !== '-' ? ` • ${t.opponent}` : ''}</p>${t.notes && t.notes !== '-' ? `<p class="subtle"><b>Note:</b> ${t.notes}</p>` : ''}${trendEvidenceHistoryHtml(t)}</article>`;
+  }).join('')}</div></div>`;
+}
+function trendEvidenceCardSummary(p){
+  const trends = matchedTrendEvidenceForPick(p, 1);
+  if(!trends.length) return '';
+  const t = trends[0];
+  const rec = trendEvidenceRecordClean(t);
+  return `<div class="matched-trend-card upgraded-card-evidence"><strong>Matched Trend Evidence</strong><div class="pick-card-proof"><div><small>Hit Rate</small><strong>${rec.rate}</strong></div><div><small>Record</small><strong>${rec.wins!==null ? `${rec.wins}-${rec.losses}` : 'Stored'}</strong></div><div><small>Sample</small><strong>${rec.total}</strong></div></div><small>${trendEvidenceTitle(t)} • ${String(t.situation || '-')}</small></div>`;
+}
+function apiProofStrip(p){
+  const st = normalizedPickStatus(p);
+  const hit = apiResultForPick(p);
+  const source = hit ? 'Official MLB API' : 'API pending';
+  return `<div class="pick-verified-strip"><span class="verified-pill verified-${st}">${statusDisplayIcon(st)}</span><span class="verified-pill verified-${st}">${source}</span></div>`;
+}
+function slatePlayCard(p){
+  const st = normalizedPickStatus(p);
+  const official = isOfficialPlay(p);
+  const statusText = official ? 'Official Play' : 'Research Play';
+  const scoreLine = typeof p.score === 'number' ? p.score.toFixed(2) : 'Pending';
+  return `<article class="slate-play-card ${official?'official-play':'research-play'}"><div class="series-card-top"><span class="tag ${official?'':'blue'}">${statusText}</span><span class="pill ${'status-'+slugStatus(st)}">${statusDisplayIcon(st)}</span></div><h3>${cleanPickTitle(p)}</h3>${matchupSubtitleHtml(p)}${apiProofStrip(p)}<div class="pick-card-proof"><div><small>Market</small><strong>${bettorCategory(p)}</strong></div><div><small>Odds</small><strong>${p.odds || '-'}</strong></div><div><small>Model Score</small><strong>${scoreLine}</strong></div></div>${trendEvidenceCardSummary(p) || `<p class="card-summary">${consumerReasoningNotes(p)[0] || compactWhy(p)[0] || 'Sports Edge is waiting for connected evidence on this pick.'}</p>`}<button class="secondary details-cta" onclick="openPick(${dailyPicks.indexOf(p)})">Open Bet Details</button></article>`;
+}
+function startingPitcherBlock(p){
+  const ctx = matchupContextForPick(p);
+  if(!ctx) return '<p class="subtle">Starting pitchers will appear when the pick has a stored matchup or live MLB matchup link.</p>';
+  const game = (liveState.games || []).find(g=>{
+    const away = teamAbbr(g.away_team_abbr || g.away_team);
+    const home = teamAbbr(g.home_team_abbr || g.home_team);
+    return away === teamAbbr(ctx.away) && home === teamAbbr(ctx.home);
+  });
+  const awayPitcher = game?.away_pitcher || game?.awayPitcher || 'Probable starter pending';
+  const homePitcher = game?.home_pitcher || game?.homePitcher || 'Probable starter pending';
+  return `<div class="pitcher-card"><div><small>${teamAbbr(ctx.away)}</small><strong>${awayPitcher}</strong><span>Road starter</span></div><div><small>${teamAbbr(ctx.home)}</small><strong>${homePitcher}</strong><span>Home starter</span></div></div>`;
+}
+function modelBreakdownHtml(p){
+  const b = p.breakdown || {};
+  const rows = [
+    ['Model Score', typeof p.score === 'number' ? p.score.toFixed(2) : 'Pending'],
+    ['Market', bettorCategory(p)],
+    ['Starting Pitcher', b.pitcher || b['Starting Pitcher'] || 'Pending'],
+    ['Opponent Offense', b.offense || b['Opponent Offense'] || 'Pending'],
+    ['Ballpark', b.ballpark || b['Ballpark'] || 'Pending'],
+    ['Market Edge', b.market || b['Market Edge'] || 'Pending'],
+    ['Lineup', b.lineup || b['Lineup'] || 'Pending'],
+    ['Travel', b.travel || b['Travel'] || 'Neutral / pending']
+  ];
+  return `<div class="model-score-grid">${rows.map(([k,v])=>`<div><small>${k}</small><strong>${v}</strong></div>`).join('')}</div>`;
+}
+function verificationHtml(p){
+  const st = normalizedPickStatus(p);
+  const hit = apiResultForPick(p);
+  const game = hit?.grading?.game;
+  return `<div class="consumer-detail-grid"><div class="consumer-metric"><small>Status</small><strong>${statusDisplayIcon(st)}</strong><span>${hit ? 'Verified through grade-picks API' : 'Waiting for API match'}</span></div><div class="consumer-metric"><small>Source</small><strong>${hit ? 'MLB API' : 'Pending'}</strong><span>${verificationNoteForPick(p)}</span></div>${game ? `<div class="consumer-metric"><small>Final</small><strong>${game.away} ${game.awayScore} - ${game.home} ${game.homeScore}</strong><span>${game.status || 'Final'}</span></div>` : ''}</div>`;
+}
+function pitcherPropHistoryHtml(p){
+  return `<div class="current-k-line"><h4>Starting Pitchers</h4>${startingPitcherBlock(p)}</div><div class="historical-prop-evidence"><h4>Pitcher / K Prop History</h4>${currentKLineHtml(p)}${matchupPropHistoryHtml(p)}</div>`;
+}
+function openPick(i){
+  const p = dailyPicks[i];
+  const st = normalizedPickStatus(p);
+  const scoreMeta = typeof p.score === 'number' ? `<span class="pill">Model Score ${p.score}</span>` : `<span class="pill ${'status-'+slugStatus(st)}">Result ${pickScoreDisplay(p)}</span>`;
+  const consumerWhy = consumerReasoningNotes(p);
+  const reasoningHtml = consumerWhy.length ? `<div class="reason-block"><ul class="clean">${consumerWhy.map(w=>`<li>${w}</li>`).join('')}</ul></div>` : '<p class="subtle">Consumer-facing reasoning notes are pending for this pick.</p>';
+  const detailSections = [
+    detailAccordion('Verified Result', verificationHtml(p), true),
+    detailAccordion('Starting Pitchers / K Prop History', pitcherPropHistoryHtml(p), false),
+    detailAccordion('Model Breakdown', modelBreakdownHtml(p), false),
+    detailAccordion('Matched Trend Evidence', trendEvidenceHtml(p), true),
+    detailAccordion('Reasoning Notes', reasoningHtml, false)
+  ].join('');
+  $('#modalBody').innerHTML = `<h2>${cleanPickTitle(p)}</h2>${matchupSubtitleHtml(p)}<p class="eyebrow">${p.slate} • ${statusDisplayName(st)}</p><div class="meta"><span class="pill">Category ${pickCategory(p)}</span><span class="pill">Odds ${p.odds || '-'}</span><span class="pill">Units ${explicitUnitSize(p)?String(p.units).trim():'No unit size'}</span>${scoreMeta}<span class="pill">P/L ${explicitUnitSize(p)&&['WIN','LOSS'].includes(st)?formatUnits(profitUnits(p)):'-'}</span></div>${detailSections}`;
+  $('#modal').classList.remove('hidden');
+}
