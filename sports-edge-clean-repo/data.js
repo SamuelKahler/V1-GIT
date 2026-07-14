@@ -13922,6 +13922,76 @@ for(let i = trackedPickResults.length - 1; i >= 0; i--){
 }
 trackedPickResults.unshift(...v43RecentDailyPicksUpdate);
 
+
+
+// V52: Daily Import Engine update (07/08/2026 through 07/12/2026).
+// Rules: DISREGARD picks are excluded. Unit size = Official play. LIVE = Wait For Value / Live Look.
+// API grades these through /api/grade-picks?month=2026-07 and feeds Performance/F5 displays.
+const v52DailyImportPicks = [
+  v43RecentPick({slate:"July 12, 2026", pick:"MIL ML", odds:"+105", status:"PENDING", units:".875U", edge:"Mil ml +105, .875U", trendTags:[]}),
+  v43RecentPick({slate:"July 12, 2026", pick:"MIL / PIT O7.5", odds:"-115", status:"PENDING", units:"", edge:"Mil / pit o 7.5 -115", trendTags:[], matchup:"MIL @ PIT"}),
+  v43RecentPick({slate:"July 12, 2026", pick:"KC ML", odds:"+125", status:"LIVE", units:"", edge:"Kc ml +125; AtS - LIVE", trendTags:["AtS"]}),
+  v43RecentPick({slate:"July 12, 2026", pick:"F5 WSH -0.5", odds:"+105", status:"LIVE", units:"", edge:"F5 WSH -.5 +105 - LIVE", trendTags:[]}),
+  v43RecentPick({slate:"July 12, 2026", pick:"WSH ML", odds:"-106", status:"PENDING", units:"", edge:"WSH ml -106; AtS", trendTags:["AtS"]}),
+  v43RecentPick({slate:"July 12, 2026", pick:"CLE ML", odds:"-105", status:"LIVE", units:"", edge:"CLE ML -105 - LIVE", trendTags:[]}),
+  v43RecentPick({slate:"July 12, 2026", pick:"SEA ML", odds:"+118", status:"LIVE", units:"", edge:"Sea ml +118; AtS - LIVE", trendTags:["AtS"]}),
+  v43RecentPick({slate:"July 12, 2026", pick:"CHC ML", odds:"-130", status:"LIVE", units:"", edge:"CHC* ml -130 - LIVE", trendTags:[]}),
+  v43RecentPick({slate:"July 12, 2026", pick:"A's ML", odds:"+109", status:"PENDING", units:"", edge:"A's ml +109; AtS & previously scored 0", trendTags:["AtS", "previously scored 0"]}),
+  v43RecentPick({slate:"July 12, 2026", pick:"ATL ML", odds:"+113", status:"PENDING", units:".85U", edge:"Atl ml; AtS, +113, .85U", trendTags:["AtS"]}),
+  v43RecentPick({slate:"July 12, 2026", pick:"F5 HOU +0.5", odds:"-115", status:"PENDING", units:"", edge:"F5 HOU +.5 -115", trendTags:[]}),
+  v43RecentPick({slate:"July 12, 2026", pick:"F5 TOR +0.5", odds:"-105", status:"PENDING", units:"", edge:"F5 tor +.5 -105", trendTags:[]}),
+  v43RecentPick({slate:"July 11, 2026", pick:"LAA / MIN O9", odds:"-110", status:"LIVE", units:"", edge:"LAA / min o 9 -110 - LIVE", trendTags:[], matchup:"LAA @ MIN"}),
+  v43RecentPick({slate:"July 11, 2026", pick:"A's ML", odds:"-110", status:"PENDING", units:"", edge:"A's ml -110; allowed 10+", trendTags:["allowed 10+"]}),
+  v43RecentPick({slate:"July 11, 2026", pick:"NYY / WSH O9", odds:"-105", status:"PENDING", units:"", edge:"NYY / WSH o* 9 -105", trendTags:[], matchup:"NYY @ WSH"}),
+  v43RecentPick({slate:"July 11, 2026", pick:"F5 NYY -0.5", odds:"-145", status:"LIVE", units:"", edge:"F5 NYY -.5 -145 - LIVE", trendTags:[]}),
+  v43RecentPick({slate:"July 11, 2026", pick:"F5 SEA -0.5", odds:"-115", status:"LIVE", units:"", edge:"F5 sea -.5 -115 - LIVE", trendTags:[]}),
+  v43RecentPick({slate:"July 11, 2026", pick:"TB ML", odds:"-115", status:"LIVE", units:"", edge:"Tb ml -115 - LIVE", trendTags:[]}),
+  v43RecentPick({slate:"July 11, 2026", pick:"CLE / MIA O7.5", odds:"-125", status:"PENDING", units:"", edge:"CLE / mia o 7.5 -125", trendTags:[], matchup:"CLE @ MIA"}),
+  v43RecentPick({slate:"July 11, 2026", pick:"HOU / TEX O9", odds:"+100", status:"PENDING", units:".65U", edge:"HOU / Tex o 8.5 -105 NOW o 9 +100, .65U", trendTags:[], matchup:"HOU @ TEX"}),
+  v43RecentPick({slate:"July 11, 2026", pick:"F5 PHI -0.5", odds:"-105", status:"PENDING", units:"", edge:"F5 phi -.5 -105", trendTags:[]}),
+  v43RecentPick({slate:"July 11, 2026", pick:"TOR / SD U8", odds:"-226", status:"PENDING", units:"", edge:"Tor / sd u 8 -226", trendTags:[], matchup:"TOR @ SD"}),
+  v43RecentPick({slate:"July 10, 2026", pick:"PHI / DET U9", odds:"-105", status:"PENDING", units:".35U", edge:"Phi / DET u 9 -105, .35U", trendTags:[], matchup:"PHI @ DET"}),
+  v43RecentPick({slate:"July 10, 2026", pick:"DET ML", odds:"-120", status:"PENDING", units:".5U", edge:"DET ml -120, .5U", trendTags:[]}),
+  v43RecentPick({slate:"July 10, 2026", pick:"NYY / WSH O10", odds:"-115", status:"LIVE", units:"", edge:"NYY / WSH o 10 -115 - LIVE", trendTags:[], matchup:"NYY @ WSH"}),
+  v43RecentPick({slate:"July 10, 2026", pick:"MIA ML", odds:"-128", status:"LIVE", units:".4U", edge:"MIA ml -128, .4U & LIVE", trendTags:[]}),
+  v43RecentPick({slate:"July 10, 2026", pick:"TB ML", odds:"-127", status:"LIVE", units:"", edge:"Tb ml -127 - LIVE", trendTags:[]}),
+  v43RecentPick({slate:"July 10, 2026", pick:"F5 ATL ML", odds:"-120", status:"LIVE", units:".575U", edge:"F5 atl -120, .575U & LIVE", trendTags:[]}),
+  v43RecentPick({slate:"July 10, 2026", pick:"F5 HOU -0.5", odds:"-110", status:"LIVE", units:".25U", edge:"F5 HOU -.5 -110, .25U & LIVE", trendTags:[]}),
+  v43RecentPick({slate:"July 10, 2026", pick:"F5 DET -0.5", odds:"-110", status:"PENDING", units:"", edge:"F5 DET -.5 -110", trendTags:[]}),
+  v43RecentPick({slate:"July 10, 2026", pick:"LAA / MIN O9.5", odds:"-102", status:"LIVE", units:"", edge:"LAA / min o 9.5 -102 - LIVE", trendTags:[], matchup:"LAA @ MIN"}),
+  v43RecentPick({slate:"July 9, 2026", pick:"NYY ML", odds:"+127", status:"LIVE", units:"", edge:"NYY ml +127; AtS & previously scored 0 - LIVE", trendTags:["AtS", "previously scored 0"]}),
+  v43RecentPick({slate:"July 9, 2026", pick:"NYY / TB U7.5", odds:"-110", status:"PENDING", units:".6U", edge:"NYY / tb u 7.5 -110, .6U", trendTags:[], matchup:"NYY @ TB"}),
+  v43RecentPick({slate:"July 9, 2026", pick:"CHC ML", odds:"+109", status:"LIVE", units:".5U", edge:"CHC ml* +109; SWEEP, .5U & LIVE", trendTags:["SWEEP"]}),
+  v43RecentPick({slate:"July 9, 2026", pick:"CHC / BAL O9.5", odds:"-110", status:"LIVE", units:"", edge:"CHC / bal o* 9.5 -110 - LIVE", trendTags:[], matchup:"CHC @ BAL"}),
+  v43RecentPick({slate:"July 9, 2026", pick:"MIN ML", odds:"+110", status:"LIVE", units:"", edge:"Min ml +110; SWEEP - LIVE", trendTags:["SWEEP"]}),
+  v43RecentPick({slate:"July 9, 2026", pick:"CWS ML", odds:"-118", status:"LIVE", units:"", edge:"CWS ml -118; AtS & previously scored 0 - LIVE", trendTags:["AtS", "previously scored 0"]}),
+  v43RecentPick({slate:"July 9, 2026", pick:"SEA ML", odds:"-150", status:"LIVE", units:"", edge:"Sea ml -150; no CLV & AtS & previously scored 0 - LIVE", trendTags:["no CLV", "AtS", "previously scored 0"]}),
+  v43RecentPick({slate:"July 9, 2026", pick:"SEA / MIA U8", odds:"-110", status:"PENDING", units:"", edge:"Sea / mia u 8 -110", trendTags:[], matchup:"SEA @ MIA"}),
+  v43RecentPick({slate:"July 9, 2026", pick:"MIL / STL U8.5", odds:"-113", status:"LIVE", units:".4U", edge:"Mil / stl u* 8.5 -113, .4U & LIVE", trendTags:[], matchup:"MIL @ STL"}),
+  v43RecentPick({slate:"July 9, 2026", pick:"TEX ML", odds:"-143", status:"PENDING", units:"", edge:"Tex ml -143; no CLV", trendTags:["no CLV"]}),
+  v43RecentPick({slate:"July 9, 2026", pick:"ARI / SD U9", odds:"-117", status:"LIVE", units:".55U", edge:"Ari / sd u 9 -117, .55U & LIVE", trendTags:[], matchup:"ARI @ SD"}),
+  v43RecentPick({slate:"July 8, 2026", pick:"TOR / SF U7", odds:"-114", status:"PENDING", units:"", edge:"Tor / sf u 7 -114", trendTags:[], matchup:"TOR @ SF"}),
+  v43RecentPick({slate:"July 8, 2026", pick:"CHC / BAL O10", odds:"-104", status:"LIVE", units:"", edge:"CHC / bal o* 10 -104 - LIVE", trendTags:[], matchup:"CHC @ BAL"}),
+  v43RecentPick({slate:"July 8, 2026", pick:"CHC ML", odds:"+113", status:"PENDING", units:".65U", edge:"CHC ml* +105 NOW +113, .65U", trendTags:[]}),
+  v43RecentPick({slate:"July 8, 2026", pick:"ATL ML", odds:"+103", status:"PENDING", units:".8U", edge:"Atl ml -101; no CLV & previously allowed 10+ NOW +103, .8U", trendTags:["no CLV", "previously allowed 10+"]}),
+  v43RecentPick({slate:"July 8, 2026", pick:"ATL / PIT O9.5", odds:"-110", status:"LIVE", units:"", edge:"Atl / pit o 9 -121 NOW 9.5 -110 - LIVE", trendTags:[], matchup:"ATL @ PIT"}),
+  v43RecentPick({slate:"July 8, 2026", pick:"DET ML", odds:"-136", status:"PENDING", units:"", edge:"DET ml -136", trendTags:[]}),
+  v43RecentPick({slate:"July 8, 2026", pick:"SEA / MIA U8.5", odds:"-110", status:"PENDING", units:"", edge:"Sea / mia u 8.5 -110", trendTags:[], matchup:"SEA @ MIA"}),
+  v43RecentPick({slate:"July 8, 2026", pick:"TB ML", odds:"-120", status:"PENDING", units:"", edge:"Tb ml -120", trendTags:[]}),
+  v43RecentPick({slate:"July 8, 2026", pick:"WSH ML", odds:"-138", status:"LIVE", units:"", edge:"WSH ml -138 - LIVE", trendTags:[]}),
+  v43RecentPick({slate:"July 8, 2026", pick:"PHI ML", odds:"+120", status:"LIVE", units:"", edge:"Phi ml +120 - LIVE", trendTags:[]}),
+  v43RecentPick({slate:"July 8, 2026", pick:"KC / NYM O9.5", odds:"-110", status:"LIVE", units:".3U", edge:"Kc / NYM o 9 -110 NOW 9.5 -110, .3U & LIVE", trendTags:[], matchup:"KC @ NYM"}),
+  v43RecentPick({slate:"July 8, 2026", pick:"BOS / CWS O8", odds:"-115", status:"PENDING", units:"", edge:"Bos / CWS o 8 -115", trendTags:[], matchup:"BOS @ CWS"}),
+  v43RecentPick({slate:"July 8, 2026", pick:"CLE ML", odds:"+100", status:"PENDING", units:"", edge:"CLE ml +100; no CLV", trendTags:["no CLV"]}),
+  v43RecentPick({slate:"July 8, 2026", pick:"MIL ML", odds:"-151", status:"LIVE", units:"", edge:"MIL ML -151; no CLV - LIVE", trendTags:["no CLV"]}),
+  v43RecentPick({slate:"July 8, 2026", pick:"MIL / STL U8", odds:"-105", status:"LIVE", units:".35U", edge:"Mil / stl u* 8 -105, .35U & LIVE", trendTags:[], matchup:"MIL @ STL"}),
+  v43RecentPick({slate:"July 8, 2026", pick:"ARI / SD U8", odds:"-101", status:"PENDING", units:"", edge:"Ari / sd u 8 -101", trendTags:[], matchup:"ARI @ SD"})
+];
+for(let i = trackedPickResults.length - 1; i >= 0; i--){
+  if(['July 8, 2026','July 9, 2026','July 10, 2026','July 11, 2026','July 12, 2026'].includes(trackedPickResults[i].slate)) trackedPickResults.splice(i, 1);
+}
+trackedPickResults.unshift(...v52DailyImportPicks);
+
 const dailyPicks = trackedPickResults;
 
 const journal = [
