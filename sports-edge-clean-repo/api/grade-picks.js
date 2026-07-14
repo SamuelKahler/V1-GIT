@@ -130,7 +130,67 @@ const JULY_PICKS = [
   {date:'2026-07-07', rawPick:'SD ML', odds:'-127', trendTags:['PREV_SCORED 0']},
   {date:'2026-07-07', rawPick:'ARI / SD U8.5', odds:'-105'},
   {date:'2026-07-07', rawPick:'TOR ML', odds:'-118', trendTags:['PREV_ALLOWED 10+']}
-];
+
+
+  // V52 Daily Import Engine: 07/08 through 07/12. DISREGARD picks excluded.
+  {date: "2026-07-12", rawPick: "MIL ML", odds: "+105", units: ".875U"},
+  {date: "2026-07-12", rawPick: "MIL / PIT O7.5", odds: "-115"},
+  {date: "2026-07-12", rawPick: "KC ML", odds: "+125", trendTags: ["AtS"], notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-12", rawPick: "F5 WSH -.5", odds: "+105", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-12", rawPick: "WSH ML", odds: "-106", trendTags: ["AtS"]},
+  {date: "2026-07-12", rawPick: "CLE ML", odds: "-105", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-12", rawPick: "SEA ML", odds: "+118", trendTags: ["AtS"], notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-12", rawPick: "CHC ML", odds: "-130", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-12", rawPick: "A's ML", odds: "+109", trendTags: ["AtS", "previously scored 0"]},
+  {date: "2026-07-12", rawPick: "ATL ML", odds: "+113", units: ".85U", trendTags: ["AtS"]},
+  {date: "2026-07-12", rawPick: "F5 HOU +.5", odds: "-115"},
+  {date: "2026-07-12", rawPick: "F5 TOR +.5", odds: "-105"},
+  {date: "2026-07-11", rawPick: "LAA / MIN O9", odds: "-110", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-11", rawPick: "A's ML", odds: "-110", trendTags: ["allowed 10+"]},
+  {date: "2026-07-11", rawPick: "NYY / WSH O9", odds: "-105"},
+  {date: "2026-07-11", rawPick: "F5 NYY -.5", odds: "-145", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-11", rawPick: "F5 SEA -.5", odds: "-115", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-11", rawPick: "TB ML", odds: "-115", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-11", rawPick: "CLE / MIA O7.5", odds: "-125"},
+  {date: "2026-07-11", rawPick: "HOU / TEX O9", odds: "+100", units: ".65U"},
+  {date: "2026-07-11", rawPick: "F5 PHI -.5", odds: "-105"},
+  {date: "2026-07-11", rawPick: "TOR / SD U8", odds: "-226"},
+  {date: "2026-07-10", rawPick: "PHI / DET U9", odds: "-105", units: ".35U"},
+  {date: "2026-07-10", rawPick: "DET ML", odds: "-120", units: ".5U"},
+  {date: "2026-07-10", rawPick: "NYY / WSH O10", odds: "-115", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-10", rawPick: "MIA ML", odds: "-128", units: ".4U", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-10", rawPick: "TB ML", odds: "-127", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-10", rawPick: "F5 ATL ML", odds: "-120", units: ".575U", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-10", rawPick: "F5 HOU -.5", odds: "-110", units: ".25U", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-10", rawPick: "F5 DET -.5", odds: "-110"},
+  {date: "2026-07-10", rawPick: "LAA / MIN O9.5", odds: "-102", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-09", rawPick: "NYY ML", odds: "+127", trendTags: ["AtS", "previously scored 0"], notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-09", rawPick: "NYY / TB U7.5", odds: "-110", units: ".6U"},
+  {date: "2026-07-09", rawPick: "CHC ML", odds: "+109", units: ".5U", trendTags: ["SWEEP"], notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-09", rawPick: "CHC / BAL O9.5", odds: "-110", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-09", rawPick: "MIN ML", odds: "+110", trendTags: ["SWEEP"], notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-09", rawPick: "CWS ML", odds: "-118", trendTags: ["AtS", "previously scored 0"], notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-09", rawPick: "SEA ML", odds: "-150", trendTags: ["no CLV", "AtS", "previously scored 0"], notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-09", rawPick: "SEA / MIA U8", odds: "-110"},
+  {date: "2026-07-09", rawPick: "MIL / STL U8.5", odds: "-113", units: ".4U", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-09", rawPick: "TEX ML", odds: "-143", trendTags: ["no CLV"]},
+  {date: "2026-07-09", rawPick: "ARI / SD U9", odds: "-117", units: ".55U", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-08", rawPick: "TOR / SF U7", odds: "-114"},
+  {date: "2026-07-08", rawPick: "CHC / BAL O10", odds: "-104", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-08", rawPick: "CHC ML", odds: "+113", units: ".65U"},
+  {date: "2026-07-08", rawPick: "ATL ML", odds: "+103", units: ".8U", trendTags: ["no CLV", "previously allowed 10+"]},
+  {date: "2026-07-08", rawPick: "ATL / PIT O9.5", odds: "-110", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-08", rawPick: "DET ML", odds: "-136"},
+  {date: "2026-07-08", rawPick: "SEA / MIA U8.5", odds: "-110"},
+  {date: "2026-07-08", rawPick: "TB ML", odds: "-120"},
+  {date: "2026-07-08", rawPick: "WSH ML", odds: "-138", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-08", rawPick: "PHI ML", odds: "+120", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-08", rawPick: "KC / NYM O9.5", odds: "-110", units: ".3U", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-08", rawPick: "BOS / CWS O8", odds: "-115"},
+  {date: "2026-07-08", rawPick: "CLE ML", odds: "+100", trendTags: ["no CLV"]},
+  {date: "2026-07-08", rawPick: "MIL ML", odds: "-151", trendTags: ["no CLV"], notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-08", rawPick: "MIL / STL U8", odds: "-105", units: ".35U", notes: "WAIT_FOR_VALUE"},
+  {date: "2026-07-08", rawPick: "ARI / SD U8", odds: "-101"},];
 
 function normalizeTeam(value) {
   const raw = String(value || '').trim().replace(/[’]/g, "'");
@@ -269,6 +329,10 @@ function parseRawPick(rawPick) {
   const f5Ml = text.match(/^F5\s+([A-Za-z'.]+)\s+ML\b/i);
   if (f5Ml) return { market: 'F5_ML', team: f5Ml[1] };
 
+  // Accept shorthand like "F5 ATL -120" as a first-five moneyline when no +/-0.5 is present.
+  const f5OddsOnly = text.match(/^F5\s+([A-Za-z'.]+)\s+[+-]\d{3,4}\b/i);
+  if (f5OddsOnly) return { market: 'F5_ML', team: f5OddsOnly[1] };
+
   const total = text.match(/^([A-Za-z'.]+)\s*\/\s*([A-Za-z'.]+)\s+([ou])\s*([0-9]+(?:\.[0-9])?)/i);
   if (total) return { market: 'TOTAL', team: total[1], opponent: total[2], side: total[3], line: total[4] };
 
@@ -327,11 +391,11 @@ export default async function handler(req, res) {
       const allResults = dateBatches.flatMap(batch => batch.results.map(r => ({ date: batch.date, ...r })));
       return res.status(200).json({
         ok: true,
-        version: 'V44.2',
+        version: 'V52.0',
         mode: 'july-bulk-grading',
         source: 'Official MLB Stats API',
         oddsApi: odds,
-        dateRange: '2026-07-01 through 2026-07-07',
+        dateRange: '2026-07-01 through 2026-07-12',
         summary: summarize(allResults),
         dateBatches,
         truthRule: 'Only grade when official MLB data is final and complete. Otherwise return UNVERIFIED. DISREGARD picks were excluded.'
@@ -344,7 +408,7 @@ export default async function handler(req, res) {
     if (query.bulk === 'true') {
       const picks = JULY_PICKS.filter(p => p.date === date);
       const batch = await gradeDate(date, picks);
-      return res.status(200).json({ ok: true, version: 'V44.2', mode: 'single-date-bulk-grading', source: 'Official MLB Stats API', oddsApi: odds, ...batch, truthRule: 'Only grade when official MLB data is final and complete. Otherwise return UNVERIFIED.' });
+      return res.status(200).json({ ok: true, version: 'V52.0', mode: 'single-date-bulk-grading', source: 'Official MLB Stats API', oddsApi: odds, ...batch, truthRule: 'Only grade when official MLB data is final and complete. Otherwise return UNVERIFIED.' });
     }
 
     const { sourceUrl, games } = await fetchMlbGames(date);
@@ -356,7 +420,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
-      version: 'V44.2',
+      version: 'V52.0',
       date,
       source: 'Official MLB Stats API',
       sourceUrl,
@@ -368,6 +432,6 @@ export default async function handler(req, res) {
       truthRule: 'Only grade when official MLB data is final and complete. Otherwise return UNVERIFIED.'
     });
   } catch (error) {
-    return res.status(500).json({ ok: false, version: 'V44.2', error: error.message });
+    return res.status(500).json({ ok: false, version: 'V52.0', error: error.message });
   }
 }
