@@ -3,21 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sports Edge</title>
+  <title>Sports Edge Research Platform</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
   <header class="topbar">
-    <div class="brand">
-      <span class="logo">SE</span>
-      <div>
-        <strong>Sports Edge</strong>
-        <small>Betting intelligence built on proof</small>
-      </div>
-    </div>
-
-    <nav>
+    <div class="brand"><span class="logo">SE</span><div><strong>Sports Edge</strong><small>Premium betting research intelligence</small></div></div>
+    <nav class="primary-nav">
       <button class="nav active" data-page="home">Home</button>
       <button class="nav" data-page="sport-mlb">MLB</button>
       <button class="nav" data-page="sport-cfb">CFB</button>
@@ -30,22 +22,19 @@
     <section id="home" class="page active">
       <div class="hero sports-landing-hero">
         <div>
-          <p class="eyebrow">Sports Edge Command Center</p>
-          <h1>Sports betting research without the noise.</h1>
-          <p class="sub">
-            Start with a sport, open the board, and see the pick, the proof, the model score,
-            the market edge, and the verified result in one clean workflow.
-          </p>
+          <p class="eyebrow">Sports Edge V51</p>
+          <h1>Pick a sport. See the proof.</h1>
+          <p class="sub">A cleaner Sports Edge home base built for daily bettors: choose the sport first, then see that sport’s card, research, trends, and performance without cramming every league into one screen.</p>
           <div class="hero-actions">
             <button class="primary jump" data-page="sport-mlb">Enter MLB</button>
             <button class="secondary jump" data-page="performance">Performance Lab</button>
+            <button class="secondary jump" data-page="journal">Research Journal</button>
           </div>
         </div>
-
         <div class="score-card glass official-summary-card">
-          <span class="tag">Live API Foundation</span>
-          <h3>Verified data first</h3>
-          <p>Sports Edge is built around official results, live odds, model grading, and trend evidence.</p>
+          <span class="tag">Daily Bettor Flow</span>
+          <h3>Sport → Plays → Proof</h3>
+          <p>Users should never feel buried in data. Sports Edge now starts with the league they care about and then guides them to the strongest actionable boards.</p>
           <div class="mini-grid">
             <div><strong id="homeOfficialCount">0</strong><small>Official Plays</small></div>
             <div><strong id="homeResearchCount">0</strong><small>Research Edges</small></div>
@@ -55,61 +44,19 @@
       </div>
 
       <section class="sport-hub-section">
-        <div class="section-head compact-head">
-          <div>
-            <p class="eyebrow">Choose Your Sport</p>
-            <h2>One sport. One clean workspace.</h2>
-            <p>Each league has its own board, database, performance room, and research center.</p>
-          </div>
-        </div>
-
+        <div class="section-head compact-head"><div><p class="eyebrow">Choose A Sport</p><h2>Your betting dashboard starts here</h2><p>Each sport gets its own space, color system, and workflow. MLB is active now; the other sports are staged so the app can expand cleanly.</p></div></div>
         <div class="sport-grid">
-          <article class="sport-card sport-mlb jump" data-page="sport-mlb">
-            <span>MLB</span>
-            <div>
-              <h3>Baseball</h3>
-              <p>Today’s card, F5, series board, trends, live games, odds, and performance.</p>
-            </div>
-            <strong>Active</strong>
-          </article>
-
-          <article class="sport-card sport-cfb jump" data-page="sport-cfb">
-            <span>CFB</span>
-            <div>
-              <h3>College Football</h3>
-              <p>Player prop database and team prop history.</p>
-            </div>
-            <strong>Database</strong>
-          </article>
-
-          <article class="sport-card sport-nfl jump" data-page="sport-nfl">
-            <span>NFL</span>
-            <div>
-              <h3>NFL</h3>
-              <p>Spreads, totals, props, injury context, and weather edges.</p>
-            </div>
-            <strong>Coming Soon</strong>
-          </article>
-
-          <article class="sport-card sport-nba jump" data-page="sport-nba">
-            <span>NBA</span>
-            <div>
-              <h3>NBA</h3>
-              <p>Player props, pace, lineup context, rest edges, and market movement.</p>
-            </div>
-            <strong>Coming Soon</strong>
-          </article>
+          <article class="sport-card sport-mlb jump" data-page="sport-mlb"><span>⚾</span><div><h3>MLB</h3><p>Today’s card, F5/ML/totals, trends, series board, prop history, and performance.</p></div><strong>Active</strong></article>
+          <article class="sport-card sport-nhl jump" data-page="sport-nhl"><span>🏒</span><div><h3>NHL</h3><p>Puck lines, moneylines, totals, goalie edges, rest/travel spots, and playoff series angles.</p></div><strong>Coming Soon</strong></article>
+          <article class="sport-card sport-nfl jump" data-page="sport-nfl"><span>🏈</span><div><h3>NFL</h3><p>Spreads, totals, props, injury context, weather, travel, public/sharp market reads.</p></div><strong>Coming Soon</strong></article>
+          <article class="sport-card sport-cfb jump" data-page="sport-cfb"><span>🏈</span><div><h3>College Football</h3><p>Player prop database by team, position, current line, and last-year over/under history.</p></div><strong>New Database</strong></article>
+          <article class="sport-card sport-nba jump" data-page="sport-nba"><span>🏀</span><div><h3>NBA</h3><p>Spread edges, totals, player props, rest disadvantage, lineups, and pace-based spots.</p></div><strong>Coming Soon</strong></article>
+          <article class="sport-card sport-ncaab jump" data-page="sport-ncaab"><span>🏀</span><div><h3>NCAAB</h3><p>Conference trends, tempo, home-court edge, underdog spots, and tournament-style profiles.</p></div><strong>Coming Soon</strong></article>
         </div>
       </section>
 
       <section class="daily-command-center home-preview-board">
-        <div class="section-head compact-head">
-          <div>
-            <p class="eyebrow">MLB Preview</p>
-            <h2>Today’s MLB snapshot</h2>
-            <p>Quick preview only. Enter MLB for the full betting workspace.</p>
-          </div>
-        </div>
+        <div class="section-head compact-head"><div><p class="eyebrow">MLB Preview</p><h2>Today’s MLB snapshot</h2><p>Quick glance only. Enter MLB to work from the full sport-specific dashboard.</p></div></div>
         <div id="homeOfficialBoard"></div>
         <div id="homeResearchBoard"></div>
         <div id="homePerformanceSnapshot"></div>
@@ -118,327 +65,35 @@
 
     <section id="sport-mlb" class="page sport-page mlb-theme">
       <div class="sport-hero mlb-hero">
-        <div>
-          <p class="eyebrow">MLB Command Center</p>
-          <h1>Baseball betting intelligence.</h1>
-          <p>
-            Every MLB tool in one place: today’s card, live games, verified grading,
-            F5 performance, series board, trend database, and model center.
-          </p>
-        </div>
-        <div class="sport-action-card">
-          <strong>MLB Active</strong>
-          <span>API-powered scores, odds, and grading.</span>
-          <button class="primary jump" data-page="today">Open Today’s Picks</button>
-        </div>
+        <div><p class="eyebrow">MLB Command Center</p><h1>Baseball betting intelligence</h1><p>F5, moneyline, totals, series board, prop/K history, trend evidence, and performance proof in one clean MLB workspace.</p></div>
+        <div class="sport-action-card"><strong>MLB Active</strong><span>Latest slate loaded into Today’s Picks.</span><button class="primary jump" data-page="today">Open MLB Card</button></div>
       </div>
-
       <div class="sport-route-grid">
-        <article class="route-card jump" data-page="today">
-          <h3>Today’s Picks</h3>
-          <p>Official plays, research plays, live looks, verified grades, and bet details.</p>
-        </article>
+        <article class="route-card jump" data-page="today"><h3>Today’s MLB Picks</h3><p>Official plays, research plays, game context, and bet details.</p></article>
+        <article class="route-card jump" data-page="series"><h3>Series Board</h3><p>Series edges organized by pick, odds, model edge, confidence, and why.</p></article>
+        <article class="route-card jump f5-route-card" data-page="f5-performance"><h3>F5 Performance</h3><p>Dedicated F5 lab with team logos, ROI, win %, AI scores, odds, and every tracked F5 bet.</p></article>
+        <article class="route-card jump" data-page="trends"><h3>Trend Database</h3><p>Win trends, ML hit-rate trends, game-log trends, and prop history.</p></article>
+        <article class="route-card jump" data-page="performance"><h3>Performance Lab</h3><p>What has actually made money by category, type, and bet log.</p></article>
 
-        <article class="route-card jump" data-page="performance">
-          <h3>Performance Lab</h3>
-          <p>Record, ROI, units, category performance, and historical bet log.</p>
-        </article>
-
-        <article class="route-card jump" data-page="f5-performance">
-          <h3>F5 Database</h3>
-          <p>First-five history by team, ROI, win rate, odds, result, and AI score.</p>
-        </article>
-
-        <article class="route-card jump" data-page="series">
-          <h3>Series Board</h3>
-          <p>Series edges with model probability, Vegas probability, edge, and confidence.</p>
-        </article>
-
-        <article class="route-card jump" data-page="trends">
-          <h3>Trend Database</h3>
-          <p>Matched trend evidence, hit rates, samples, environments, and history.</p>
-        </article>
-
-        <article class="route-card jump" data-page="journal">
-          <h3>Research Journal</h3>
-          <p>Lessons, model notes, and edge patterns from previous slates.</p>
-        </article>
-
-        <article class="route-card jump" data-page="models">
-          <h3>Model Center</h3>
-          <p>F5 weights, grading logic, component scores, and premium model settings.</p>
-        </article>
+        <article class="route-card jump" data-page="journal"><h3>Research Journal</h3><p>Market notes, edge patterns, and lessons from previous slates.</p></article>
+        <article class="route-card jump" data-page="models"><h3>Model Center</h3><p>Premium model weights and F5 grading logic.</p></article>
       </div>
     </section>
 
-    <section id="today" class="page">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">MLB Card</p>
-          <h2>Today’s Picks</h2>
-          <p>Verified results, live looks, model evidence, starting pitchers, odds, trends, and reasoning.</p>
-        </div>
-      </div>
-
-      <div class="toolbar">
-        <select id="pickStatusFilter"><option value="all">All Statuses</option></select>
-        <select id="pickSlateFilter"><option value="all">All Slates</option></select>
-        <input id="pickSearch" placeholder="Search pick, edge, team..." />
-      </div>
-
-      <div id="pickSummary" class="summary-row"></div>
-      <div id="picksGrid" class="cards"></div>
+    <section id="sport-nhl" class="page sport-page nhl-theme">
+      <div class="sport-hero nhl-hero"><div><p class="eyebrow">NHL Workspace</p><h1>Hockey intelligence room</h1><p>Designed for puck lines, moneylines, totals, goalie matchup data, rest spots, and series angles once NHL data is added.</p></div><div class="sport-action-card"><strong>Data Coming Soon</strong><span>Framework ready. No NHL picks loaded yet.</span></div></div>
     </section>
 
-    <section id="performance" class="page">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">MLB Performance Lab</p>
-          <h2>What is actually working?</h2>
-          <p>Performance by category, ROI, record, units, and searchable bet history.</p>
-        </div>
-      </div>
-
-      <div id="officialPerformanceSummary" class="summary-row"></div>
-
-      <div class="performance-lab-layout upgraded-performance">
-        <section class="model-panel performance-overview-panel">
-          <div class="section-head compact-head">
-            <div>
-              <p class="eyebrow">Category Strength</p>
-              <h3>Bet Type Board</h3>
-              <p>See which bet types are creating value.</p>
-            </div>
-          </div>
-          <div id="officialCategoryBoard"></div>
-        </section>
-
-        <section class="model-panel performance-log-panel">
-          <div class="section-head compact-head">
-            <div>
-              <p class="eyebrow">Bet Log</p>
-              <h3>Actual Bets Placed</h3>
-              <p>Search by team, market, pitcher, result, or note.</p>
-            </div>
-          </div>
-
-          <div class="toolbar compact-toolbar">
-            <select id="officialTypeFilter"><option value="all">All Bet Types</option></select>
-            <input id="officialBetSearch" placeholder="Search team, bet, pitcher, note..." />
-          </div>
-
-          <div id="officialBetLog"></div>
-        </section>
-      </div>
-    </section>
-
-    <section id="f5-performance" class="page f5-performance-page mlb-theme">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">MLB F5 Database</p>
-          <h2>F5 Performance Lab</h2>
-          <p>Every first-five play generated by Sports Edge, grouped by team with ROI, win rate, odds, result, and AI score.</p>
-        </div>
-      </div>
-
-      <div id="f5OverallSummary" class="summary-row f5-summary-row"></div>
-
-      <div class="f5-lab-layout">
-        <section class="model-panel f5-team-panel">
-          <div class="section-head compact-head">
-            <div>
-              <p class="eyebrow">Team Database</p>
-              <h3>All MLB Teams</h3>
-              <p>Click a team to view its full F5 betting history.</p>
-            </div>
-          </div>
-          <div id="f5TeamGrid" class="f5-team-grid"></div>
-        </section>
-
-        <section class="model-panel f5-detail-panel">
-          <div class="section-head compact-head">
-            <div>
-              <p class="eyebrow">Team Drilldown</p>
-              <h3 id="f5SelectedTeamTitle">Select a team</h3>
-              <p id="f5SelectedTeamSub">F5 results will appear here.</p>
-            </div>
-          </div>
-          <div id="f5SelectedTeamStats" class="summary-row"></div>
-          <div id="f5BetTable"></div>
-        </section>
-      </div>
-    </section>
-
-    <section id="series" class="page">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">MLB Series Board</p>
-          <h2>Series Edges</h2>
-          <p>Series picks with price, Vegas probability, model probability, edge, grade, and explanation.</p>
-        </div>
-      </div>
-      <div class="cards" id="seriesCards"></div>
-    </section>
-
-    <section id="trends" class="page">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">MLB Trend Database</p>
-          <h2>Trend Evidence</h2>
-          <p>Search stored trends by team, market, environment, hit rate, and supporting examples.</p>
-          <p id="importSummary" class="subtle"></p>
-        </div>
-      </div>
-
-      <div class="layout">
-        <aside class="filters">
-          <h3>Filters</h3>
-
-          <details class="filter-group" open>
-            <summary>Sport</summary>
-            <label>Sport<select id="sportFilter"><option value="MLB">MLB</option></select></label>
-          </details>
-
-          <details class="filter-group" open>
-            <summary>Bet Category</summary>
-            <label>
-              Category
-              <select id="betCategoryFilter">
-                <option value="Win Trend">Win Trend</option>
-                <option value="Win Trend Hit Rate">Win Trend Hit Rate</option>
-                <option value="Prop">Prop</option>
-                <option value="Game Log Trend">Game Log Trend</option>
-              </select>
-            </label>
-          </details>
-
-          <div id="winTrendBlock" class="category-filter-block">
-            <details class="filter-group" open>
-              <summary>Win Trend Style</summary>
-              <label>Style<select id="winStyleFilter"><option value="all">All Win Trend Styles</option></select></label>
-            </details>
-          </div>
-
-          <div id="gameLogTrendBlock" class="category-filter-block hidden">
-            <details class="filter-group" open>
-              <summary>Game Log Environment</summary>
-              <label>Environment<select id="gameLogEnvironmentFilter"><option value="all">All Game Environments</option></select></label>
-            </details>
-          </div>
-
-          <div id="mlTrendBlock" class="category-filter-block hidden">
-            <details class="filter-group" open>
-              <summary>ML Environment</summary>
-              <label>Environment<select id="mlEnvironmentFilter"><option value="all">All ML Environments</option></select></label>
-            </details>
-          </div>
-
-          <div id="propTrendBlock" class="category-filter-block hidden">
-            <details class="filter-group" open>
-              <summary>Prop Team Search</summary>
-              <label>Search Team<input id="propTeamSearch" list="propTeamSuggestions" placeholder="Yankees or NYY" /></label>
-              <datalist id="propTeamSuggestions"></datalist>
-              <small id="propDetectedEnvironment" class="subtle">Type a team to infer today’s environment.</small>
-            </details>
-
-            <details class="filter-group" open>
-              <summary>Prop Environment</summary>
-              <label>Environment<select id="propEnvironmentFilter"><option value="all">Auto / All Matching Environments</option></select></label>
-            </details>
-          </div>
-
-          <details class="filter-group" open>
-            <summary>Performance</summary>
-            <label>
-              Minimum Hit Rate
-              <select id="hitFilter">
-                <option value="all">Any</option>
-                <option value="55">55%+</option>
-                <option value="60">60%+</option>
-                <option value="65">65%+</option>
-                <option value="70">70%+</option>
-              </select>
-            </label>
-          </details>
-
-          <details class="filter-group" open>
-            <summary>Search</summary>
-            <label>Keyword Search<input id="trendSearch" placeholder="Pitcher, note, description..." /></label>
-          </details>
-
-          <button id="clearFilters" class="secondary full">Clear Filters</button>
-        </aside>
-
-        <div class="results">
-          <div id="trendCount" class="count"></div>
-          <div id="trendTable"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="journal" class="page">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Research Journal</p>
-          <h2>Model Notes & Lessons</h2>
-          <p>Track what the model learned, what worked, and what needs adjustment.</p>
-        </div>
-      </div>
-      <div id="journalGrid" class="cards"></div>
-    </section>
-
-    <section id="models" class="page">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Model Center</p>
-          <h2>Sports Edge Model Lab</h2>
-          <p>Review scoring weights, component grades, and model logic.</p>
-        </div>
-      </div>
-
-      <section id="modelPaywall" class="paywall-card">
-        <div>
-          <span class="tag gold-tag">Premium Model</span>
-          <h3>Unlock model controls</h3>
-          <p>Demo mode lets you test model weights and scoring logic.</p>
-        </div>
-        <div class="paywall-actions">
-          <button id="unlockModelDemo" class="primary">Unlock Demo</button>
-        </div>
-      </section>
-
-      <section id="modelLab" class="premium-lab hidden">
-        <section class="model-panel">
-          <div class="panel-head">
-            <div>
-              <p class="eyebrow">F5 Weights</p>
-              <h3>Model Components</h3>
-            </div>
-            <button id="resetWeights" class="secondary">Reset</button>
-          </div>
-          <div id="f5Weights"></div>
-          <div id="weightTotal" class="weight-total"></div>
-        </section>
-
-        <section class="model-panel model-board-panel">
-          <div class="section-head compact-head">
-            <div>
-              <p class="eyebrow">Custom Model Board</p>
-              <h3>Re-ranked Plays</h3>
-            </div>
-            <button id="lockModelDemo" class="secondary">Lock Demo</button>
-          </div>
-          <div id="customModelBoard"></div>
-        </section>
-      </section>
+    <section id="sport-nfl" class="page sport-page nfl-theme">
+      <div class="sport-hero nfl-hero"><div><p class="eyebrow">NFL Workspace</p><h1>Football intelligence room</h1><p>Built for spreads, totals, props, weather, injuries, market movement, and matchup filters once NFL data is added.</p></div><div class="sport-action-card"><strong>Data Coming Soon</strong><span>Framework ready. No NFL picks loaded yet.</span></div></div>
     </section>
 
     <section id="sport-cfb" class="page sport-page cfb-theme">
       <div class="sport-hero cfb-hero">
         <div>
-          <p class="eyebrow">College Football</p>
-          <h1>Player prop database.</h1>
-          <p>Search by team and view stored player prop history.</p>
+          <p class="eyebrow">College Football Prop Lab</p>
+          <h1>Player prop intelligence by team.</h1>
+          <p>Search a team or choose from the database. When a team is selected, Sports Edge shows every player with stored 2025 prop history, position, current-line placeholder, and the lines they hit or missed.</p>
         </div>
         <div class="sport-action-card">
           <strong>CFB Database Active</strong>
@@ -446,12 +101,10 @@
           <button class="primary jump" data-page="cfb-props">Open CFB Props</button>
         </div>
       </div>
-
       <div class="sport-route-grid">
-        <article class="route-card jump" data-page="cfb-props">
-          <h3>Team Prop Lookup</h3>
-          <p>Search a team and open player prop histories.</p>
-        </article>
+        <article class="route-card jump" data-page="cfb-props"><h3>Team Prop Lookup</h3><p>Search a team and open dropdowns for each player with prop history.</p></article>
+        <article class="route-card"><h3>Today's CFB Slate</h3><p>Ready for schedule import. Once games are added, today's teams will appear first.</p></article>
+        <article class="route-card"><h3>Prop Profiles</h3><p>QB/RB/WR/TE histories grouped by prop type, hit result, and line.</p></article>
       </div>
     </section>
 
@@ -460,69 +113,178 @@
         <div>
           <p class="eyebrow">College Football Database</p>
           <h2>Team Player Prop Lookup</h2>
-          <p>Select a team to see player prop history.</p>
+          <p>Simple flow: choose a team playing today, or search any team. Each player opens as a dropdown showing position, current line slot, and 2025 prop results.</p>
         </div>
       </div>
-
       <div class="cfb-dashboard">
         <section class="model-panel cfb-control-panel">
-          <div class="section-head compact-head">
-            <div>
-              <p class="eyebrow">Find Team</p>
-              <h3>Search or choose a team</h3>
-            </div>
-          </div>
-
+          <div class="section-head compact-head"><div><p class="eyebrow">Find Team</p><h3>Search or choose a team</h3><p>Today's CFB slate can be imported later. For now, every team with stored 2025 prop history is searchable.</p></div></div>
           <div class="toolbar compact-toolbar cfb-toolbar">
-            <input id="cfbTeamSearch" list="cfbTeamList" placeholder="Search team..." />
+            <input id="cfbTeamSearch" list="cfbTeamList" placeholder="Search team, e.g. Alabama, Miami, Ohio State" />
             <datalist id="cfbTeamList"></datalist>
             <select id="cfbTeamSelect"><option value="">Select Team</option></select>
           </div>
-
           <div id="cfbSummary" class="summary-row"></div>
         </section>
-
         <section class="model-panel cfb-team-board-panel">
-          <div class="section-head compact-head">
-            <div>
-              <p class="eyebrow">Team Board</p>
-              <h3 id="cfbSelectedTeamTitle">Select a team</h3>
-              <p id="cfbSelectedTeamSub">Players with stored prop data will appear here.</p>
-            </div>
-          </div>
+          <div class="section-head compact-head"><div><p class="eyebrow">Team Board</p><h3 id="cfbSelectedTeamTitle">Select a team</h3><p id="cfbSelectedTeamSub">Players with stored prop data will appear here.</p></div></div>
           <div id="cfbPlayerBoard"></div>
         </section>
       </div>
     </section>
 
-    <section id="sport-nfl" class="page sport-page nfl-theme">
-      <div class="sport-hero nfl-hero">
-        <div>
-          <p class="eyebrow">NFL Workspace</p>
-          <h1>NFL coming soon.</h1>
-          <p>Prepared for spreads, totals, props, injuries, weather, and market movement.</p>
-        </div>
+    <section id="sport-nba" class="page sport-page nba-theme">
+      <div class="sport-hero nba-hero"><div><p class="eyebrow">NBA Workspace</p><h1>Basketball intelligence room</h1><p>Prepared for spreads, totals, player props, lineups, pace, rest disadvantage, and matchup trends once NBA data is added.</p></div><div class="sport-action-card"><strong>Data Coming Soon</strong><span>Framework ready. No NBA picks loaded yet.</span></div></div>
+    </section>
+
+    <section id="sport-ncaab" class="page sport-page ncaab-theme">
+      <div class="sport-hero ncaab-hero"><div><p class="eyebrow">NCAAB Workspace</p><h1>College hoops intelligence room</h1><p>Prepared for conference trends, tempo, home-court edge, underdog spots, and tournament-style profile building.</p></div><div class="sport-action-card"><strong>Data Coming Soon</strong><span>Framework ready. No NCAAB picks loaded yet.</span></div></div>
+    </section>
+
+    <section id="today" class="page">
+      <div class="section-head"><div><p class="eyebrow">Picks + Performance</p><h2>Today’s Picks & Results Dashboard</h2><p>Full tracked betting history with wins, losses, live bets, ungraded archive, units, ROI, and category performance.</p></div></div>
+      <div class="toolbar">
+        <select id="pickStatusFilter"><option value="all">All Statuses</option></select>
+        <select id="pickSlateFilter"><option value="all">All Slates</option></select>
+        <input id="pickSearch" placeholder="Search pick, edge, team..." />
+      </div>
+      <div id="pickSummary" class="summary-row"></div>
+      <div id="picksGrid" class="cards"></div>
+    </section>
+
+
+    <section id="performance" class="page">
+      <div class="section-head"><div><p class="eyebrow">Performance Lab</p><h2>What has actually worked?</h2><p>A cleaner performance room for daily bettors: summary first, category strength second, searchable bet log third.</p></div></div>
+      <div id="officialPerformanceSummary" class="summary-row"></div>
+      <div class="performance-lab-layout upgraded-performance">
+        <section class="model-panel performance-overview-panel">
+          <div class="section-head compact-head"><div><p class="eyebrow">Quick Read</p><h3>Category Strength Board</h3><p>Immediately see which bet types are helping the bankroll and which ones need discipline.</p></div></div>
+          <div id="officialCategoryBoard"></div>
+        </section>
+        <section class="model-panel performance-guide-panel">
+          <div class="section-head compact-head"><div><p class="eyebrow">How to use this</p><h3>Daily bettor checklist</h3></div></div>
+          <ol class="clean numbered-clean">
+            <li>Start with the strongest positive category.</li>
+            <li>Check today’s official card for unit-sized plays.</li>
+            <li>Use Research Journal and Trend Database only when you want deeper evidence.</li>
+          </ol>
+        </section>
+        <section class="model-panel performance-log-panel">
+          <div class="section-head compact-head"><div><p class="eyebrow">Bet Log</p><h3>Actual Bets Placed</h3><p>Filter quickly by type or search a team/pitcher. Units are only shown when they were actually recorded.</p></div></div>
+          <div class="toolbar compact-toolbar">
+            <select id="officialTypeFilter"><option value="all">All Bet Types</option></select>
+            <input id="officialBetSearch" placeholder="Search team, bet, pitcher, note..." />
+          </div>
+          <div id="officialBetLog"></div>
+        </section>
       </div>
     </section>
 
-    <section id="sport-nba" class="page sport-page nba-theme">
-      <div class="sport-hero nba-hero">
+
+    <section id="trends" class="page">
+      <div class="section-head"><div><p class="eyebrow">Spreadsheet → Live Slate Matching</p><h2>MLB Trend Database</h2><p>Choose sport and bet category, then see today's matching trend rows first. For Game Log Trend, filter by game environment/description while the app assigns styles automatically as tags and keeps history inside each row.</p><p id="importSummary" class="subtle"></p></div></div>
+      <div class="layout">
+        <aside class="filters">
+          <h3>Filters</h3>
+          <details class="filter-group" open><summary>1. Sport</summary><label>Sport<select id="sportFilter"><option value="MLB">MLB</option></select></label></details>
+          <details class="filter-group" open><summary>2. Bet Category</summary><label>Category<select id="betCategoryFilter"><option value="Win Trend">Win Trend</option><option value="Win Trend Hit Rate">Win Trend Hit Rate</option><option value="Prop">Prop</option><option value="Game Log Trend">Game Log Trend</option></select></label></details>
+          <div id="winTrendBlock" class="category-filter-block"><details class="filter-group" open><summary>Win Trend Style</summary><label>Style<select id="winStyleFilter"><option value="all">All Win Trend Styles</option></select></label><small class="subtle">PREV_SCORED 10+, PREV_SCORED 0, PREV_ALLOWED, SWEEP, AVOID SWEEP, FOR SWEEP, OVER, UNDER.</small></details></div>
+          <div id="gameLogTrendBlock" class="category-filter-block hidden"><details class="filter-group" open><summary>Game Log Description</summary><label>Game Environment<select id="gameLogEnvironmentFilter"><option value="all">All Game Environments</option></select></label><small class="subtle">Filter by the game description: Away Underdog, Away Favorite, Home Underdog, or Home Favorite. Styles like PREV_SCORED, PREV_ALLOWED, SWEEP, and AtS are now auto-assigned as tags on matching slate rows.</small></details></div>
+          <div id="mlTrendBlock" class="category-filter-block hidden"><details class="filter-group" open><summary>Win Trend Hit Rate Environment</summary><label>Environment<select id="mlEnvironmentFilter"><option value="all">All ML Environments</option></select></label><small class="subtle">AFTER A WIN, 1-DAY REST, AWAY UNDERDOG, DIVISION, NO REST.</small></details></div>
+          <div id="propTrendBlock" class="category-filter-block hidden"><details class="filter-group" open><summary>Prop Team Search</summary><label>Search Team<input id="propTeamSearch" list="propTeamSuggestions" placeholder="Type team or abbreviation, e.g. Yankees or NYY" /></label><datalist id="propTeamSuggestions"></datalist><small id="propDetectedEnvironment" class="subtle">Type a team and the app will infer HOME/AWAY and favorite/underdog from today’s slate when live odds are available.</small></details><details class="filter-group" open><summary>Detected Prop Environment</summary><label>Environment<select id="propEnvironmentFilter"><option value="all">Auto / All Matching Environments</option></select></label><small class="subtle">Manual override is optional. The app keeps automatic environment matching in code.</small></details></div>
+          <details class="filter-group" open><summary>Performance</summary><label>Minimum Hit Rate<select id="hitFilter"><option value="all">Any</option><option value="55">55%+</option><option value="60">60%+</option><option value="65">65%+</option><option value="70">70%+</option></select></label></details>
+          <details class="filter-group" open><summary>Search</summary><label>Keyword Search<input id="trendSearch" placeholder="Pitcher, note, description..." /></label></details>
+          <button id="clearFilters" class="secondary full">Clear Filters</button>
+        </aside>
+        <div class="results"><div id="trendCount" class="count"></div><div id="trendTable"></div></div>
+      </div>
+    </section>
+
+    <section id="series" class="page">
+      <div class="section-head"><div><p class="eyebrow">New Module</p><h2>Series Board</h2><p>Clean series-pick board: see the pick, price, model probability, Vegas probability, edge, confidence grade, and why it qualifies.</p></div></div>
+      <div class="cards" id="seriesCards"></div>
+    </section>
+
+
+    <section id="f5-performance" class="page f5-performance-page mlb-theme">
+      <div class="section-head">
         <div>
-          <p class="eyebrow">NBA Workspace</p>
-          <h1>NBA coming soon.</h1>
-          <p>Prepared for props, pace, lineups, rest edges, and matchup trends.</p>
+          <p class="eyebrow">MLB F5 Performance</p>
+          <h2>F5 Performance Lab</h2>
+          <p>Dedicated database for every F5 play generated by the AI weights and prompts. Click any team badge to drill into team-specific F5 bets, odds, ROI, win %, and AI scores.</p>
+        </div>
+      </div>
+      <div id="f5OverallSummary" class="summary-row f5-summary-row"></div>
+      <div class="f5-lab-layout">
+        <section class="model-panel f5-team-panel">
+          <div class="section-head compact-head"><div><p class="eyebrow">Team Database</p><h3>All MLB Teams</h3><p>Every team stays visible. Teams without F5 history show as waiting for data.</p></div></div>
+          <div id="f5TeamGrid" class="f5-team-grid"></div>
+        </section>
+        <section class="model-panel f5-detail-panel">
+          <div class="section-head compact-head"><div><p class="eyebrow">Team Drilldown</p><h3 id="f5SelectedTeamTitle">Select a team</h3><p id="f5SelectedTeamSub">Click a team badge to see F5 history, odds, ROI, win %, and AI scores.</p></div></div>
+          <div id="f5SelectedTeamStats" class="summary-row f5-team-summary"></div>
+          <div id="f5BetTable"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="journal" class="page">
+      <div class="section-head"><div><p class="eyebrow">Knowledge Base</p><h2>Research Journal</h2><p>Daily edge profiles and patterns to track from your prompts. This is where the app gets smarter over time.</p></div></div>
+      <div id="journalGrid" class="cards"></div>
+    </section>
+
+    <section id="models" class="page premium-page">
+      <div class="section-head"><div><p class="eyebrow">Premium Model Center</p><h2>Locked Model Lab</h2><p>This is the subscription-only “holy grail” of Sports Edge: the model weights, Grade A logic, and live slider lab that recalculates bets as weights change.</p></div></div>
+
+      <div id="modelPaywall" class="paywall-card">
+        <div>
+          <span class="tag">Subscription Required</span>
+          <h3>Unlock the Sports Edge Model Lab</h3>
+          <p>Free users can see picks and trends. Paid users get access to the exact model weights, adjustable sliders, Grade A thresholds, and recalculated bet rankings.</p>
+          <ul class="clean">
+            <li>View the current F5 Run Line weight system.</li>
+            <li>Adjust model weights with slider controls.</li>
+            <li>Watch Grade A plays update instantly.</li>
+            <li>Compare default model score vs. custom model score.</li>
+          </ul>
+        </div>
+        <div class="paywall-actions">
+          <button id="unlockModelDemo" class="primary">Unlock Demo Access</button>
+          <small>Demo gate only. Production should connect this button to Stripe + user accounts.</small>
+        </div>
+      </div>
+
+      <div id="modelLab" class="premium-lab hidden">
+        <div class="model-grid">
+          <article class="model-panel">
+            <div class="panel-head"><span class="tag">Premium</span><button id="lockModelDemo" class="secondary">Lock Demo</button></div>
+            <h3>MLB F5 Run Line Weight Sliders</h3>
+            <p>Move the sliders to create a custom version of the model. The Grade A board below recalculates automatically.</p>
+            <div id="f5Weights"></div>
+            <div id="weightTotal" class="weight-total"></div>
+            <button id="resetWeights" class="secondary full">Reset Default Weights</button>
+          </article>
+          <article class="model-panel">
+            <span class="tag blue">Grade A Logic</span>
+            <h3>Current Qualification Rules</h3>
+            <ul class="clean">
+              <li><strong>Grade A:</strong> custom score 7.00 or higher.</li>
+              <li><strong>Playable:</strong> custom score 6.50 to 6.99.</li>
+              <li><strong>Pass/Fade:</strong> below 6.50 or price/risk fails discipline.</li>
+              <li><strong>Favorite odds cap:</strong> avoid prices worse than -150.</li>
+            </ul>
+            <p class="subtle">This prototype uses the pick component data already entered into the app. In production, the same sliders should recalculate every eligible live slate bet.</p>
+          </article>
+        </div>
+        <div class="model-panel model-board-panel">
+          <div class="section-head compact"><div><p class="eyebrow">Live Recalculation</p><h3>Custom Grade A Board</h3><p>Re-ranked by your active weight settings.</p></div></div>
+          <div id="customModelBoard"></div>
         </div>
       </div>
     </section>
   </main>
 
-  <div id="modal" class="modal hidden">
-    <div class="modal-card">
-      <button id="closeModal" class="close">&times;</button>
-      <div id="modalBody"></div>
-    </div>
-  </div>
-
+  <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="close">×</button><div id="modalBody"></div></div></div>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
