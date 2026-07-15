@@ -129,7 +129,7 @@ const JULY_PICKS = [
   {date:'2026-07-07', rawPick:'CLE ML', odds:'-101', trendTags:['NO CLV']},
   {date:'2026-07-07', rawPick:'SD ML', odds:'-127', trendTags:['PREV_SCORED 0']},
   {date:'2026-07-07', rawPick:'ARI / SD U8.5', odds:'-105'},
-  {date:'2026-07-07', rawPick:'TOR ML', odds:'-118', trendTags:['PREV_ALLOWED 10+']}
+  {date:'2026-07-07', rawPick:'TOR ML', odds:'-118', trendTags:['PREV_ALLOWED 10+']},
 
 
   // V52 Daily Import Engine: 07/08 through 07/12. DISREGARD picks excluded.
