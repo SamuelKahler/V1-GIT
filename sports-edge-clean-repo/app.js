@@ -1198,20 +1198,50 @@ function isWaitForValuePick(p){
   return raw.includes('LIVE') || raw.includes('WAIT FOR VALUE') || raw.includes('IN-GAME') || raw.includes('IN GAME');
 }
 function isMainBoardPick(p){ return !isWaitForValuePick(p); }
+function renderPickDropdownRow(p){
+  const st = normalizedPickStatus(p);
+  const resultClass = st==='WIN'?'status-WIN':st==='LOSS'?'status-LOSS':(st==='PUSH'?'status-PUSH':(st==='UNVERIFIED'||st==='UNGRADED'?'status-UNGRADED':'status-'+slugStatus(st)));
+  const unitText = explicitUnitSize(p) ? String(p.units).trim() : 'No unit';
+  const trendText = Array.isArray(p.trendTags) && p.trendTags.length ? p.trendTags.join(' • ') : '';
+  const proof = trendEvidenceCardSummary(p) || `<p class="card-summary">${consumerReasoningNotes(p)[0] || compactWhy(p)[0] || 'Sports Edge tracked play. Open details for model context.'}</p>`;
+  return `<article class="slate-play-card compact-dropdown-pick ${isOfficialPlay(p)?'official-play':'research-play'}">
+    <div class="series-card-top"><span class="tag ${isOfficialPlay(p)?'':'blue'}">${isOfficialPlay(p)?'Official':'Research'}</span><span class="pill ${resultClass}">${statusDisplayIcon(st)}</span></div>
+    <h3>${cleanPickTitle(p)}</h3>
+    ${matchupSubtitleHtml(p)}
+    <div class="meta"><span class="pill">${bettorCategory(p)}</span><span class="pill">Odds ${p.odds || '-'}</span><span class="pill">${unitText}</span>${trendText?`<span class="pill">${trendText}</span>`:''}</div>
+    ${proof}
+    <button class="secondary details-cta" onclick="openPick(${dailyPicks.indexOf(p)})">Open Bet Details</button>
+  </article>`;
+}
+function renderPickDropdownSection(title, subtitle, picks, options={}){
+  const open = options.open ? ' open' : '';
+  const label = `${title} (${picks.length})`;
+  return `<details class="pick-dropdown-section"${open}><summary><div><strong>${label}</strong><small>${subtitle}</small></div><span>Expand</span></summary><div class="pick-dropdown-body">${picks.length ? picks.map(renderPickDropdownRow).join('') : `<p class="subtle small-empty">${options.empty || 'No plays in this section.'}</p>`}</div></details>`;
+}
 function renderCategorizedPlayBoard(picks, emptyMessage, options={}){
   const includeLiveLooks = options.includeLiveLooks !== false;
   if(!picks.length) return `<p class="subtle">${emptyMessage}</p>`;
-  const columns = includeLiveLooks ? ['Wait For Value / Live Looks','First Five','Moneyline','Over','Under','Spread'] : ['First Five','Moneyline','Over','Under','Spread'];
-  const by = Object.fromEntries(columns.map(c=>[c, []]));
+  const buckets = [
+    {key:'First Five', title:'F5 Plays', sub:'First-five inning plays with F5 grading and F5 database tracking.'},
+    {key:'Moneyline', title:'Moneylines', sub:'Team win bets, auto-graded by official final score.'},
+    {key:'Over', title:'Overs', sub:'Totals marked over.'},
+    {key:'Under', title:'Unders', sub:'Totals marked under.'},
+    {key:'Totals', title:'Other Totals', sub:'Totals that need additional classification.'},
+    {key:'Spread', title:'Spreads / Runlines', sub:'Spread-style positions.'},
+    {key:'Props', title:'Props', sub:'Player prop and K history plays.'}
+  ];
+  const by = Object.fromEntries(buckets.map(b=>[b.key, []]));
   picks.filter(isClassifiedPick).forEach(p=>{
-    const cat = isWaitForValuePick(p) && includeLiveLooks ? 'Wait For Value / Live Looks' : bettorCategory(p);
+    const cat = bettorCategory(p);
     if(by[cat]) by[cat].push(p);
+    else if(cat === 'Totals') by['Totals'].push(p);
   });
-  return `<div class="pick-column-board">${columns.map(cat=>{
-    const label = cat === 'First Five' ? 'F5' : cat === 'Moneyline' ? 'ML' : cat === 'Wait For Value / Live Looks' ? 'Wait For Value' : cat;
-    const helper = cat === 'Wait For Value / Live Looks' ? '<small>LIVE-tagged plays to monitor in-game for better value.</small>' : '';
-    return `<section class="pick-column ${cat === 'Wait For Value / Live Looks' ? 'wait-value-column' : ''}"><div class="pick-column-head"><h3>${label}</h3><span>${by[cat].length}</span>${helper}</div><div class="pick-column-list">${by[cat].length ? by[cat].map(slatePlayCard).join('') : '<p class="subtle small-empty">No plays</p>'}</div></section>`;
-  }).join('')}</div>`;
+  const trendBacked = picks.filter(p=>Array.isArray(p.trendTags) && p.trendTags.length);
+  const sections = [];
+  if(includeLiveLooks) sections.push(renderPickDropdownSection('Wait For Value / Live Looks', 'LIVE-tagged plays to monitor for a better entry price.', picks.filter(isWaitForValuePick), {open:true, empty:'No wait-for-value plays.'}));
+  buckets.forEach((b, idx)=>sections.push(renderPickDropdownSection(b.title, b.sub, by[b.key] || [], {open: idx===0 && !includeLiveLooks})));
+  sections.push(renderPickDropdownSection('Trend-Backed Plays', 'Picks with AtS, SWEEP, previously scored/allowed, or no-CLV tags attached.', trendBacked, {empty:'No trend-tagged plays in this group.'}));
+  return `<div class="pick-dropdown-board">${sections.join('')}</div>`;
 }
 
 function renderHomeDailyDashboard(){
@@ -1275,7 +1305,7 @@ function renderPicks(){
   let picks=dailyPicks.filter(p=>(slate==='all'||p.slate===slate));
   if(status!=='all') picks=picks.filter(p=>normalizedPickStatus(p)===status);
   if(q) picks=picks.filter(p=>JSON.stringify(p).toLowerCase().includes(q));
-  $('#pickSummary').innerHTML = '<div class="board-note"><strong>Today’s Picks</strong><span>Performance record lives only in the Performance Lab so the totals stay synced.</span></div>' + apiGradeSummaryHtml();
+  $('#pickSummary').innerHTML = '<div class="board-note"><strong>Today’s Picks</strong><span>Grouped into clean dropdowns. Open only the section you want.</span></div>' + apiGradeSummaryHtml();
 
   const latest = latestPickDateKey();
   const currentSlate = picks.filter(p=>dateKey(parseSlateDate(p.slate))===latest);
@@ -1285,14 +1315,22 @@ function renderPicks(){
   const regularCurrent = classifiedCurrent.filter(isMainBoardPick);
   const official = regularCurrent.filter(isOfficialPlay);
   const research = regularCurrent.filter(isResearchPlay);
+  const f5All = classifiedCurrent.filter(p=>bettorCategory(p)==='First Five');
+  const trendBacked = classifiedCurrent.filter(p=>Array.isArray(p.trendTags) && p.trendTags.length);
   const archive = picks.filter(p=>dateKey(parseSlateDate(p.slate))!==latest && isClassifiedPick(p));
 
-  const officialHtml = `<section class="pick-section"><div class="board-header"><div><p class="eyebrow">Money On It</p><h3>Official Plays</h3><p>Only non-live plays with unit sizes attached. These are the plays users should treat as official card plays before the game.</p></div></div>${renderCategorizedPlayBoard(official, 'No unit-sized official plays for the latest slate yet.', {includeLiveLooks:false})}</section>`;
-  const waitValueHtml = `<section class="pick-section wait-value-section"><div class="board-header research-header"><div><p class="eyebrow">In-Game Watchlist</p><h3>Wait For Value / Live Looks</h3><p>These picks were tagged LIVE. They should be monitored during the game for better value instead of treated like normal pregame bets.</p></div></div>${renderCategorizedPlayBoard(waitForValue, 'No LIVE / wait-for-value plays for the latest slate.', {includeLiveLooks:true})}</section>`;
-  const researchHtml = `<section class="pick-section"><div class="board-header research-header"><div><p class="eyebrow">Found Edge</p><h3>Research Plays</h3><p>These are non-live plays the app identified or you entered, but they are not official bets until a unit size is attached.</p></div></div>${renderCategorizedPlayBoard(research, 'No research plays for the latest slate.', {includeLiveLooks:false})}</section>`;
-  const archiveHtml = `<section class="pick-section"><h3>Historical Results Archive</h3>${groupBySlate(archive).map(([slate,items])=>`<details class="date-group"><summary>${slate} <span>${items.length} picks</span></summary><div class="archive-list">${items.map(p=>archiveRow(p)).join('')}</div></details>`).join('')}</section>`;
-  $('#picksGrid').className = 'picks-dashboard';
-  $('#picksGrid').innerHTML = officialHtml + waitValueHtml + researchHtml + archiveHtml;
+  const latestLabel = latest ? new Date(latest+'T00:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : 'Latest Slate';
+  const header = `<section class="today-command-card"><div><p class="eyebrow">${latestLabel}</p><h3>Latest MLB Slate</h3><p>Official plays are unit-sized. LIVE tags are shown as Wait For Value. Past slates are automatically graded by the API when final data is available.</p></div><div class="mini-grid"><div><strong>${official.length}</strong><small>Official</small></div><div><strong>${waitForValue.length}</strong><small>Wait Value</small></div><div><strong>${classifiedCurrent.length}</strong><small>Total Picks</small></div></div></section>`;
+  const officialHtml = renderPickDropdownSection('Official Plays', 'Unit-sized plays only. These feed the Performance Lab ROI.', official, {open:true, empty:'No unit-sized official plays for the latest slate yet.'});
+  const waitValueHtml = renderPickDropdownSection('Wait For Value / Live Looks', 'LIVE-tagged plays. Monitor for better in-game price.', waitForValue, {open:false, empty:'No LIVE / wait-for-value plays for the latest slate.'});
+  const f5Html = renderPickDropdownSection('F5 Plays', 'Every first-five play on this slate. These also feed the F5 Performance tab.', f5All, {open:false, empty:'No F5 plays for this slate.'});
+  const researchHtml = renderPickDropdownSection('Research Plays', 'Non-live, non-unit plays that need a unit size before they become official.', research, {open:false, empty:'No research plays for the latest slate.'});
+  const trendHtml = renderPickDropdownSection('Trend-Backed Plays', 'Picks carrying AtS, SWEEP, previously scored/allowed, or no-CLV evidence tags.', trendBacked, {open:false, empty:'No trend-backed plays for this slate.'});
+  const marketHtml = `<details class="pick-dropdown-section"><summary><div><strong>Market Type Dropdowns</strong><small>Open by bet type instead of scanning a wall of cards.</small></div><span>Expand</span></summary><div class="pick-dropdown-body">${renderCategorizedPlayBoard(classifiedCurrent, 'No current slate plays.', {includeLiveLooks:false})}</div></details>`;
+  const archiveHtml = `<details class="pick-dropdown-section graded-archive-section"><summary><div><strong>Graded Archive (${archive.length})</strong><small>Past slates with API grades, ROI, and details.</small></div><span>Expand</span></summary><div class="archive-list">${groupBySlate(archive).map(([slate,items])=>`<details class="date-group"><summary>${slate} <span>${items.length} picks</span></summary><div class="archive-list">${items.map(p=>archiveRow(p)).join('')}</div></details>`).join('')}</div></details>`;
+
+  $('#picksGrid').className = 'picks-dashboard grouped-today-dashboard';
+  $('#picksGrid').innerHTML = header + officialHtml + waitValueHtml + f5Html + researchHtml + trendHtml + marketHtml + archiveHtml;
   if($('#homePicks')) $('#homePicks').textContent=dailyPicks.length;
   renderHomeDailyDashboard();
 }
@@ -1368,7 +1406,7 @@ function seriesResultBadge(p){
 }
 function renderSeries(){
   const picks = (typeof seriesBoardPicks !== 'undefined') ? seriesBoardPicks.slice().sort((a,b)=>dateKey(parseSlateDate(b.date||'')).localeCompare(dateKey(parseSlateDate(a.date||''))) ) : [];
-  const summary = `<div class="series-intro"><div><p class="eyebrow">Series Edge Board</p><h3>Newest series bets first</h3><p>Each card keeps the pick, price, model edge, decision, home/away context, and series result status in one clean view.</p></div></div>`;
+  const summary = `<div class="series-intro"><div><p class="eyebrow">Series Edge Board</p><h3>Newest series bets first</h3><p>Each card keeps the pick, price, model edge, decision, home/away context, and series result status in one clean view. If this board looks stale, it means no new series-specific picks were entered into the series dataset yet.</p></div></div>`;
   const modelSteps = `<details class="model-steps series-method-top"><summary>How the Series Engine works</summary><div class="cards">${seriesModule.map((s,idx)=>`<article class="model-panel"><span class="tag gray">Step ${idx+1}</span><h3>${s.step}</h3><p>${s.detail}</p></article>`).join('')}</div></details>`;
   const cards = picks.length ? picks.map((p,idx)=>`<article class="series-pick-card ${p.type==='BET'?'series-bet':'series-lean'}">
     <div class="series-card-top"><span class="tag ${p.type==='BET'?'':'gold-tag'}">${p.type}</span><span class="series-grade">Grade ${p.grade}</span>${seriesResultBadge(p)}</div>
