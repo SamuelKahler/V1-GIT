@@ -6,9 +6,9 @@
   <title>Sports Edge Research Platform</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
+<body class="theme-home">
   <header class="topbar">
-    <div class="brand"><span class="logo">SE</span><div><strong>Sports Edge</strong><small>Premium betting research intelligence</small></div></div>
+    <div class="brand"><span class="logo">SE</span><div><strong>Sports Edge</strong><small>Calm, trusted betting intelligence</small></div></div>
     <nav class="primary-nav">
       <button class="nav active" data-page="home">Home</button>
       <button class="nav" data-page="sport-mlb">MLB</button>
@@ -109,6 +109,7 @@
     </section>
 
     <section id="cfb-props" class="page cfb-theme">
+      <div class="back-row"><button class="secondary jump back-button" data-page="sport-cfb">← Back to CFB Home</button></div>
       <div class="section-head">
         <div>
           <p class="eyebrow">College Football Database</p>
@@ -142,6 +143,7 @@
     </section>
 
     <section id="today" class="page">
+      <div class="back-row"><button class="secondary jump back-button" data-page="sport-mlb">← Back to MLB Home</button></div>
       <div class="section-head"><div><p class="eyebrow">Picks + Performance</p><h2>Today’s Picks & Results Dashboard</h2><p>Full tracked betting history with wins, losses, live bets, ungraded archive, units, ROI, and category performance.</p></div></div>
       <div class="toolbar">
         <select id="pickStatusFilter"><option value="all">All Statuses</option></select>
@@ -154,6 +156,7 @@
 
 
     <section id="performance" class="page">
+      <div class="back-row"><button class="secondary jump back-button" data-page="sport-mlb">← Back to MLB Home</button></div>
       <div class="section-head"><div><p class="eyebrow">Performance Lab</p><h2>What has actually worked?</h2><p>A cleaner performance room for daily bettors: summary first, category strength second, searchable bet log third.</p></div></div>
       <div id="officialPerformanceSummary" class="summary-row"></div>
       <div class="performance-lab-layout upgraded-performance">
@@ -182,6 +185,7 @@
 
 
     <section id="trends" class="page">
+      <div class="back-row"><button class="secondary jump back-button" data-page="sport-mlb">← Back to MLB Home</button></div>
       <div class="section-head"><div><p class="eyebrow">Spreadsheet → Live Slate Matching</p><h2>MLB Trend Database</h2><p>Choose sport and bet category, then see today's matching trend rows first. For Game Log Trend, filter by game environment/description while the app assigns styles automatically as tags and keeps history inside each row.</p><p id="importSummary" class="subtle"></p></div></div>
       <div class="layout">
         <aside class="filters">
@@ -201,12 +205,14 @@
     </section>
 
     <section id="series" class="page">
+      <div class="back-row"><button class="secondary jump back-button" data-page="sport-mlb">← Back to MLB Home</button></div>
       <div class="section-head"><div><p class="eyebrow">New Module</p><h2>Series Board</h2><p>Clean series-pick board: see the pick, price, model probability, Vegas probability, edge, confidence grade, and why it qualifies.</p></div></div>
       <div class="cards" id="seriesCards"></div>
     </section>
 
 
     <section id="f5-performance" class="page f5-performance-page mlb-theme">
+      <div class="back-row"><button class="secondary jump back-button" data-page="sport-mlb">← Back to MLB Home</button></div>
       <div class="section-head">
         <div>
           <p class="eyebrow">MLB F5 Performance</p>
@@ -229,11 +235,13 @@
     </section>
 
     <section id="journal" class="page">
+      <div class="back-row"><button class="secondary jump back-button" data-page="sport-mlb">← Back to MLB Home</button></div>
       <div class="section-head"><div><p class="eyebrow">Knowledge Base</p><h2>Research Journal</h2><p>Daily edge profiles and patterns to track from your prompts. This is where the app gets smarter over time.</p></div></div>
       <div id="journalGrid" class="cards"></div>
     </section>
 
     <section id="models" class="page premium-page">
+      <div class="back-row"><button class="secondary jump back-button" data-page="sport-mlb">← Back to MLB Home</button></div>
       <div class="section-head"><div><p class="eyebrow">Premium Model Center</p><h2>Locked Model Lab</h2><p>This is the subscription-only “holy grail” of Sports Edge: the model weights, Grade A logic, and live slider lab that recalculates bets as weights change.</p></div></div>
 
       <div id="modelPaywall" class="paywall-card">
@@ -285,6 +293,7 @@
   </main>
 
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="close">×</button><div id="modalBody"></div></div></div>
+  <script src="daily-import.js"></script>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
