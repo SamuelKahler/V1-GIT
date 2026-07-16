@@ -13992,6 +13992,74 @@ for(let i = trackedPickResults.length - 1; i >= 0; i--){
 }
 trackedPickResults.unshift(...v52DailyImportPicks);
 
+
+
+// V54 Daily Import Parser
+// Reads picks from daily-import.js when that file is loaded before data.js.
+function sportsEdgeTitleCaseDate(mmdd){
+  const raw = String(mmdd||'').trim();
+  const m = raw.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+  if(!m) return '';
+  const year = m[3] ? (m[3].length===2 ? '20'+m[3] : m[3]) : '2026';
+  const d = new Date(`${year}-${String(m[1]).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}T00:00:00`);
+  if(!Number.isFinite(d.getTime())) return '';
+  return d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+}
+function sportsEdgeNormalizeImportedPickTitle(line){
+  let t = String(line||'').trim().replace(/[’]/g,"'").replace(/\*/g,'').replace(/_/g,' ');
+  t = t.replace(/\bNOW\b.*?(?=,|;|$)/i,'').replace(/\s+/g,' ').trim();
+  t = t.replace(/\bml\b/i,'ML').replace(/^f5\b/i,'F5');
+  t = t.replace(/\s([ou])\s*([0-9])/i, (_,s,n)=>` ${s.toUpperCase()}${n}`);
+  t = t.replace(/\+\.5/g,'+0.5').replace(/-\.5/g,'-0.5').replace(/\+\.5/g,'+0.5');
+  const odds = (t.match(/([+-]\d{3,4})/)||[])[1] || '';
+  const before = t.split(/[;,]/)[0].replace(/\s+[+-]\d{3,4}\b.*$/,'').trim();
+  return {pick: before || t, odds};
+}
+function sportsEdgeParseDailyImportText(raw){
+  const text = String(raw||'').trim();
+  if(!text) return [];
+  const out=[]; let currentSlate='';
+  text.split(/\n+/).forEach(line=>{
+    let l=String(line||'').trim();
+    if(!l || /^\/\//.test(l) || /^paste picks here$/i.test(l)) return;
+    const dateMatch = l.match(/^(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\s*$/);
+    if(dateMatch){ currentSlate=sportsEdgeTitleCaseDate(dateMatch[1]); return; }
+    if(!currentSlate) return;
+    if(/DISREGARD/i.test(l)) return;
+    const live = /\bLIVE\b/i.test(l);
+    const unitMatch = l.match(/(?:,|\s)(\.\d+|\d+(?:\.\d+)?)\s*U\b/i);
+    const units = unitMatch ? `${unitMatch[1]}U` : '';
+    const trendTags=[];
+    if(/\bAtS\b/i.test(l)) trendTags.push('AtS');
+    if(/previously\s+scored\s+0/i.test(l)) trendTags.push('previously scored 0');
+    if(/previously\s+allowed\s+10\+/i.test(l) || /allowed\s+10\+/i.test(l)) trendTags.push('previously allowed 10+');
+    if(/SWEEP/i.test(l)) trendTags.push('SWEEP');
+    if(/no\s+CLV/i.test(l)) trendTags.push('no CLV');
+    const parsed=sportsEdgeNormalizeImportedPickTitle(l);
+    out.push(v43RecentPick({
+      slate: currentSlate,
+      pick: parsed.pick,
+      odds: parsed.odds || '-',
+      status: live ? 'LIVE' : 'PENDING',
+      units,
+      edge: l,
+      trendTags: [...new Set(trendTags)]
+    }));
+  });
+  return out;
+}
+function sportsEdgeMergeDailyImportPicks(){
+  const raw = (typeof window !== 'undefined' && window.SPORTS_EDGE_DAILY_IMPORT_TEXT) ? window.SPORTS_EDGE_DAILY_IMPORT_TEXT : (typeof SPORTS_EDGE_DAILY_IMPORT_TEXT !== 'undefined' ? SPORTS_EDGE_DAILY_IMPORT_TEXT : '');
+  const imported = sportsEdgeParseDailyImportText(raw);
+  if(!imported.length) return;
+  const importedDates = new Set(imported.map(p=>p.slate));
+  for(let i=trackedPickResults.length-1;i>=0;i--){
+    if(importedDates.has(trackedPickResults[i].slate)) trackedPickResults.splice(i,1);
+  }
+  trackedPickResults.unshift(...imported);
+}
+sportsEdgeMergeDailyImportPicks();
+
 const dailyPicks = trackedPickResults;
 
 const journal = [
