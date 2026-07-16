@@ -330,3 +330,138 @@ body.theme-nba{--sport-accent:#c76a2d;--sport-accent-2:#6b4a2f;--sport-soft:#fff
 table{background:#fff;border:1px solid var(--line)}th{background:#f3f6f2;color:#69777e}td{color:var(--text)}select,input{background:#fff;color:var(--text);border:1px solid var(--line)}
 .performance-board,.category-board,.mini-grid{gap:12px}.perf-card,.category-card,.mini-grid div,.summary-row div{background:#fff!important;border:1px solid var(--line)!important;color:var(--text)!important}
 @media(max-width:900px){.sport-route-grid{grid-template-columns:1fr}.hero,.sport-hero{padding:22px}.topbar{background:rgba(255,253,248,.94)}}
+
+/* =========================================================
+   V55 SPORTS EDGE 3.0 DESIGN SYSTEM
+   White / Navy / Orange foundation + sport-specific themes
+   ========================================================= */
+:root{
+  --bg:#f8f7f4;
+  --page:#f8f7f4;
+  --panel:#ffffff;
+  --panel2:#f2f5f8;
+  --text:#142231;
+  --muted:#667586;
+  --line:#dce4ea;
+  --green:#2e8b57;
+  --blue:#1e3a5f;
+  --orange:#f28c28;
+  --gold:#d79b21;
+  --red:#c84c4c;
+  --shadow:0 18px 50px rgba(30,58,95,.12);
+  --soft-shadow:0 8px 24px rgba(30,58,95,.08);
+  --sport-primary:#1e3a5f;
+  --sport-secondary:#f28c28;
+  --sport-soft:#fff3e6;
+}
+html{background:var(--page)}
+body{
+  background:
+    radial-gradient(circle at top left,rgba(242,140,40,.10),transparent 28%),
+    radial-gradient(circle at top right,rgba(30,58,95,.10),transparent 30%),
+    linear-gradient(180deg,#fbfaf7 0%,#f4f6f8 52%,#f8f7f4 100%)!important;
+  color:var(--text)!important;
+}
+.topbar{
+  background:rgba(251,250,247,.92)!important;
+  border-bottom:1px solid rgba(30,58,95,.10)!important;
+  box-shadow:0 10px 35px rgba(30,58,95,.07);
+}
+.brand strong{color:var(--text)}
+.brand small{color:var(--muted)!important}
+.logo{
+  background:linear-gradient(135deg,var(--blue),#2d6f8f)!important;
+  color:#fff!important;
+  box-shadow:0 12px 28px rgba(30,58,95,.18);
+}
+.nav,.primary,.secondary{
+  background:#fff!important;
+  border:1px solid rgba(30,58,95,.14)!important;
+  color:var(--text)!important;
+  box-shadow:var(--soft-shadow);
+}
+.nav.active,.primary{
+  background:linear-gradient(135deg,var(--sport-primary),var(--sport-secondary))!important;
+  color:#fff!important;
+  border:0!important;
+}
+.secondary:hover,.nav:hover{border-color:var(--sport-secondary)!important;transform:translateY(-1px)}
+main{background:transparent}.page{color:var(--text)}
+.glass,.gateway,.filters,.model-panel,.modal-card,.pick-card,.route-card,.sport-action-card,.score-card,.date-group,.pick-section-card,.daily-pick-section,.monthly-archive-card{
+  background:rgba(255,255,255,.92)!important;
+  border:1px solid rgba(30,58,95,.12)!important;
+  box-shadow:var(--shadow)!important;
+  color:var(--text)!important;
+}
+.gateway:hover,.route-card:hover,.pick-card:hover{border-color:rgba(242,140,40,.42)!important;box-shadow:0 24px 60px rgba(242,140,40,.14)!important}
+.eyebrow{color:var(--sport-secondary)!important}.section-head h2,.section-head h3,h1,h2,h3{color:var(--text)}
+.sub,.section-head p,.model-panel p,.model-panel li,.gateway p,.score-card p,.subtle,.count,.mini-grid small,.summary-row small,.pill{color:var(--muted)!important}
+select,input{
+  background:#fff!important;
+  color:var(--text)!important;
+  border:1px solid rgba(30,58,95,.16)!important;
+}
+table{background:#fff!important;border-color:rgba(30,58,95,.12)!important;color:var(--text)!important}th{background:#f2f5f8!important;color:#587089!important}td{border-color:#edf1f5!important;color:var(--text)}
+.summary-row div,.mini-grid div,.detail-list div,.trend-proof-card,.perf-card,.category-card,.performance-column{
+  background:#fff!important;
+  border:1px solid rgba(30,58,95,.12)!important;
+  color:var(--text)!important;
+  box-shadow:var(--soft-shadow);
+}
+.summary-row strong,.perf-card strong,.metric-pop{
+  background:rgba(242,140,40,.11)!important;
+  border-color:rgba(242,140,40,.25)!important;
+  color:var(--sport-primary)!important;
+}
+.tag{background:rgba(46,139,87,.10)!important;color:#1f7a4a!important}.tag.blue{background:rgba(30,58,95,.10)!important;color:var(--blue)!important}.tag.gray{background:#eef3f6!important;color:var(--muted)!important}.gold-tag{background:rgba(242,140,40,.12)!important;color:#a65b08!important}
+.pill{background:#f2f5f8!important;color:#607184!important}.pill strong{color:var(--text)}
+.status-WIN,.positive-metric{color:#2e8b57!important}.status-LOSS,.negative-metric{color:#c84c4c!important}.status-ACTIVE,.status-PENDING,.status-UNGRADED{color:var(--orange)!important}
+.modal{background:rgba(20,34,49,.52)!important;backdrop-filter:blur(10px)}.modal-card{background:#fff!important;color:var(--text)!important}.close{color:var(--text)!important}
+
+/* Home + sport gateway */
+.sport-grid,.sport-route-grid,.gateway-grid{gap:18px}.sport-card,.route-card,.gateway{border-radius:28px!important;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}.sport-card:hover,.route-card:hover,.gateway:hover{transform:translateY(-4px)}
+.sport-card{background:#fff!important;border:1px solid rgba(30,58,95,.12)!important;box-shadow:var(--shadow)!important;color:var(--text)!important}
+.sport-card span{display:inline-grid;place-items:center;width:54px;height:54px;border-radius:18px;background:linear-gradient(135deg,var(--sport-primary),var(--sport-secondary));color:#fff;font-weight:1000;letter-spacing:-.05em}.sport-card strong{color:var(--sport-secondary)}
+
+/* MLB theme: navy/orange/cream with subtle baseball seam */
+.mlb-theme{--sport-primary:#1e3a5f;--sport-secondary:#f28c28;--sport-soft:#fff3e6}.mlb-hero,.sport-hero.mlb-hero{
+  position:relative;overflow:hidden;
+  background:
+    radial-gradient(circle at 92% 10%,rgba(242,140,40,.16),transparent 30%),
+    linear-gradient(135deg,#1e3a5f 0%,#2e5b85 58%,#f28c28 140%)!important;
+  color:#fff!important;
+  border:0!important;
+  box-shadow:0 30px 80px rgba(30,58,95,.22)!important;
+}
+.mlb-hero:before,.sport-hero.mlb-hero:before{
+  content:"";position:absolute;right:-80px;top:-120px;width:360px;height:360px;border-radius:50%;
+  border:4px solid rgba(255,255,255,.28);box-shadow:inset 0 0 0 26px rgba(255,255,255,.04);
+}
+.mlb-hero:after,.sport-hero.mlb-hero:after{
+  content:"";position:absolute;right:56px;top:0;width:140px;height:520px;opacity:.28;
+  background:repeating-linear-gradient(180deg,transparent 0 22px,rgba(255,255,255,.9) 23px 26px,transparent 27px 46px);
+  transform:rotate(14deg);border-radius:999px;
+}
+.mlb-hero h1,.mlb-hero p,.mlb-hero .eyebrow,.sport-hero.mlb-hero h1,.sport-hero.mlb-hero p,.sport-hero.mlb-hero .eyebrow{color:#fff!important;text-shadow:0 2px 14px rgba(0,0,0,.18)}
+.mlb-hero .sport-action-card,.mlb-hero .score-card{background:rgba(255,255,255,.12)!important;border:1px solid rgba(255,255,255,.22)!important;color:#fff!important;box-shadow:none!important;backdrop-filter:blur(8px)}
+.mlb-theme .route-card h3:before{content:"âš¾ ";}
+
+/* NFL theme */
+.nfl-theme{--sport-primary:#0f5132;--sport-secondary:#8a98a8;--sport-soft:#edf7f1}.nfl-hero,.sport-hero.nfl-hero{background:linear-gradient(135deg,#0f5132,#1b7a4a 58%,#c4ccd6)!important;color:#fff!important;border:0!important;position:relative;overflow:hidden}.nfl-hero:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 72px,rgba(255,255,255,.18) 73px 75px);opacity:.25}.nfl-hero h1,.nfl-hero p,.nfl-hero .eyebrow{color:#fff!important}.nfl-theme .route-card h3:before{content:"ðŸˆ ";}
+
+/* NBA theme */
+.nba-theme{--sport-primary:#5b2a86;--sport-secondary:#f97316;--sport-soft:#fff2e8}.nba-hero,.sport-hero.nba-hero{background:linear-gradient(135deg,#5b2a86,#25113a 58%,#f97316)!important;color:#fff!important;border:0!important;position:relative;overflow:hidden}.nba-hero:after{content:"";position:absolute;inset:auto -40px -60px auto;width:260px;height:260px;border-radius:50%;border:14px solid rgba(255,255,255,.18);box-shadow:inset 0 0 0 4px rgba(255,255,255,.14)}.nba-hero h1,.nba-hero p,.nba-hero .eyebrow{color:#fff!important}.nba-theme .route-card h3:before{content:"ðŸ€ ";}
+
+/* CFB theme */
+.cfb-theme{--sport-primary:#7f1d1d;--sport-secondary:#d6a23a;--sport-soft:#fff8e5;background:linear-gradient(180deg,#fbfaf7,#f8f7f4)!important;color:var(--text)!important}.cfb-hero,.sport-hero.cfb-hero{background:linear-gradient(135deg,#7f1d1d,#1e3a5f 60%,#d6a23a)!important;color:#fff!important;border:0!important}.cfb-hero h1,.cfb-hero p,.cfb-hero .eyebrow{color:#fff!important}.cfb-theme .model-panel,.cfb-theme .route-card,.cfb-theme .sport-action-card{background:#fff!important;color:var(--text)!important;border-color:rgba(127,29,29,.14)!important}.cfb-theme .primary{background:linear-gradient(135deg,#7f1d1d,#d6a23a)!important;color:#fff!important}.cfb-theme input,.cfb-theme select{background:#fff!important;color:var(--text)!important;border-color:rgba(127,29,29,.16)!important}.cfb-theme .route-card h3:before{content:"ðŸŸï¸ ";}
+
+/* Today's Picks dropdown polish */
+.daily-pick-section,.date-group,.monthly-archive-card{border-radius:28px!important;overflow:hidden}.daily-pick-section summary,.date-group summary,.month-performance summary{background:linear-gradient(135deg,#ffffff,#f4f7fa)!important;color:var(--text)!important;border-bottom:1px solid rgba(30,58,95,.10)}
+.daily-pick-section summary:hover,.date-group summary:hover{background:linear-gradient(135deg,#fff7ef,#ffffff)!important}.pick-column-head{background:#f4f7fa!important;color:var(--text)!important;border-color:rgba(30,58,95,.10)!important}.pick-column-head span{background:rgba(242,140,40,.12)!important;color:var(--orange)!important}.pick-column-list .slate-play-card,.slate-play-card{background:#fff!important;border:1px solid rgba(30,58,95,.12)!important;color:var(--text)!important;box-shadow:var(--soft-shadow)!important}.card-summary{color:var(--muted)!important}
+.upgraded-card-evidence,.upgraded-trend-evidence{background:rgba(242,140,40,.08)!important;border-color:rgba(242,140,40,.24)!important;color:var(--text)!important}.trend-evidence-grid .trend-proof-card{background:#fff!important}.trend-proof-card strong{color:var(--sport-primary)!important}.trend-proof-card .metric-pop{color:var(--sport-secondary)!important}
+
+/* Better back / route buttons */
+.back-button,.sport-back,.breadcrumb-back{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:#fff!important;border:1px solid rgba(30,58,95,.14)!important;color:var(--sport-primary)!important;box-shadow:var(--soft-shadow);padding:10px 14px;font-weight:900;cursor:pointer}.back-button:hover,.sport-back:hover,.breadcrumb-back:hover{border-color:var(--sport-secondary)!important;transform:translateY(-1px)}
+
+/* Mobile comfort */
+@media(max-width:900px){.topbar{gap:12px}.nav{min-width:84px}.cards,.sport-route-grid,.sport-grid{grid-template-columns:1fr!important}.hero,.sport-hero{grid-template-columns:1fr!important}.mlb-hero:after,.mlb-hero:before{opacity:.12}}
