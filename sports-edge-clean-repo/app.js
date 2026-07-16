@@ -18,7 +18,18 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 function uniq(arr){return [...new Set(arr.filter(Boolean))].sort();}
 function slugStatus(s){return String(s).replace(/\s+/g,'-').replace(/[^A-Z-]/g,'');}
 function pct(v){const n=parseFloat(String(v).replace('%',''));return Number.isFinite(n)?n:null;}
-function showPage(page){$$('.page').forEach(p=>p.classList.toggle('active',p.id===page));$$('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===page));window.scrollTo({top:0,behavior:'smooth'});} 
+function showPage(page){
+  $$('.page').forEach(p=>p.classList.toggle('active',p.id===page));
+  $$('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===page));
+  const body = document.body;
+  body.classList.remove('theme-mlb','theme-cfb','theme-nfl','theme-nba','theme-home');
+  if(String(page).includes('mlb') || ['today','performance','f5-performance','series','trends','journal','models'].includes(page)) body.classList.add('theme-mlb');
+  else if(String(page).includes('cfb')) body.classList.add('theme-cfb');
+  else if(String(page).includes('nfl')) body.classList.add('theme-nfl');
+  else if(String(page).includes('nba')) body.classList.add('theme-nba');
+  else body.classList.add('theme-home');
+  window.scrollTo({top:0,behavior:'smooth'});
+} 
 $$('.nav,.jump').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
 
 const SPORT_OPTIONS = ['MLB'];
