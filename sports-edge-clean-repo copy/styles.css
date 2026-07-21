@@ -465,24 +465,3 @@ table{background:#fff!important;border-color:rgba(30,58,95,.12)!important;color:
 
 /* Mobile comfort */
 @media(max-width:900px){.topbar{gap:12px}.nav{min-width:84px}.cards,.sport-route-grid,.sport-grid{grid-template-columns:1fr!important}.hero,.sport-hero{grid-template-columns:1fr!important}.mlb-hero:after,.mlb-hero:before{opacity:.12}}
-
-/* NFL Command Center - isolated from MLB data and rendering */
-.nfl-subnav{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 22px;padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:20px;background:rgba(67,20,7,.24)}
-.nfl-tab{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.055);color:var(--text);padding:10px 15px;border-radius:999px;cursor:pointer;font-weight:800}
-.nfl-tab.active{background:linear-gradient(135deg,#f59e0b,#fb923c);color:#271000;border-color:transparent}
-.nfl-view{display:none}.nfl-view.active{display:block}
-.nfl-summary-strip,.nfl-performance-hero{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 20px}
-.nfl-summary-strip article,.nfl-performance-hero article,.nfl-system-cards article,.nfl-signal-list article,.nfl-guide-grid article,.nfl-empty-current,.nfl-opportunity-card,.nfl-consumer-card{border:1px solid rgba(251,146,60,.22);background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.035));border-radius:20px;padding:18px;box-shadow:0 16px 45px rgba(0,0,0,.14)}
-.nfl-summary-strip strong,.nfl-performance-hero strong{display:block;font-size:29px;color:#fdba74}.nfl-summary-strip small,.nfl-performance-hero small{color:var(--muted)}
-.nfl-consumer-card{display:grid;grid-template-columns:.65fr 1.35fr;gap:24px;align-items:center;margin-bottom:22px;border-left:5px solid #f59e0b}
-.nfl-consumer-card h2{margin:5px 0}.nfl-consumer-card>p{font-size:17px;line-height:1.65;color:#d7e2ec;margin:0}
-.nfl-two-column{display:grid;grid-template-columns:1.15fr .85fr;gap:22px;align-items:start}
-.nfl-empty-current h3{font-size:22px;margin:12px 0 8px}.nfl-empty-current p{color:var(--muted);line-height:1.55}.nfl-empty-current code,.nfl-guide-grid code{display:inline-block;background:#08111a;border:1px solid var(--line);border-radius:9px;padding:4px 8px;color:#fdba74;overflow-wrap:anywhere}
-.nfl-signal-list{display:grid;gap:12px}.nfl-signal-list article span,.nfl-system-cards span,.nfl-guide-grid span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.09em;font-weight:800}.nfl-signal-list strong,.nfl-system-cards strong{display:block;margin:8px 0 3px;font-size:21px}.nfl-signal-list small,.nfl-system-cards small{color:var(--muted)}
-.nfl-filter-bar{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:10px;margin-bottom:14px}.nfl-filter-bar select,.nfl-filter-bar input{min-width:0;width:100%}
-.nfl-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:20px}.nfl-table-wrap table{border:0;border-radius:0}.nfl-table-wrap td small{display:block;color:var(--muted);margin-top:5px}
-.nfl-result{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900}.nfl-result.hit{background:rgba(48,215,131,.14);color:var(--green)}.nfl-result.miss{background:rgba(255,107,107,.14);color:var(--red)}
-.nfl-system-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0 20px}.nfl-performance-hero{grid-template-columns:repeat(3,minmax(0,1fr))}.nfl-guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.nfl-guide-grid p{color:var(--muted);line-height:1.5;margin-bottom:0}
-body.theme-nfl{background:radial-gradient(circle at top left,#53200b 0,#111827 38%,#05080d 100%)}body.theme-nfl .eyebrow{color:#fb923c}body.theme-nfl .primary{background:linear-gradient(135deg,#f59e0b,#fb923c);color:#281000}
-@media(max-width:900px){.nfl-summary-strip,.nfl-system-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.nfl-two-column,.nfl-consumer-card{grid-template-columns:1fr}.nfl-filter-bar{grid-template-columns:1fr 1fr}.nfl-guide-grid{grid-template-columns:1fr}}
-@media(max-width:560px){.nfl-summary-strip,.nfl-system-cards,.nfl-performance-hero,.nfl-filter-bar{grid-template-columns:1fr}.nfl-tab{flex:1 1 calc(50% - 9px)}}
