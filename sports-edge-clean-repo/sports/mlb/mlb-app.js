@@ -1100,6 +1100,16 @@ function monthLabelFromKey(key){
   const d = new Date(key+'-01T00:00:00');
   return d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
 }
+function currentPerformanceExposure(){
+  const rows = (typeof trackedPickResults !== 'undefined' && Array.isArray(trackedPickResults) ? trackedPickResults : [])
+    .filter(r=>{
+      const st=normalizedPickStatus(r);
+      return st==='LIVE' || st==='PENDING' || st==='UNVERIFIED' || st==='UNGRADED';
+    });
+  const unitRows = rows.filter(r=>explicitUnitSize(r));
+  const units = unitRows.reduce((sum,r)=>sum+(parseFloat(String(r.units||'').replace(/[^0-9.]/g,''))||0),0);
+  return {rows, units};
+}
 function renderPerformanceLab(){
   if(typeof officialBetHistory === 'undefined') return;
   const visibleHistory = officialBetHistory.filter(isClassifiedOfficialRow);
@@ -1112,8 +1122,9 @@ function renderPerformanceLab(){
   let rows = visibleHistory.filter(r => (type==='all' || officialHistoryType(r)===type));
   if(q) rows = rows.filter(r=>JSON.stringify(r).toLowerCase().includes(q));
   const stats = officialHistoryStats(rows);
+  const exposure = currentPerformanceExposure();
   const summary = $('#officialPerformanceSummary');
-  if(summary) summary.innerHTML = `<div><strong>${stats.wins}-${stats.losses}${stats.pushes?'-'+stats.pushes:''}</strong><small>Record</small></div><div><strong>${stats.total}</strong><small>Bets Shown</small></div><div><strong>${formatUnits(stats.net)}</strong><small>Flat 1U Net</small></div><div><strong>${stats.roi.toFixed(1)}%</strong><small>Flat 1U ROI</small></div>`;
+  if(summary) summary.innerHTML = `<div><strong>${stats.wins}-${stats.losses}${stats.pushes?'-'+stats.pushes:''}</strong><small>Graded Record</small></div><div><strong>${stats.total}</strong><small>Graded Bets</small></div><div><strong>${formatUnits(stats.net)}</strong><small>Flat 1U Net</small></div><div><strong>${stats.roi.toFixed(1)}%</strong><small>Flat 1U ROI</small></div><div><strong>${exposure.rows.length}</strong><small>Open / Live Picks</small></div><div><strong>${exposure.units.toFixed(2)}U</strong><small>Open Units Listed</small></div>`;
   const board = $('#officialCategoryBoard');
   if(board){
     const preferred = ['First Five','Moneyline','Over','Under','Series','Totals','Props'];
@@ -1132,7 +1143,9 @@ function renderPerformanceLab(){
       const sorted = items.slice().sort((a,b)=>dateKey(parseSlateDate(b.date)).localeCompare(dateKey(parseSlateDate(a.date))));
       return `<details class="month-performance" open><summary><strong>${monthLabelFromKey(m)}</strong><span>${mStats.wins}-${mStats.losses} • ${formatUnits(mStats.net)}</span></summary><div class="official-log-header"><span>Date</span><span>Bet</span><span>Type</span><span>W/L</span></div>${sorted.map(r=>`<div class="official-log-row"><span>${r.date}</span><strong>${r.bet}</strong><span>${officialHistoryType(r)}</span><span class="${Number(r.result)>0?'status-WIN':Number(r.result)<0?'status-LOSS':'status-PUSH'}">${Number(r.result)>0?'W':Number(r.result)<0?'L':'P'}</span><small>${r.notes||''}</small></div>`).join('')}</details>`;
     }).join('');
-    log.innerHTML = monthHtml || '<p class="subtle">No performance rows match the filters.</p>';
+    const exposure = currentPerformanceExposure();
+    const openHtml = exposure.rows.length ? `<details class="month-performance" open><summary><strong>Open / Live Card</strong><span>${exposure.rows.length} picks • ${exposure.units.toFixed(2)}U listed</span></summary><div class="official-log-header"><span>Date</span><span>Bet</span><span>Status</span><span>Units</span></div>${exposure.rows.slice().sort((a,b)=>dateKey(parseSlateDate(b.slate)).localeCompare(dateKey(parseSlateDate(a.slate)))).map(r=>`<div class="official-log-row"><span>${r.slate||''}</span><strong>${r.pick||''}</strong><span>${normalizedPickStatus(r)}</span><span>${explicitUnitSize(r)?r.units:'—'}</span><small>${r.edge||''}</small></div>`).join('')}</details>` : '';
+    log.innerHTML = openHtml + (monthHtml || '<p class="subtle">No graded performance rows match the filters.</p>');
   }
 }
 
