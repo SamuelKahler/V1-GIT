@@ -51,8 +51,8 @@
     p('July 19, 2026','SD ML','-103','LIVE','SD ML opened +109, now -103; no CLV - LIVE'),
     p('July 19, 2026','MIA ML','+109','PENDING','MIA ML +109; AtS, .3U','.3U'),
     p('July 19, 2026','MIA To Score First','-150','PENDING','MIA TO SCORE FIRST -150'),
-    p('July 19, 2026','F5 WSH -0.5','-125','LIVE','F5 WSH -.5 -125 - LIVE','','Top Play',8.4,{'Projection':'64.0%','Implied Probability':'55.6%','Model Edge':'+8.4 pts'}),
-    p('July 19, 2026','F5 DET -0.5','-115','LIVE','F5 DET -.5 -115 - LIVE','','Top Play',9.5,{'Projection':'63.0%','Implied Probability':'53.5%','Model Edge':'+9.5 pts'}),
+    p('July 19, 2026','F5 WSH -0.5','-125','LIVE','F5 WSH -.5 -125 - LIVE','', 'Top Play',8.4,{'Projection':'64.0%','Implied Probability':'55.6%','Model Edge':'+8.4 pts'}),
+    p('July 19, 2026','F5 DET -0.5','-115','LIVE','F5 DET -.5 -115 - LIVE','', 'Top Play',9.5,{'Projection':'63.0%','Implied Probability':'53.5%','Model Edge':'+9.5 pts'}),
 
     // July 17
     p('July 17, 2026','MIN / CHC O9','-105','LIVE','MIN / CHC O 9 -105 - LIVE'),
