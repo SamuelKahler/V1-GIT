@@ -14055,8 +14055,46 @@ function sportsEdgeParseDailyImportText(raw){
   });
   return out;
 }
+const SPORTS_EDGE_DAILY_IMPORT_FALLBACK = `
+07/23
+F5 CLE -.5
+F5 STL -.5 - LIVE
+
+07/22
+F5 MIL -.5 +105, .5U ✅
+SF ML -120 NOW -130; no CLV & AtS
+WSH / COL O11.5 -105 - LIVE
+WSH ML -136; no CLV
+CIN / SEA O8 -111 - LIVE
+STL ML +114
+MIN ML +107, .4U NOW +123, .45U ✅
+TB ML -109; no CLV, .6U ✅
+BAL ML +105; no CLV - LIVE
+
+07/21
+F5 PHI -.5 +100 - LIVE
+F5 CLE -.5 -110 - LIVE
+MIN ML +115; previously allowed 10+
+MIN / CLE O8 -115
+TB / TOR O7.5 -111 - LIVE
+TB ML -110, .6U
+ATL ML -149; no CLV - LIVE
+KC ML -110
+MIL ML -149; no CLV - LIVE
+NYM / MIL U9 -120
+DET ML +100 - LIVE
+CWS ML +109; previously scored 10+
+CWS / TEX O8.5 -110 NOW -115, .65U
+MIA / HOU O9 +100, .6U
+MIA ML +160 - LIVE
+WSH / COL O13 -116
+STL / LAA U9 -111
+CIN ML -105; previously scored 0 NOW +124
+CIN / SEA O7.5 -110
+`;
 function sportsEdgeMergeDailyImportPicks(){
-  const raw = (typeof window !== 'undefined' && window.SPORTS_EDGE_DAILY_IMPORT_TEXT) ? window.SPORTS_EDGE_DAILY_IMPORT_TEXT : (typeof SPORTS_EDGE_DAILY_IMPORT_TEXT !== 'undefined' ? SPORTS_EDGE_DAILY_IMPORT_TEXT : '');
+  const externalRaw = (typeof window !== 'undefined' && typeof window.SPORTS_EDGE_DAILY_IMPORT_TEXT === 'string') ? window.SPORTS_EDGE_DAILY_IMPORT_TEXT.trim() : '';
+  const raw = externalRaw || SPORTS_EDGE_DAILY_IMPORT_FALLBACK;
   const imported = sportsEdgeParseDailyImportText(raw);
   if(!imported.length) return;
   const importedDates = new Set(imported.map(p=>p.slate));
