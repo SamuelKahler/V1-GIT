@@ -376,13 +376,40 @@ async function gradeDate(date, picksForDate) {
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
     const query = req.query || Object.fromEntries(new URL(req.url, 'http://localhost').searchParams.entries());
     const odds = await maybeFetchOdds();
+
+    if (req.method === 'POST') {
+      let body = req.body || {};
+      if (typeof body === 'string') body = JSON.parse(body || '{}');
+      const submitted = Array.isArray(body.picks) ? body.picks.slice(0, 2500) : [];
+      const normalized = submitted.map(p => ({
+        ...p,
+        date: toIsoDate(p.date || p.slate),
+        rawPick: String(p.rawPick || p.pick || '').trim()
+      })).filter(p => p.date && p.rawPick && !/DISREGARD/i.test(p.rawPick));
+      const dates = [...new Set(normalized.map(p => p.date))].sort();
+      const dateBatches = [];
+      for (const date of dates) dateBatches.push(await gradeDate(date, normalized.filter(p => p.date === date)));
+      const allResults = dateBatches.flatMap(batch => batch.results.map(r => ({ date: batch.date, ...r })));
+      return res.status(200).json({
+        ok: true,
+        version: 'V57.0',
+        mode: 'unified-ledger-bulk-grading',
+        source: 'Official MLB Stats API',
+        oddsApi: odds,
+        submitted: submitted.length,
+        accepted: normalized.length,
+        summary: summarize(allResults),
+        dateBatches,
+        truthRule: 'Every dashboard reads the same submitted pick ledger. Only official final MLB data can create a WIN, LOSS, PUSH, or NO_ACTION grade.'
+      });
+    }
 
     if (query.month === '2026-07' || query.july === 'true') {
       const dates = [...new Set(JULY_PICKS.map(p => p.date))].sort();
