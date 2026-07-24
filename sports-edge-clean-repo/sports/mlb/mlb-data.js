@@ -14056,6 +14056,14 @@ function sportsEdgeParseDailyImportText(raw){
   return out;
 }
 const SPORTS_EDGE_DAILY_IMPORT_FALLBACK = `
+07/24
+CHC ML -110; no CLV - LIVE
+CHC / PIT O8 -112
+WSH ML +114
+F5 BAL -.5 +105
+F5 SEA -.5 +110
+F5 STL -.5 -115
+
 07/23
 F5 CLE -.5
 F5 STL -.5 - LIVE
@@ -18426,3 +18434,44 @@ const f5PerformanceBets = [
     duplicatePolicy: 'date + normalized bet + type'
   };
 })();
+
+
+
+// V59: July 24 approved Series Board bets only.
+// PASS and LEAN rows from the source sheet are intentionally excluded.
+const july24ApprovedSeriesPlays = [
+  {
+    date:'July 24, 2026', result:'PENDING', matchup:'Cubs vs Pirates', away:'CHC', home:'PIT',
+    favorite:'Cubs', dog:'Pirates', pick:'CHC Series ML', odds:'+125', type:'BET', grade:'A-',
+    vegas:'PIT 57.1%', model:'CHC 52.5%', edge:'CHC +9.6%', decision:'BET CHC +125',
+    why:['Approved series bet from the July 24 model board.', 'Model/market comparison identifies Chicago as the actionable plus-money side.', 'Projected series split: CHC 53.6% to PIT 46.4%.']
+  },
+  {
+    date:'July 24, 2026', result:'PENDING', matchup:'Diamondbacks vs Nationals', away:'ARI', home:'WSH',
+    favorite:'Diamondbacks', dog:'Nationals', pick:'ARI Series ML', odds:'+105', type:'BET', grade:'A',
+    vegas:'WSH 53.2%', model:'ARI 57.0%', edge:'ARI +10.2%', decision:'BET ARI +105',
+    why:['Approved series bet from the July 24 model board.', 'Arizona carries the strongest stated model-versus-market edge in this matchup.', 'Projected series split: ARI 60.0% to WSH 40.0%.']
+  },
+  {
+    date:'July 24, 2026', result:'PENDING', matchup:'Braves vs Orioles', away:'ATL', home:'BAL',
+    favorite:'Braves', dog:'Orioles', pick:'ATL Series ML', odds:'-118', type:'BET', grade:'A-',
+    vegas:'ATL 51.7%', model:'ATL 59.5%', edge:'ATL +7.8%', decision:'BET ATL -118',
+    why:['Approved Atlanta series play requested for the July 24 board.', 'The model places Atlanta materially above the market probability.', 'Projected series split: ATL 63.6% to BAL 36.4%.']
+  },
+  {
+    date:'July 24, 2026', result:'PENDING', matchup:'Dodgers vs Mets', away:'LAD', home:'NYM',
+    favorite:'Dodgers', dog:'Mets', pick:'LAD Series ML', odds:'-190', type:'BET', grade:'B+',
+    vegas:'LAD 63.0%', model:'LAD 69.0%', edge:'LAD +6.0%', decision:'BET LAD -190',
+    why:['Included because the source board explicitly labels it BET.', 'Los Angeles remains above the market projection despite the favorite price.', 'Projected series split: LAD 77.1% to NYM 22.9%.']
+  },
+  {
+    date:'July 24, 2026', result:'PENDING', matchup:'Padres vs Marlins', away:'SD', home:'MIA',
+    favorite:'Padres', dog:'Marlins', pick:'SD Series ML', odds:'+135', type:'BET', grade:'A',
+    vegas:'MIA 58.8%', model:'SD 52.0%', edge:'SD +10.8%', decision:'BET SD +135',
+    why:['Included because the source board explicitly labels it BET.', 'San Diego is the actionable plus-money side after the model comparison.', 'Projected series split: SD 52.9% to MIA 47.1%.']
+  }
+];
+for(let i=seriesBoardPicks.length-1;i>=0;i--){
+  if(seriesBoardPicks[i].date==='July 24, 2026') seriesBoardPicks.splice(i,1);
+}
+seriesBoardPicks.unshift(...july24ApprovedSeriesPlays);
