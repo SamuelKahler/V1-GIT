@@ -1975,3 +1975,129 @@ function openPick(i){
   $('#modalBody').innerHTML = `<h2>${cleanPickTitle(p)}</h2>${matchupSubtitleHtml(p)}<p class="eyebrow">${p.slate} • ${statusDisplayName(st)}</p><div class="meta"><span class="pill">Category ${pickCategory(p)}</span><span class="pill">Odds ${p.odds || '-'}</span><span class="pill">Units ${explicitUnitSize(p)?String(p.units).trim():'No unit size'}</span>${scoreMeta}<span class="pill">P/L ${explicitUnitSize(p)&&['WIN','LOSS'].includes(st)?formatUnits(profitUnits(p)):'-'}</span></div>${detailSections}`;
   $('#modal').classList.remove('hidden');
 }
+
+// V57 Unified MLB Truth Engine
+// One pick collection now drives Today's Picks, Performance Lab, and F5 Performance.
+(function sportsEdgeUnifiedTruthEngine(){
+  function unifiedPickRows(){
+    return (typeof dailyPicks !== 'undefined' && Array.isArray(dailyPicks)) ? dailyPicks : [];
+  }
+  function unifiedGradedRows(){
+    return unifiedPickRows().filter(p => ['WIN','LOSS','PUSH'].includes(normalizedPickStatus(p)) && isClassifiedPick(p));
+  }
+  function unifiedType(p){
+    const cat = bettorCategory(p);
+    if(cat === 'First Five') return 'First Five';
+    if(cat === 'Moneyline') return 'Moneyline';
+    if(cat === 'Over') return 'Over';
+    if(cat === 'Under') return 'Under';
+    if(cat === 'Series') return 'Series';
+    if(cat === 'Props') return 'Props';
+    return cat || 'Other';
+  }
+  function unifiedStats(rows){
+    const wins = rows.filter(p=>normalizedPickStatus(p)==='WIN').length;
+    const losses = rows.filter(p=>normalizedPickStatus(p)==='LOSS').length;
+    const pushes = rows.filter(p=>normalizedPickStatus(p)==='PUSH').length;
+    const unitRows = rows.filter(p=>['WIN','LOSS'].includes(normalizedPickStatus(p)) && explicitUnitSize(p));
+    const risk = unitRows.reduce((s,p)=>s+unitsValue(p),0);
+    const net = unitRows.reduce((s,p)=>s+profitUnits(p),0);
+    return {wins,losses,pushes,total:wins+losses+pushes,risk,net,roi:risk?(net/risk)*100:0};
+  }
+  function unifiedGroups(rows){
+    const map = {};
+    rows.forEach(p=>{ const type=unifiedType(p); (map[type] ||= []).push(p); });
+    return Object.entries(map).map(([type,items])=>({type,items,stats:unifiedStats(items)}));
+  }
+
+  window.renderPerformanceLab = function renderPerformanceLabV57(){
+    const all = unifiedPickRows().filter(isClassifiedPick);
+    const graded = unifiedGradedRows();
+    const typeSel = $('#officialTypeFilter');
+    if(typeSel){
+      const current = typeSel.value || 'all';
+      typeSel.innerHTML = '<option value="all">All Bet Types</option>' + unifiedGroups(all).map(g=>g.type).sort().map(t=>`<option value="${t}">${t}</option>`).join('');
+      if([...typeSel.options].some(o=>o.value===current)) typeSel.value=current;
+    }
+    const q = ($('#officialBetSearch')?.value || '').toLowerCase();
+    const type = typeSel?.value || 'all';
+    let rows = graded.filter(p => type==='all' || unifiedType(p)===type);
+    if(q) rows = rows.filter(p=>JSON.stringify(p).toLowerCase().includes(q));
+    const stats = unifiedStats(rows);
+    const exposure = currentPerformanceExposure();
+    const summary = $('#officialPerformanceSummary');
+    if(summary) summary.innerHTML = `<div><strong>${stats.wins}-${stats.losses}${stats.pushes?`-${stats.pushes}`:''}</strong><small>Verified Record</small></div><div><strong>${stats.total?((stats.wins/(stats.wins+stats.losses))*100).toFixed(1)+'%':'—'}</strong><small>Win Rate</small></div><div><strong>${formatUnits(stats.net)}</strong><small>Unit Profit</small></div><div><strong>${stats.risk?stats.roi.toFixed(1)+'%':'—'}</strong><small>ROI</small></div><div><strong>${exposure.rows.length}</strong><small>Open / Unverified</small></div>`;
+    const board = $('#officialCategoryPerformance');
+    if(board){
+      const preferred=['First Five','Moneyline','Over','Under','Series','Props'];
+      const grouped=Object.fromEntries(unifiedGroups(graded).map(g=>[g.type,g]));
+      board.innerHTML = `<div class="performance-columns">${preferred.filter(t=>grouped[t]).map(t=>{const g=grouped[t];return `<section class="performance-column"><div class="pick-column-head"><h3>${t==='First Five'?'F5':t}</h3><span>${g.stats.wins}-${g.stats.losses}</span></div><div class="perf-mini"><strong>${formatUnits(g.stats.net)}</strong><small>${g.stats.risk?g.stats.roi.toFixed(1)+'% ROI':'No unit ROI'}</small></div></section>`;}).join('')}</div>`;
+    }
+    const log = $('#officialBetLog');
+    if(log){
+      const monthGroups={};
+      rows.forEach(p=>{const k=monthKeyFromDate(p.slate);(monthGroups[k] ||= []).push(p);});
+      const openHtml = exposure.rows.length ? `<details class="month-performance" open><summary><strong>Open / Awaiting Verification</strong><span>${exposure.rows.length} picks</span></summary><div class="official-log-header"><span>Date</span><span>Bet</span><span>Status</span><span>Units</span></div>${exposure.rows.slice().sort((a,b)=>dateKey(parseSlateDate(b.slate)).localeCompare(dateKey(parseSlateDate(a.slate)))).map(p=>`<div class="official-log-row"><span>${p.slate||''}</span><strong>${cleanPickTitle(p)}</strong><span>${statusDisplayName(normalizedPickStatus(p))}</span><span>${explicitUnitSize(p)?p.units:'—'}</span><small>${verificationNoteForPick(p)||p.edge||''}</small></div>`).join('')}</details>` : '';
+      const gradedHtml = Object.entries(monthGroups).sort((a,b)=>b[0].localeCompare(a[0])).map(([m,items])=>{const s=unifiedStats(items);return `<details class="month-performance" open><summary><strong>${monthLabelFromKey(m)}</strong><span>${s.wins}-${s.losses}${s.pushes?`-${s.pushes}`:''} • ${formatUnits(s.net)}</span></summary><div class="official-log-header"><span>Date</span><span>Bet</span><span>Type</span><span>Result</span></div>${items.slice().sort((a,b)=>dateKey(parseSlateDate(b.slate)).localeCompare(dateKey(parseSlateDate(a.slate)))).map(p=>{const st=normalizedPickStatus(p);return `<div class="official-log-row"><span>${p.slate||''}</span><strong>${cleanPickTitle(p)}</strong><span>${unifiedType(p)}</span><span class="status-${st}">${st}</span><small>${verificationNoteForPick(p)||p.edge||''}</small></div>`;}).join('')}</details>`;}).join('');
+      log.innerHTML = openHtml + (gradedHtml || '<p class="subtle">No verified graded plays match the current filters.</p>');
+    }
+  };
+
+  function dailyF5Rows(){
+    return unifiedGradedRows().filter(p=>bettorCategory(p)==='First Five').map(p=>{
+      const st=normalizedPickStatus(p);
+      const title=cleanPickTitle(p);
+      const team=(title.match(/^F5\s+([A-Z]{2,3}|A'S)\b/i)||[])[1] || teamAbbr(title.replace(/^F5\s+/i,'').split(/\s+/)[0]);
+      return {date:dateKey(parseSlateDate(p.slate)),team:String(team||'').toUpperCase(),bet:title,odds:p.odds||'-',outcome:st==='WIN'?'win':st==='LOSS'?'loss':'push',result:st==='PUSH'?0:profitUnits(p),score:Number(p.score)||0,source:'unified-pick-ledger'};
+    });
+  }
+  const originalF5AllBets = window.f5AllBets || f5AllBets;
+  window.f5AllBets = function f5AllBetsV57(){
+    const base = originalF5AllBets();
+    const map = new Map();
+    [...base,...dailyF5Rows()].forEach(r=>{
+      const key=`${String(r.date||'').slice(0,10)}::${normalizePickKeyText(r.bet||'')}`;
+      map.set(key,r);
+    });
+    return [...map.values()];
+  };
+  try { f5AllBets = window.f5AllBets; } catch(e) {}
+
+  window.fetchVerifiedGrades = async function fetchVerifiedGradesV57(){
+    if(apiGradeState.loading) return;
+    apiGradeState.loading=true; apiGradeState.error='';
+    try{
+      const payload = unifiedPickRows().map(p=>({date:dateKey(parseSlateDate(p.slate)),rawPick:cleanPickTitle(p),odds:p.odds||'',units:p.units||'',slate:p.slate||''})).filter(p=>/^\d{4}-\d{2}-\d{2}$/.test(p.date) && p.rawPick);
+      const res=await fetch('/api/grade-picks',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({picks:payload})});
+      if(!res.ok) throw new Error(`grade-picks returned ${res.status}`);
+      const data=await res.json();
+      if(!data.ok) throw new Error(data.error||'grade-picks returned ok:false');
+      const lookup={};
+      (data.dateBatches||[]).forEach(batch=>(batch.results||[]).forEach(result=>{lookup[apiGradeKey(batch.date||result.date,result.rawPick)]=result;}));
+      apiGradeState={loading:false,loaded:true,error:'',summary:data.summary||null,dateBatches:data.dateBatches||[],resultByKey:lookup};
+      renderPicks(); renderHomeDailyDashboard(); window.renderPerformanceLab(); renderF5PerformanceLab();
+    }catch(err){apiGradeState.loading=false;apiGradeState.loaded=false;apiGradeState.error=err.message||'Could not load verified grades.';renderPicks();window.renderPerformanceLab();}
+  };
+
+  function cleanText(value){
+    return String(value||'')
+      .replace(/âš¾/g,'MLB')
+      .replace(/⚾/g,'MLB')
+      .replace(/âœ…/g,'WIN')
+      .replace(/âœ•|âœ–|âŒ/g,'LOSS')
+      .replace(/â€™/g,"'")
+      .replace(/â€œ|â€/g,'"')
+      .replace(/Â/g,'');
+  }
+  function sanitizeNode(root){
+    if(!root) return;
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+    const nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(n=>{const fixed=cleanText(n.nodeValue);if(fixed!==n.nodeValue)n.nodeValue=fixed;});
+  }
+  const startSanitizer=()=>{
+    sanitizeNode(document.body);
+    new MutationObserver(muts=>muts.forEach(m=>m.addedNodes.forEach(n=>sanitizeNode(n.nodeType===1?n:n.parentNode)))).observe(document.body,{childList:true,subtree:true});
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',startSanitizer,{once:true}); else startSanitizer();
+})();
