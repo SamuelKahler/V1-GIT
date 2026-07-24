@@ -2101,3 +2101,48 @@ function openPick(i){
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',startSanitizer,{once:true}); else startSanitizer();
 })();
+
+
+// V59 customer-facing cleanup.
+// The full performance ledger remains loaded in the background for future features,
+// but the general Performance Dashboard is intentionally removed from public navigation.
+(function sportsEdgeV59CustomerCleanup(){
+  const MOJIBAKE_REPLACEMENTS = [
+    [/âš¾/g, ''], [/⚾/g, ''], [/ðŸŽ¯/g, ''], [/ðŸ“Š/g, ''],
+    [/âœ…/g, 'WIN'], [/âœ•|âœ–|âŒ/g, 'LOSS'], [/â€™/g, "'"],
+    [/â€œ|â€/g, '"'], [/Â/g, '']
+  ];
+  function cleanValue(value){
+    let output=String(value||'');
+    MOJIBAKE_REPLACEMENTS.forEach(([pattern,replacement])=>{output=output.replace(pattern,replacement);});
+    return output.replace(/^\s+/, '');
+  }
+  function cleanTree(root){
+    if(!root) return;
+    if(root.nodeType===3){root.nodeValue=cleanValue(root.nodeValue);return;}
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+    const nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(node=>{const fixed=cleanValue(node.nodeValue);if(fixed!==node.nodeValue)node.nodeValue=fixed;});
+    if(root.querySelectorAll){
+      root.querySelectorAll('[title],[aria-label]').forEach(el=>{
+        ['title','aria-label'].forEach(attr=>{if(el.hasAttribute(attr))el.setAttribute(attr,cleanValue(el.getAttribute(attr)));});
+      });
+    }
+  }
+  function removePublicPerformanceDashboard(){
+    document.querySelectorAll('[data-page="performance"]').forEach(el=>el.remove());
+    const page=document.getElementById('performance'); if(page) page.remove();
+    const snapshot=document.getElementById('homePerformanceSnapshot'); if(snapshot) snapshot.remove();
+    document.querySelectorAll('article,section,button,a').forEach(el=>{
+      const text=cleanValue(el.textContent).trim().toLowerCase();
+      if(text==='performance lab' || (text.includes('performance lab') && el.matches('.route-card,.jump,.nav'))){el.remove();}
+    });
+  }
+  function applyCleanup(){cleanTree(document.body);removePublicPerformanceDashboard();}
+  const start=()=>{
+    applyCleanup();
+    const observer=new MutationObserver(()=>applyCleanup());
+    observer.observe(document.body,{childList:true,subtree:true,characterData:true});
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
+})();
