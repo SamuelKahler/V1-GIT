@@ -1,9 +1,17 @@
 // Sports Edge Official Daily Import
-// This is the ONLY file used for current/recent MLB picks.
-// ✅ = WIN, ❌ = LOSS, LIVE = live/open, DISREGARD = ignored.
-// Unit sizes update open exposure; graded permanent results are mirrored in mlb-data.js.
+// Primary source for current/recent MLB picks.
+// WIN and LOSS are graded results; LIVE and PENDING remain out of verified performance totals.
 
 window.SPORTS_EDGE_DAILY_IMPORT_TEXT = `
+07/24
+CHC ML -110; no CLV - LIVE
+CHC / PIT O8 -112
+NYY / PHI O7.5 -103
+WSH ML +114
+F5 BAL -.5 +105
+F5 SEA -.5 +110
+F5 STL -.5 -115
+
 07/23
 F5 CLE -.5
 F5 STL -.5 - LIVE
