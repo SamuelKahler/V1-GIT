@@ -1,0 +1,9 @@
+{
+  "name": "sports-edge",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check api/live-data.js && node --check api/grade-picks.js && node --check api/odds.js && node --check sports/mlb/core/master-ledger.js && node --check sports/mlb/mlb-app.js && node --check sports/mlb/mlb-data.js && node --check sports/nfl/nfl-app.js"
+  }
+}
