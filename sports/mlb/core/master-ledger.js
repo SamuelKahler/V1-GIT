@@ -134,11 +134,11 @@
       if (!Array.isArray(data)) return;
       data.forEach((row, index) => rows.push({source, arrayName, sourceIndex:index, row}));
     };
-    add('MLB_DATA','trackedPickResults',window.trackedPickResults);
-    add('OFFICIAL_HISTORY','officialBetHistory',window.officialBetHistory);
-    add('F5_HISTORY','f5PerformanceBets',window.f5PerformanceBets);
-    add('SERIES_BOARD','seriesBoardPicks',window.seriesBoardPicks);
-    add('DAILY_IMPORT','dailyImportPicks',window.dailyImportPicks || window.DAILY_IMPORT_PICKS);
+    add('MLB_DATA','trackedPickResults',typeof trackedPickResults !== 'undefined' ? trackedPickResults : window.trackedPickResults);
+    add('OFFICIAL_HISTORY','officialBetHistory',typeof officialBetHistory !== 'undefined' ? officialBetHistory : window.officialBetHistory);
+    add('F5_HISTORY','f5PerformanceBets',typeof f5PerformanceBets !== 'undefined' ? f5PerformanceBets : window.f5PerformanceBets);
+    add('SERIES_BOARD','seriesBoardPicks',typeof seriesBoardPicks !== 'undefined' ? seriesBoardPicks : window.seriesBoardPicks);
+    add('DAILY_IMPORT','dailyImportPicks',typeof dailyImportPicks !== 'undefined' ? dailyImportPicks : (window.dailyImportPicks || window.DAILY_IMPORT_PICKS));
     return rows;
   }
 
@@ -181,6 +181,42 @@
     return [record.date || 'NO_DATE', record.selectedTeam || 'NO_TEAM', record.opponent || 'NO_OPP', record.period, record.market, record.line == null ? 'NO_LINE' : record.line].join('|');
   }
 
+  function statusRank(status) {
+    return ({WIN:90,LOSS:90,PUSH:90,VOID:80,LIVE:60,PENDING:50,UNVERIFIED:20,DISREGARD:10})[status] || 0;
+  }
+
+  function displaySourceRank(source) {
+    return ({DAILY_IMPORT:40,MLB_DATA:30,SERIES_BOARD:20,F5_HISTORY:10,OFFICIAL_HISTORY:5})[source] || 0;
+  }
+
+  function displayRecordForGroup(group, authoritative) {
+    const displayCandidate = [...group]
+      .filter(record => ['MLB_DATA','DAILY_IMPORT'].includes(record.source))
+      .sort((a,b) => displaySourceRank(b.source) - displaySourceRank(a.source) || b.sourceIndex - a.sourceIndex)[0];
+    if (!displayCandidate) return null;
+    const original = {...(displayCandidate.original || {})};
+    const mergedStatus = authoritative.status;
+    return {
+      ...original,
+      coreId: authoritative.id,
+      slate: original.slate || original.date || displayCandidate.rawDate,
+      pick: original.pick || original.bet || original.selection || displayCandidate.rawPick,
+      odds: original.odds != null && original.odds !== '' ? original.odds : (displayCandidate.odds != null ? String(displayCandidate.odds) : ''),
+      units: original.units != null ? original.units : displayCandidate.units,
+      status: mergedStatus,
+      result: authoritative.result,
+      gamePk: authoritative.gamePk || original.gamePk || null,
+      selectedTeam: authoritative.selectedTeam,
+      opponent: authoritative.opponent,
+      market: authoritative.market,
+      period: authoritative.period,
+      normalizedDate: authoritative.date,
+      reconciliation: authoritative.reconciliation,
+      sourceRecords: authoritative.sourceRecords,
+      originalStatus: original.status || original.result || null
+    };
+  }
+
   function buildLedger() {
     const preserved = sourceRows().map(toCanonical);
     const groups = new Map();
@@ -197,10 +233,11 @@
       const statuses = new Set(group.map(r=>r.status));
       const odds = new Set(group.map(r=>r.odds).filter(v=>v!=null));
       const classification = group.length === 1 ? 'UNIQUE' : (statuses.size === 1 && odds.size <= 1 ? 'DUPLICATE' : 'CONFLICT');
-      const preferred = [...group].sort((a,b)=>{
-        const rank = {WIN:8,LOSS:8,PUSH:8,VOID:7,LIVE:5,PENDING:4,UNVERIFIED:2,DISREGARD:1};
-        return (rank[b.status]||0)-(rank[a.status]||0) || (b.gamePk?1:0)-(a.gamePk?1:0);
-      })[0];
+      const preferred = [...group].sort((a,b)=>
+        statusRank(b.status)-statusRank(a.status) ||
+        (b.gamePk?1:0)-(a.gamePk?1:0) ||
+        displaySourceRank(b.source)-displaySourceRank(a.source)
+      )[0];
       const idSeed = key.replace(/[^A-Z0-9|.-]/gi,'').replace(/\|/g,'-');
       ledger.push({
         ...preferred,
@@ -212,11 +249,20 @@
       if (classification === 'DUPLICATE') duplicates.push({key,records:group});
     }
 
+    const uiPicks = ledger
+      .map(record => {
+        const group = groups.get(keyFor(record)) || [];
+        return displayRecordForGroup(group, record);
+      })
+      .filter(Boolean)
+      .sort((a,b) => String(a.normalizedDate || '').localeCompare(String(b.normalizedDate || '')) || String(a.pick || '').localeCompare(String(b.pick || '')));
+
     return {
-      version:'1.0.0',
+      version:'2.0.0',
       generatedAt:new Date().toISOString(),
       preserved,
       ledger,
+      uiPicks,
       audit:{
         preservedRows:preserved.length,
         masterRecords:ledger.length,
@@ -238,6 +284,7 @@
     version:core.version,
     generatedAt:core.generatedAt,
     picks:core.ledger,
+    uiPicks:core.uiPicks,
     preserved:core.preserved,
     audit:core.audit,
     duplicates:core.duplicates,
