@@ -242,105 +242,135 @@ function convertMlbGame(game) {
 }
 
 async function fetchMlbGames(date) {
-  const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${encodeURIComponent(date)}&hydrate=linescore,team`;
-  const response = await fetch(url);
+  const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${encodeURIComponent(date)}&hydrate=linescore,probablePitcher,team,venue`;
+  const response = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error(`MLB Stats API error ${response.status}`);
   const data = await response.json();
   const games = (data?.dates || []).flatMap(day => day.games || []).map(convertMlbGame);
   return { sourceUrl: url, games };
 }
 
-function findGameForTeam(games, team) {
-  const target = normalizeTeam(team);
-  return games.find(g => g.away === target || g.home === target);
-}
-
-function findGameForTeams(games, a, b) {
-  const aa = normalizeTeam(a);
-  const bb = normalizeTeam(b);
-  return games.find(g => [g.away, g.home].includes(aa) && [g.away, g.home].includes(bb));
+function findMatchingGames(games, team, opponent, gamePk) {
+  if (Number.isFinite(Number(gamePk))) {
+    return games.filter(game => Number(game.gamePk) === Number(gamePk));
+  }
+  const selected = normalizeTeam(team);
+  const opposing = normalizeTeam(opponent);
+  return games.filter(game => {
+    const teams = [game.away, game.home];
+    if (!teams.includes(selected)) return false;
+    return !opposing || teams.includes(opposing);
+  });
 }
 
 function scoreFor(game, team, market) {
   const target = normalizeTeam(team);
-  if (market === 'F5_SPREAD' || market === 'F5_ML') return target === game.away ? game.f5.away : target === game.home ? game.f5.home : null;
+  const useF5 = String(market).startsWith('F5_');
+  if (useF5) return target === game.away ? game.f5.away : target === game.home ? game.f5.home : null;
   return target === game.away ? game.awayScore : target === game.home ? game.homeScore : null;
 }
 
 function oppScoreFor(game, team, market) {
   const target = normalizeTeam(team);
-  if (market === 'F5_SPREAD' || market === 'F5_ML') return target === game.away ? game.f5.home : target === game.home ? game.f5.away : null;
+  const useF5 = String(market).startsWith('F5_');
+  if (useF5) return target === game.away ? game.f5.home : target === game.home ? game.f5.away : null;
   return target === game.away ? game.homeScore : target === game.home ? game.awayScore : null;
 }
 
-function gradePick({ market, team, opponent, side, line }, games) {
+function auditGrade(status, reason, game, calculation, scoreUsed) {
+  return {
+    status,
+    reason,
+    game,
+    audit: {
+      gradeSource: 'Official MLB Stats API',
+      gamePk: game?.gamePk ?? null,
+      calculation: calculation || null,
+      scoreUsed: scoreUsed || null,
+      gradedAt: new Date().toISOString()
+    }
+  };
+}
+
+function gradePick({ market, team, opponent, side, line, gamePk }, games) {
   const normalizedMarket = String(market || '').toUpperCase();
   const normalizedSide = String(side || '').toUpperCase();
   const numericLine = Number(line);
-  const game = opponent ? findGameForTeams(games, team, opponent) : findGameForTeam(games, team);
+  const matches = findMatchingGames(games, team, opponent, gamePk);
 
-  if (!game) return { status: 'UNVERIFIED', reason: 'No matching MLB game found for this date/team.' };
-  if (!game.isFinal) return { status: 'UNVERIFIED', reason: `Game is not final yet. Current status: ${game.status}.`, game };
-  if ((normalizedMarket === 'F5_SPREAD' || normalizedMarket === 'F5_ML' || normalizedMarket === 'F5_TOTAL') && !game.f5.available) return { status: 'UNVERIFIED', reason: 'First-five innings are not fully available from the official linescore.', game };
+  if (!normalizeTeam(team)) return { status: 'UNVERIFIED', reason: 'Selected team is missing or invalid.' };
+  if (!matches.length) return { status: 'UNVERIFIED', reason: 'NO_MATCHING_GAME: no official MLB game matched this date and team.' };
+  if (matches.length > 1) return { status: 'UNVERIFIED', reason: 'AMBIGUOUS_MULTIPLE_GAMES: more than one official MLB game matched. A gamePk is required.', candidates: matches.map(game => ({ gamePk: game.gamePk, away: game.away, home: game.home, status: game.status })) };
 
-  if (normalizedMarket === 'ML' || normalizedMarket === 'MONEYLINE' || normalizedMarket === 'F5_ML') {
-    const marketType = normalizedMarket === 'F5_ML' ? 'F5_ML' : 'ML';
-    const scored = scoreFor(game, team, marketType);
-    const allowed = oppScoreFor(game, team, marketType);
-    if (scored === allowed) return { status: 'PUSH', reason: `Verified tie for ${normalizeTeam(team)} in ${normalizedMarket}.`, game };
-    return { status: scored > allowed ? 'WIN' : 'LOSS', reason: `Verified ${normalizedMarket}: ${normalizeTeam(team)} ${scored}, opponent ${allowed}.`, game };
+  const game = matches[0];
+  if (!game.isFinal) return auditGrade('UNVERIFIED', `GAME_NOT_FINAL: ${game.status}.`, game, null, null);
+  if (normalizedMarket.startsWith('F5_') && !game.f5.available) return auditGrade('UNVERIFIED', 'F5_NOT_COMPLETE: five complete innings were not available.', game, null, null);
+
+  if (['ML', 'MONEYLINE', 'F5_ML'].includes(normalizedMarket)) {
+    const scored = scoreFor(game, team, normalizedMarket);
+    const allowed = oppScoreFor(game, team, normalizedMarket);
+    const label = normalizedMarket === 'F5_ML' ? 'first-five moneyline' : 'full-game moneyline';
+    const scoreUsed = `${normalizeTeam(team)} ${scored}, opponent ${allowed}`;
+    if (scored === allowed) return auditGrade('PUSH', `${label} ended tied.`, game, `${scored} compared with ${allowed}`, scoreUsed);
+    const status = scored > allowed ? 'WIN' : 'LOSS';
+    return auditGrade(status, `${label} graded ${status}.`, game, `${scored} ${scored > allowed ? '>' : '<'} ${allowed}`, scoreUsed);
   }
 
-  if (normalizedMarket === 'TOTAL' || normalizedMarket === 'OVER_UNDER') {
-    if (!Number.isFinite(numericLine)) return { status: 'UNVERIFIED', reason: 'Total line missing or invalid.', game };
-    const runs = game.totalRuns;
-    if (runs === numericLine) return { status: 'PUSH', reason: `Verified total ${runs} pushed ${numericLine}.`, game };
-    const won = normalizedSide.startsWith('O') ? runs > numericLine : runs < numericLine;
-    return { status: won ? 'WIN' : 'LOSS', reason: `Verified total runs ${runs} ${won ? 'beat' : 'did not beat'} ${normalizedSide}${numericLine}.`, game };
+  if (['TOTAL', 'OVER_UNDER', 'F5_TOTAL'].includes(normalizedMarket)) {
+    if (!Number.isFinite(numericLine)) return auditGrade('UNVERIFIED', 'MISSING_LINE: total line missing or invalid.', game, null, null);
+    if (!['O', 'OVER', 'U', 'UNDER'].includes(normalizedSide)) return auditGrade('UNVERIFIED', 'MISSING_SIDE: total must specify OVER or UNDER.', game, null, null);
+    const runs = normalizedMarket === 'F5_TOTAL' ? game.f5.away + game.f5.home : game.totalRuns;
+    const isOver = normalizedSide.startsWith('O');
+    const scoreUsed = `${normalizedMarket === 'F5_TOTAL' ? 'F5' : 'Final'} total ${runs}`;
+    if (runs === numericLine) return auditGrade('PUSH', `Total ${runs} pushed ${numericLine}.`, game, `${runs} = ${numericLine}`, scoreUsed);
+    const won = isOver ? runs > numericLine : runs < numericLine;
+    const status = won ? 'WIN' : 'LOSS';
+    return auditGrade(status, `${normalizedMarket} ${isOver ? 'OVER' : 'UNDER'} ${numericLine} graded ${status}.`, game, `${runs} ${isOver ? (won ? '>' : '<=') : (won ? '<' : '>=')} ${numericLine}`, scoreUsed);
   }
 
-  if (normalizedMarket === 'F5_TOTAL') {
-    if (!Number.isFinite(numericLine)) return { status: 'UNVERIFIED', reason: 'F5 total line missing or invalid.', game };
-    const runs = game.f5.away + game.f5.home;
-    if (runs === numericLine) return { status: 'PUSH', reason: `Verified F5 total ${runs} pushed ${numericLine}.`, game };
-    const won = normalizedSide.startsWith('O') ? runs > numericLine : runs < numericLine;
-    return { status: won ? 'WIN' : 'LOSS', reason: `Verified F5 total runs ${runs} ${won ? 'beat' : 'did not beat'} ${normalizedSide}${numericLine}.`, game };
-  }
-
-  if (normalizedMarket === 'SPREAD' || normalizedMarket === 'RUNLINE' || normalizedMarket === 'F5_SPREAD') {
-    if (!Number.isFinite(numericLine)) return { status: 'UNVERIFIED', reason: 'Spread line missing or invalid.', game };
+  if (['SPREAD', 'RUNLINE', 'RUN_LINE', 'F5_SPREAD'].includes(normalizedMarket)) {
+    if (!Number.isFinite(numericLine)) return auditGrade('UNVERIFIED', 'MISSING_LINE: spread line missing or invalid.', game, null, null);
     const scored = scoreFor(game, team, normalizedMarket);
     const allowed = oppScoreFor(game, team, normalizedMarket);
     const adjusted = scored - allowed + numericLine;
-    if (adjusted === 0) return { status: 'PUSH', reason: `Verified margin pushed line ${numericLine}.`, game };
-    return { status: adjusted > 0 ? 'WIN' : 'LOSS', reason: `Verified ${normalizedMarket}: ${normalizeTeam(team)} ${scored}, opponent ${allowed}, line ${numericLine}.`, game };
+    const scoreUsed = `${normalizeTeam(team)} ${scored}, opponent ${allowed}, line ${numericLine > 0 ? '+' : ''}${numericLine}`;
+    if (adjusted === 0) return auditGrade('PUSH', `Adjusted margin pushed the line.`, game, `${scored} - ${allowed} + (${numericLine}) = 0`, scoreUsed);
+    const status = adjusted > 0 ? 'WIN' : 'LOSS';
+    return auditGrade(status, `${normalizedMarket} graded ${status}.`, game, `${scored} - ${allowed} + (${numericLine}) = ${adjusted}`, scoreUsed);
   }
 
-  return { status: 'UNVERIFIED', reason: `Market ${normalizedMarket || '(missing)'} is not supported in V44.2 yet.`, game };
+  return auditGrade('UNVERIFIED', `UNSUPPORTED_MARKET: ${normalizedMarket || '(missing)'}.`, game, null, null);
 }
 
 function parseRawPick(rawPick) {
-  const text = String(rawPick || '').trim().replace(/[’]/g, "'").replace(/_/g, ' ').replace(/\*/g, '').replace(/\s+/g, ' ');
+  const text = String(rawPick || '')
+    .trim()
+    .replace(/[’]/g, "'")
+    .replace(/_/g, ' ')
+    .replace(/\*/g, '')
+    .replace(/\s+/g, ' ');
   if (!text) return null;
 
-  const f5Spread = text.match(/^F5\s+([A-Za-z'.]+)\s*([+-])\s*\.?5/i);
-  if (f5Spread) return { market: 'F5_SPREAD', team: f5Spread[1], line: f5Spread[2] === '+' ? 0.5 : -0.5 };
+  const f5Total = text.match(/^F5\s+([A-Za-z'.]+)\s*\/\s*([A-Za-z'.]+)\s+(O|U|OVER|UNDER)\s*([0-9]+(?:\.[0-9])?)/i);
+  if (f5Total) return { market: 'F5_TOTAL', team: f5Total[1], opponent: f5Total[2], side: f5Total[3], line: Number(f5Total[4]) };
+
+  const f5Spread = text.match(/^F5\s+([A-Za-z'.]+)\s*([+-])\s*([0-9]+(?:\.[0-9])?)/i);
+  if (f5Spread) return { market: 'F5_SPREAD', team: f5Spread[1], line: Number(`${f5Spread[2]}${f5Spread[3]}`) };
 
   const f5Ml = text.match(/^F5\s+([A-Za-z'.]+)\s+ML\b/i);
   if (f5Ml) return { market: 'F5_ML', team: f5Ml[1] };
 
-  // Accept shorthand like "F5 ATL -120" as a first-five moneyline when no +/-0.5 is present.
   const f5OddsOnly = text.match(/^F5\s+([A-Za-z'.]+)\s+[+-]\d{3,4}\b/i);
   if (f5OddsOnly) return { market: 'F5_ML', team: f5OddsOnly[1] };
 
-  const total = text.match(/^([A-Za-z'.]+)\s*\/\s*([A-Za-z'.]+)\s+([ou])\s*([0-9]+(?:\.[0-9])?)/i);
-  if (total) return { market: 'TOTAL', team: total[1], opponent: total[2], side: total[3], line: total[4] };
+  const total = text.match(/^([A-Za-z'.]+)\s*\/\s*([A-Za-z'.]+)\s+(O|U|OVER|UNDER)\s*([0-9]+(?:\.[0-9])?)/i);
+  if (total) return { market: 'TOTAL', team: total[1], opponent: total[2], side: total[3], line: Number(total[4]) };
 
   const ml = text.match(/^([A-Za-z'.]+)\s+ML\b/i);
   if (ml) return { market: 'ML', team: ml[1] };
 
-  const spread = text.match(/^([A-Za-z'.]+)\s*([+-])\s*\.?5/i);
-  if (spread) return { market: 'SPREAD', team: spread[1], line: spread[2] === '+' ? 0.5 : -0.5 };
+  const spread = text.match(/^([A-Za-z'.]+)\s*([+-])\s*([0-9]+(?:\.[0-9])?)/i);
+  if (spread) return { market: 'SPREAD', team: spread[1], line: Number(`${spread[2]}${spread[3]}`) };
 
   return null;
 }
@@ -399,15 +429,15 @@ export default async function handler(req, res) {
       const allResults = dateBatches.flatMap(batch => batch.results.map(r => ({ date: batch.date, ...r })));
       return res.status(200).json({
         ok: true,
-        version: 'V57.0',
-        mode: 'unified-ledger-bulk-grading',
+        version: 'CORE-1.0',
+        mode: 'traceable-ledger-bulk-grading',
         source: 'Official MLB Stats API',
         oddsApi: odds,
         submitted: submitted.length,
         accepted: normalized.length,
         summary: summarize(allResults),
         dateBatches,
-        truthRule: 'Every dashboard reads the same submitted pick ledger. Only official final MLB data can create a WIN, LOSS, PUSH, or NO_ACTION grade.'
+        truthRule: 'Only official final MLB data can create a WIN, LOSS, or PUSH. Every grade includes a gamePk and calculation audit when resolved.'
       });
     }
 
@@ -418,7 +448,7 @@ export default async function handler(req, res) {
       const allResults = dateBatches.flatMap(batch => batch.results.map(r => ({ date: batch.date, ...r })));
       return res.status(200).json({
         ok: true,
-        version: 'V52.0',
+        version: 'CORE-1.0',
         mode: 'july-bulk-grading',
         source: 'Official MLB Stats API',
         oddsApi: odds,
@@ -435,7 +465,7 @@ export default async function handler(req, res) {
     if (query.bulk === 'true') {
       const picks = JULY_PICKS.filter(p => p.date === date);
       const batch = await gradeDate(date, picks);
-      return res.status(200).json({ ok: true, version: 'V52.0', mode: 'single-date-bulk-grading', source: 'Official MLB Stats API', oddsApi: odds, ...batch, truthRule: 'Only grade when official MLB data is final and complete. Otherwise return UNVERIFIED.' });
+      return res.status(200).json({ ok: true, version: 'CORE-1.0', mode: 'single-date-bulk-grading', source: 'Official MLB Stats API', oddsApi: odds, ...batch, truthRule: 'Only grade when official MLB data is final and complete. Otherwise return UNVERIFIED.' });
     }
 
     const { sourceUrl, games } = await fetchMlbGames(date);
@@ -447,7 +477,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
-      version: 'V52.0',
+      version: 'CORE-1.0',
       date,
       source: 'Official MLB Stats API',
       sourceUrl,
@@ -459,6 +489,6 @@ export default async function handler(req, res) {
       truthRule: 'Only grade when official MLB data is final and complete. Otherwise return UNVERIFIED.'
     });
   } catch (error) {
-    return res.status(500).json({ ok: false, version: 'V52.0', error: error.message });
+    return res.status(500).json({ ok: false, version: 'CORE-1.0', error: error.message });
   }
 }
