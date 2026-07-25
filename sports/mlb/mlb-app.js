@@ -1,3 +1,9 @@
+// Sports Edge Core V2: Today's Picks now reads the reconciled master ledger view.
+// The original data remains preserved in mlb-data.js and SportsEdgeCore.preserved.
+const coreDailyPicks = (window.SportsEdgeCore && Array.isArray(window.SportsEdgeCore.uiPicks) && window.SportsEdgeCore.uiPicks.length)
+  ? window.SportsEdgeCore.uiPicks
+  : ((typeof trackedPickResults !== 'undefined' && Array.isArray(trackedPickResults)) ? trackedPickResults : []);
+
 // V43 stability helper: all missing/blank unit values default to 1U.
 function parseUnits(value) {
   if (value === null || value === undefined || value === '') return 1;
@@ -408,7 +414,7 @@ function refreshTrendDropdowns(){
 function initFilters(){
   refreshTrendDropdowns();
   populateSelect('#pickStatusFilter', ['ACTIVE','WIN','LOSS','PUSH','UNVERIFIED','TOP PLAY','PLAYABLE','MONITOR','FADE','DISQUALIFIED']);
-  populateSelect('#pickSlateFilter', uniq(dailyPicks.map(p=>p.slate)));
+  populateSelect('#pickSlateFilter', uniq(coreDailyPicks.map(p=>p.slate)));
   ['#sportFilter','#betCategoryFilter','#winStyleFilter','#mlEnvironmentFilter','#propTeamSearch','#propEnvironmentFilter','#gameLogEnvironmentFilter','#hitFilter','#trendSearch'].forEach(id=>$(id)?.addEventListener('input',renderTrends));
   ['#pickStatusFilter','#pickSlateFilter','#pickSearch'].forEach(id=>$(id)?.addEventListener('input',renderPicks));
   $('#clearFilters')?.addEventListener('click',()=>{
@@ -460,7 +466,7 @@ function dateKey(d){
   return d ? d.toISOString().slice(0,10) : '0000-00-00';
 }
 function latestPickDateKey(){
-  const keys = dailyPicks.map(p=>dateKey(parseSlateDate(p.slate))).filter(k=>k!=='0000-00-00').sort();
+  const keys = coreDailyPicks.map(p=>dateKey(parseSlateDate(p.slate))).filter(k=>k!=='0000-00-00').sort();
   return keys[keys.length-1] || dateKey(new Date());
 }
 
@@ -648,12 +654,12 @@ function isOfficialPlay(p){return explicitUnitSize(p);}
 function isResearchPlay(p){return !isOfficialPlay(p);}
 function latestSlateLabel(){
   const latest = latestPickDateKey();
-  const found = dailyPicks.find(p=>dateKey(parseSlateDate(p.slate))===latest);
+  const found = coreDailyPicks.find(p=>dateKey(parseSlateDate(p.slate))===latest);
   return found?.slate || 'Latest Slate';
 }
 function latestSlatePicks(){
   const latest = latestPickDateKey();
-  return dailyPicks.filter(p=>dateKey(parseSlateDate(p.slate))===latest);
+  return coreDailyPicks.filter(p=>dateKey(parseSlateDate(p.slate))===latest);
 }
 function bettorCategory(p){
   const t = `${p.pick || ''} ${p.edge || ''}`.toLowerCase();
@@ -983,11 +989,11 @@ function isSeriesPick(p){ return pickCategory(p) === 'Series' || /series/i.test(
 function displayCategoryBuckets(){ return ['First Five','Moneyline','Over','Under','Series','Totals','Props']; }
 function latestNonSeriesPlays(){
   const latest = latestPickDateKey();
-  return dailyPicks.filter(p => dateKey(parseSlateDate(p.slate)) === latest && !isSeriesPick(p) && isClassifiedPick(p));
+  return coreDailyPicks.filter(p => dateKey(parseSlateDate(p.slate)) === latest && !isSeriesPick(p) && isClassifiedPick(p));
 }
 function latestSeriesPlays(){
   const latest = latestPickDateKey();
-  return dailyPicks.filter(p => dateKey(parseSlateDate(p.slate)) === latest && isSeriesPick(p));
+  return coreDailyPicks.filter(p => dateKey(parseSlateDate(p.slate)) === latest && isSeriesPick(p));
 }
 function officialHistoryStats(rows){
   const total = rows.length;
@@ -1161,7 +1167,7 @@ function renderPickDropdownRow(p){
     ${matchupSubtitleHtml(p)}
     <div class="meta"><span class="pill">${bettorCategory(p)}</span><span class="pill">Odds ${p.odds || '-'}</span><span class="pill">${unitText}</span>${trendText?`<span class="pill">${trendText}</span>`:''}</div>
     ${proof}
-    <button class="secondary details-cta" onclick="openPick(${dailyPicks.indexOf(p)})">Open Bet Details</button>
+    <button class="secondary details-cta" onclick="openPick(${coreDailyPicks.indexOf(p)})">Open Bet Details</button>
   </article>`;
 }
 function renderPickDropdownSection(title, subtitle, picks, options={}){
@@ -1253,7 +1259,7 @@ function groupBySlate(picks){
 }
 function renderPicks(){
   const status=$('#pickStatusFilter').value, slate=$('#pickSlateFilter').value, q=$('#pickSearch').value.toLowerCase();
-  let picks=dailyPicks.filter(p=>(slate==='all'||p.slate===slate));
+  let picks=coreDailyPicks.filter(p=>(slate==='all'||p.slate===slate));
   if(status!=='all') picks=picks.filter(p=>normalizedPickStatus(p)===status);
   if(q) picks=picks.filter(p=>JSON.stringify(p).toLowerCase().includes(q));
   $('#pickSummary').innerHTML = '<div class="board-note"><strong>Today’s Picks</strong><span>Grouped into clean dropdowns. Open only the section you want.</span></div>' + apiGradeSummaryHtml();
@@ -1282,18 +1288,18 @@ function renderPicks(){
 
   $('#picksGrid').className = 'picks-dashboard grouped-today-dashboard';
   $('#picksGrid').innerHTML = header + officialHtml + waitValueHtml + f5Html + researchHtml + trendHtml + marketHtml + archiveHtml;
-  if($('#homePicks')) $('#homePicks').textContent=dailyPicks.length;
+  if($('#homePicks')) $('#homePicks').textContent=coreDailyPicks.length;
   renderHomeDailyDashboard();
 }
 function pickCard(p){
   const st = normalizedPickStatus(p);
-  return `<article class="pick-card"><span class="tag">${p.slate}</span><h3>${p.pick}</h3><div class="score ${'status-'+slugStatus(st)}">${pickScoreDisplay(p)}</div><div class="meta">${formatPickLine(p)}<span class="pill ${'status-'+slugStatus(st)}">${st}</span></div><p>${p.edge || ''}</p><button class="secondary" onclick="openPick(${dailyPicks.indexOf(p)})">View Details</button></article>`;
+  return `<article class="pick-card"><span class="tag">${p.slate}</span><h3>${p.pick}</h3><div class="score ${'status-'+slugStatus(st)}">${pickScoreDisplay(p)}</div><div class="meta">${formatPickLine(p)}<span class="pill ${'status-'+slugStatus(st)}">${st}</span></div><p>${p.edge || ''}</p><button class="secondary" onclick="openPick(${coreDailyPicks.indexOf(p)})">View Details</button></article>`;
 }
 function archiveRow(p){
   const st = normalizedPickStatus(p);
   const pl = profitUnits(p);
   const resultClass = st==='WIN'?'status-WIN':st==='LOSS'?'status-LOSS':(st==='UNVERIFIED'||st==='UNGRADED')?'status-UNGRADED':'status-'+slugStatus(st);
-  return `<div class="archive-row"><div><strong>${p.pick}</strong><small>${pickCategory(p)} • ${p.edge || 'Tracked pick'}</small></div><div>${p.odds || '-'}</div><div>${explicitUnitSize(p)?String(p.units).trim():'—'}</div><div class="${resultClass}">${statusDisplayIcon(st)}</div><div>${explicitUnitSize(p)&&['WIN','LOSS'].includes(st)?formatUnits(pl):(st==='PUSH'?'0.00U':'—')}</div><button class="secondary" onclick="openPick(${dailyPicks.indexOf(p)})">Details</button></div>`;
+  return `<div class="archive-row"><div><strong>${p.pick}</strong><small>${pickCategory(p)} • ${p.edge || 'Tracked pick'}</small></div><div>${p.odds || '-'}</div><div>${explicitUnitSize(p)?String(p.units).trim():'—'}</div><div class="${resultClass}">${statusDisplayIcon(st)}</div><div>${explicitUnitSize(p)&&['WIN','LOSS'].includes(st)?formatUnits(pl):(st==='PUSH'?'0.00U':'—')}</div><button class="secondary" onclick="openPick(${coreDailyPicks.indexOf(p)})">Details</button></div>`;
 }
 
 function currentKLineHtml(p){
@@ -1421,7 +1427,7 @@ function gradeForScore(score){
   return 'PASS';
 }
 function modelEligiblePicks(){
-  return dailyPicks.filter(p=>p.breakdown && Object.keys(p.breakdown).length && typeof p.score === 'number');
+  return coreDailyPicks.filter(p=>p.breakdown && Object.keys(p.breakdown).length && typeof p.score === 'number');
 }
 function renderWeights(){
   const wrap = $('#f5Weights');
@@ -1831,7 +1837,7 @@ function slatePlayCard(p){
   const official = isOfficialPlay(p);
   const statusText = official ? 'Official Play' : 'Research Play';
   const scoreLine = typeof p.score === 'number' ? p.score.toFixed(2) : 'Pending';
-  return `<article class="slate-play-card ${official?'official-play':'research-play'}"><div class="series-card-top"><span class="tag ${official?'':'blue'}">${statusText}</span><span class="pill ${'status-'+slugStatus(st)}">${statusDisplayIcon(st)}</span></div><h3>${cleanPickTitle(p)}</h3>${matchupSubtitleHtml(p)}${apiProofStrip(p)}<div class="pick-card-proof"><div><small>Market</small><strong>${bettorCategory(p)}</strong></div><div><small>Odds</small><strong>${p.odds || '-'}</strong></div><div><small>Model Score</small><strong>${scoreLine}</strong></div></div>${trendEvidenceCardSummary(p) || `<p class="card-summary">${consumerReasoningNotes(p)[0] || compactWhy(p)[0] || 'Sports Edge is waiting for connected evidence on this pick.'}</p>`}<button class="secondary details-cta" onclick="openPick(${dailyPicks.indexOf(p)})">Open Bet Details</button></article>`;
+  return `<article class="slate-play-card ${official?'official-play':'research-play'}"><div class="series-card-top"><span class="tag ${official?'':'blue'}">${statusText}</span><span class="pill ${'status-'+slugStatus(st)}">${statusDisplayIcon(st)}</span></div><h3>${cleanPickTitle(p)}</h3>${matchupSubtitleHtml(p)}${apiProofStrip(p)}<div class="pick-card-proof"><div><small>Market</small><strong>${bettorCategory(p)}</strong></div><div><small>Odds</small><strong>${p.odds || '-'}</strong></div><div><small>Model Score</small><strong>${scoreLine}</strong></div></div>${trendEvidenceCardSummary(p) || `<p class="card-summary">${consumerReasoningNotes(p)[0] || compactWhy(p)[0] || 'Sports Edge is waiting for connected evidence on this pick.'}</p>`}<button class="secondary details-cta" onclick="openPick(${coreDailyPicks.indexOf(p)})">Open Bet Details</button></article>`;
 }
 function startingPitcherBlock(p){
   const ctx = matchupContextForPick(p);
@@ -1869,7 +1875,7 @@ function pitcherPropHistoryHtml(p){
   return `<div class="current-k-line"><h4>Starting Pitchers</h4>${startingPitcherBlock(p)}</div><div class="historical-prop-evidence"><h4>Pitcher / K Prop History</h4>${currentKLineHtml(p)}${matchupPropHistoryHtml(p)}</div>`;
 }
 function openPick(i){
-  const p = dailyPicks[i];
+  const p = coreDailyPicks[i];
   const st = normalizedPickStatus(p);
   const scoreMeta = typeof p.score === 'number' ? `<span class="pill">Model Score ${p.score}</span>` : `<span class="pill ${'status-'+slugStatus(st)}">Result ${pickScoreDisplay(p)}</span>`;
   const consumerWhy = consumerReasoningNotes(p);
@@ -1889,7 +1895,7 @@ function openPick(i){
 // One pick collection now drives Today's Picks, Performance Lab, and F5 Performance.
 (function sportsEdgeUnifiedTruthEngine(){
   function unifiedPickRows(){
-    return (typeof dailyPicks !== 'undefined' && Array.isArray(dailyPicks)) ? dailyPicks : [];
+    return (typeof coreDailyPicks !== 'undefined' && Array.isArray(coreDailyPicks)) ? coreDailyPicks : [];
   }
   function unifiedGradedRows(){
     return unifiedPickRows().filter(p => ['WIN','LOSS','PUSH'].includes(normalizedPickStatus(p)) && isClassifiedPick(p));
@@ -2214,8 +2220,8 @@ function openPick(i){
   }
 
   function latestSlateRows(){
-    if(!Array.isArray(dailyPicks) || !dailyPicks.length) return [];
-    const dated = dailyPicks
+    if(!Array.isArray(coreDailyPicks) || !coreDailyPicks.length) return [];
+    const dated = coreDailyPicks
       .map(p => ({p, date: slateDateIso(p)}))
       .filter(x => x.date)
       .sort((a,b) => b.date.localeCompare(a.date));
@@ -2232,7 +2238,7 @@ function openPick(i){
   }
 
   openPick = function(index){
-    const p = dailyPicks[index];
+    const p = coreDailyPicks[index];
     baseOpenPick(index);
     if(!p?._officialMatchupContext){
       resolvePickContext(p).then(ctx => {
