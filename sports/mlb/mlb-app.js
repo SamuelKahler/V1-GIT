@@ -904,40 +904,120 @@ function trendEvidenceLabel(row){
 function normalizedPickResearchText(p){
   return [p.pick, p.edge, p.rank, ...(Array.isArray(p.why) ? p.why : [])].join(' ').toUpperCase();
 }
-function trendRowQualifiesForPick(row, p, teams, explicitGameLogTags, explicitSituations, desiredMarketStyle){
-  if(!teams.includes(row.team)) return false;
+function trendMarketCandidatesForPick(p){
+  const title = cleanPickTitle(p).toUpperCase();
+  if(/\bU\s*\d|\bUNDER\b/.test(title)) return ['UNDER'];
+  if(/\bO\s*\d|\bOVER\b/.test(title)) return ['OVER'];
+  if(/^F5\s+/.test(title) && /[+-]\s*0?\.5/.test(title)) return ['SPRD','ML'];
+  if(/\bML\b|\bSERIES\b/.test(title)) return ['ML'];
+  if(/[+-]\s*1?\.5/.test(title)) return ['SPRD'];
+  return [];
+}
+function evidenceTeamsForPick(p){
+  const found = teamsFromPickText(p.pick || '');
+  const target = targetTeamForPick(p);
+  const ctx = matchupContextForPick(p);
+  return uniq([...found, target, ctx?.away, ctx?.home].filter(Boolean).map(x=>String(x).toUpperCase()));
+}
+function derivedEnvironmentTagsForPick(p){
+  const tags = new Set(explicitSituationTagsForPick(p));
+  const target = targetTeamForPick(p);
+  const ctx = matchupContextForPick(p);
+  const fav = targetIsFavorite(p);
+  if(target && ctx){
+    const role = String(target).toUpperCase() === String(ctx.home).toUpperCase() ? 'HOME' : 'AWAY';
+    tags.add(role);
+    if(fav !== null) tags.add(`${role} ${fav ? 'FAVORITE' : 'UNDERDOG'}`);
+  }
+  return [...tags];
+}
+function trendMatchScore(row, p){
+  const teams = evidenceTeamsForPick(p);
+  const rowTeam = String(row.team || '').toUpperCase();
+  if(!teams.includes(rowTeam)) return null;
+
+  const style = normalizeStyleKey(row.style);
+  const markets = trendMarketCandidatesForPick(p);
+  const explicitLogs = explicitGameLogTrendTagsForPick(p);
+  const environments = derivedEnvironmentTagsForPick(p);
   const situation = String(row.situation || '').toUpperCase();
   const notes = String(row.notes || '').toUpperCase();
-  const style = row.normalizedStyle;
-  const pickText = normalizedPickResearchText(p);
-  const exactGameLogMatch = explicitGameLogTags.includes(style);
-  const marketStyleMatch = desiredMarketStyle && style === desiredMarketStyle && row.hitRateNumber !== null;
-  const directSituationMatch = explicitSituations.length ? explicitSituations.some(tag => situation.includes(tag) || notes.includes(tag)) : false;
-  const divisionMatch = pickText.includes('DIVISION') && (situation.includes('DIVISION') || notes.includes('DIVISION'));
-  const noRestMatch = pickText.includes('NO REST') && situation.includes('NO REST');
-  const oneDayRestMatch = pickText.includes('1-DAY REST') && situation.includes('1-DAY REST');
-  if(exactGameLogMatch) return true;
-  if(marketStyleMatch && (directSituationMatch || divisionMatch || noRestMatch || oneDayRestMatch)) return true;
-  return false;
+  const ctx = matchupContextForPick(p);
+  const target = targetTeamForPick(p);
+  const opponent = target && ctx ? (String(target).toUpperCase() === String(ctx.home).toUpperCase() ? ctx.away : ctx.home) : '';
+
+  let score = 30;
+  const reasons = [`Same team: ${rowTeam}`];
+
+  if(markets.includes(style)){
+    score += 25;
+    reasons.push(`Same market: ${trendDisplayStyle(style)}`);
+  } else if(markets.includes('SPRD') && style === 'ML'){
+    score += 16;
+    reasons.push('Related team-side market');
+  } else if(explicitLogs.includes(style)){
+    score += 25;
+    reasons.push(`Exact game-log tag: ${trendDisplayStyle(style)}`);
+  } else {
+    return null;
+  }
+
+  if(explicitLogs.includes(style)){
+    score += 20;
+    reasons.push('Exact stated trend condition');
+  }
+
+  const exactEnvironment = environments.find(tag=>situation.includes(tag) || notes.includes(tag));
+  if(exactEnvironment){
+    score += 18;
+    reasons.push(`Environment: ${exactEnvironment}`);
+  } else {
+    const role = environments.find(tag=>tag === 'HOME' || tag === 'AWAY' || tag.startsWith('HOME ') || tag.startsWith('AWAY '));
+    if(role){
+      const base = role.startsWith('HOME') ? 'HOME' : 'AWAY';
+      if(situation.includes(base) || notes.includes(base)){
+        score += 8;
+        reasons.push(`Same ${base.toLowerCase()} role`);
+      }
+    }
+  }
+
+  if(opponent && opponentMatchesTrend(row, String(opponent).toUpperCase())){
+    score += 12;
+    reasons.push(`Same opponent: ${String(opponent).toUpperCase()}`);
+  }
+
+  const rec = trendEvidenceRecord(row);
+  const rate = pct(row.hitRate);
+  if(rec.total >= 10 || (rate !== null && row.duration && row.duration !== '-')) score += 4;
+  else if(rec.total >= 5) score += 2;
+
+  const tier = score >= 85 ? 'Exact Environment Match' : score >= 70 ? 'Strong Environment Match' : 'Relevant Team / Market Match';
+  return {score, reasons, tier, opponent, environments, markets};
+}
+function trendRowQualifiesForPick(row, p){
+  const match = trendMatchScore(row, p);
+  return Boolean(match && match.score >= 50);
 }
 function matchedTrendEvidenceForPick(p, limit=8){
-  const teams = teamsFromPickText(p.pick);
-  if(!teams.length) return [];
-  const explicitGameLogTags = explicitGameLogTrendTagsForPick(p);
-  const explicitSituations = explicitSituationTagsForPick(p);
-  const desiredMarketStyle = trendEvidenceTypeForPick(p);
-  const rows = trendRows.map(r=>({
-    ...r,
-    normalizedStyle: normalizeStyleKey(r.style),
-    hitRateNumber: pct(r.hitRate)
-  })).filter(r=>trendRowQualifiesForPick(r, p, teams, explicitGameLogTags, explicitSituations, desiredMarketStyle));
+  const rows = trendRows.map(r=>{
+    const match = trendMatchScore(r, p);
+    return match ? {
+      ...r,
+      normalizedStyle: normalizeStyleKey(r.style),
+      hitRateNumber: pct(r.hitRate),
+      matchScore: match.score,
+      matchReasons: match.reasons,
+      matchTier: match.tier,
+      matchedOpponent: match.opponent
+    } : null;
+  }).filter(Boolean).filter(r=>r.matchScore >= 50);
+
   return rows.sort((a,b)=>{
-    const aExact = explicitGameLogTags.includes(a.normalizedStyle) ? 1 : 0;
-    const bExact = explicitGameLogTags.includes(b.normalizedStyle) ? 1 : 0;
-    if(aExact !== bExact) return bExact - aExact;
-    const aSituation = explicitSituations.some(tag => String(a.situation||'').toUpperCase().includes(tag)) ? 1 : 0;
-    const bSituation = explicitSituations.some(tag => String(b.situation||'').toUpperCase().includes(tag)) ? 1 : 0;
-    if(aSituation !== bSituation) return bSituation - aSituation;
+    if(a.matchScore !== b.matchScore) return b.matchScore - a.matchScore;
+    const aSample = trendEvidenceRecord(a).total;
+    const bSample = trendEvidenceRecord(b).total;
+    if(aSample !== bSample) return bSample - aSample;
     const ap = a.hitRateNumber ?? -1;
     const bp = b.hitRateNumber ?? -1;
     if(ap !== bp) return bp - ap;
@@ -1780,15 +1860,11 @@ function pickScoreDisplay(p){
   return 'PENDING';
 }
 function trendEvidenceConfidence(row){
-  const rate = pct(row.hitRate);
-  const rec = trendEvidenceRecord(row);
-  const score = rate !== null ? rate : (rec.rate ? parseFloat(rec.rate) : 0);
-  if(score >= 70) return 'Elite Evidence';
-  if(score >= 65) return 'Strong Evidence';
-  if(score >= 60) return 'Positive Evidence';
-  if(score >= 55) return 'Lean Evidence';
-  if(rec.total > 0) return 'Small Sample';
-  return 'Needs Sample';
+  if(row.matchTier) return row.matchTier;
+  const score = Number(row.matchScore || 0);
+  if(score >= 85) return 'Exact Environment Match';
+  if(score >= 70) return 'Strong Environment Match';
+  return 'Relevant Team / Market Match';
 }
 function trendEvidenceMetric(row){
   const rate = pct(row.hitRate);
@@ -1811,12 +1887,13 @@ function trendEvidenceRecordClean(row){
 function trendEvidenceHtml(p){
   const trends = matchedTrendEvidenceForPick(p, 6);
   if(!trends.length){
-    return `<div class="trend-evidence empty-evidence"><strong>No matched trend evidence yet</strong><p class="subtle">Sports Edge did not find a stored same-environment trend for this pick yet. Keep the pick visible, but do not show a fake hit rate.</p></div>`;
+    return `<div class="trend-evidence empty-evidence"><strong>No qualifying matched environment yet</strong><p class="subtle">Sports Edge did not find a same-team, same-market historical row above the minimum match threshold. This pick remains visible, but no unsupported hit rate is shown.</p></div>`;
   }
-  return `<div class="trend-evidence upgraded-trend-evidence"><strong>Matched Trend Evidence</strong><p class="subtle">Same team, market, trend tag, or game environment from the Sports Edge database.</p><div class="trend-evidence-grid">${trends.map(t=>{
+  return `<div class="trend-evidence upgraded-trend-evidence"><strong>Matched Trend Evidence</strong><p class="subtle">Ranked by team, market, current role, opponent, and explicit historical environment. Imported rates remain labeled separately from calculated game-log records.</p><div class="trend-evidence-grid">${trends.map(t=>{
     const rec = trendEvidenceRecordClean(t);
-    const badgeClass = String(trendEvidenceConfidence(t)).includes('Needs') ? 'pending' : (String(trendEvidenceConfidence(t)).includes('Small') || String(trendEvidenceConfidence(t)).includes('Lean') ? 'medium' : '');
-    return `<article class="trend-proof-card clean-proof"><div class="trend-proof-top"><b>${trendEvidenceTitle(t)}</b><span class="proof-badge ${badgeClass}">${trendEvidenceConfidence(t)}</span></div><div class="trend-proof-metrics"><div><small>Hit Rate</small><strong>${rec.rate}</strong></div><div><small>Record</small><strong>${rec.wins!==null ? `${rec.wins}-${rec.losses}` : 'Stored'}</strong></div><div><small>Sample</small><strong>${rec.total}</strong></div></div><p class="subtle"><b>Environment:</b> ${String(t.situation || '-')}</p><p class="subtle"><b>Date:</b> ${formatTrendDate(t.date)}${t.opponent && t.opponent !== '-' ? ` • ${t.opponent}` : ''}</p>${t.notes && t.notes !== '-' ? `<p class="subtle"><b>Note:</b> ${t.notes}</p>` : ''}${trendEvidenceHistoryHtml(t)}</article>`;
+    const badgeClass = t.matchScore >= 85 ? '' : (t.matchScore >= 70 ? 'medium' : 'pending');
+    const reasons = (t.matchReasons || []).map(reason=>`<li>${reason}</li>`).join('');
+    return `<article class="trend-proof-card clean-proof"><div class="trend-proof-top"><b>${trendEvidenceTitle(t)}</b><span class="proof-badge ${badgeClass}">${trendEvidenceConfidence(t)}</span></div><div class="trend-proof-metrics"><div><small>Hit Rate</small><strong>${rec.rate}</strong></div><div><small>Record</small><strong>${rec.wins!==null ? `${rec.wins}-${rec.losses}` : 'Imported'}</strong></div><div><small>Match Score</small><strong>${t.matchScore}/100</strong></div></div><p class="subtle"><b>Data source:</b> ${rec.source}</p><p class="subtle"><b>Stored environment:</b> ${String(t.situation || '-')}</p><ul class="clean evidence-list match-reason-list">${reasons}</ul><p class="subtle"><b>Date:</b> ${formatTrendDate(t.date)}${t.opponent && t.opponent !== '-' ? ` • ${t.opponent}` : ''}</p>${t.notes && t.notes !== '-' ? `<p class="subtle"><b>Note:</b> ${t.notes}</p>` : ''}${trendEvidenceHistoryHtml(t)}</article>`;
   }).join('')}</div></div>`;
 }
 function trendEvidenceCardSummary(p){
@@ -1824,7 +1901,8 @@ function trendEvidenceCardSummary(p){
   if(!trends.length) return '';
   const t = trends[0];
   const rec = trendEvidenceRecordClean(t);
-  return `<div class="matched-trend-card upgraded-card-evidence"><strong>Matched Trend Evidence</strong><div class="pick-card-proof"><div><small>Hit Rate</small><strong>${rec.rate}</strong></div><div><small>Record</small><strong>${rec.wins!==null ? `${rec.wins}-${rec.losses}` : 'Stored'}</strong></div><div><small>Sample</small><strong>${rec.total}</strong></div></div><small>${trendEvidenceTitle(t)} • ${String(t.situation || '-')}</small></div>`;
+  const reason = (t.matchReasons || []).slice(0,2).join(' • ');
+  return `<div class="matched-trend-card upgraded-card-evidence"><strong>Matched Trend Evidence</strong><div class="pick-card-proof"><div><small>Hit Rate</small><strong>${rec.rate}</strong></div><div><small>Record</small><strong>${rec.wins!==null ? `${rec.wins}-${rec.losses}` : 'Imported'}</strong></div><div><small>Match</small><strong>${t.matchScore}/100</strong></div></div><small>${trendEvidenceConfidence(t)} • ${reason || trendEvidenceTitle(t)}</small></div>`;
 }
 function apiProofStrip(p){
   const st = normalizedPickStatus(p);
