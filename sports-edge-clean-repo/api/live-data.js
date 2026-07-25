@@ -1,4 +1,5 @@
 const MLB_SCHEDULE_URL = 'https://statsapi.mlb.com/api/v1/schedule';
+const MLB_GAME_FEED_URL = 'https://statsapi.mlb.com/api/v1.1/game';
 
 const TEAM_ALIASES = Object.freeze({
   ARI: 'ARI', ARIZONA: 'ARI', 'ARIZONA DIAMONDBACKS': 'ARI', 'D-BACKS': 'ARI', DIAMONDBACKS: 'ARI',
@@ -107,6 +108,148 @@ function normalizeGame(game) {
   };
 }
 
+
+
+function isGamePk(value) {
+  return /^\d+$/.test(cleanString(value));
+}
+
+async function fetchGameFeed(gamePk) {
+  const response = await fetch(`${MLB_GAME_FEED_URL}/${gamePk}/feed/live`, {
+    headers: { Accept: 'application/json' }
+  });
+
+  if (!response.ok) {
+    throw new Error(`MLB game feed request failed with status ${response.status}`);
+  }
+
+  return response.json();
+}
+
+function inningRuns(linescore, side, inningNumber) {
+  const inning = (linescore?.innings || []).find((row) => Number(row?.num) === Number(inningNumber));
+  const runs = inning?.[side]?.runs;
+  return Number.isFinite(Number(runs)) ? Number(runs) : 0;
+}
+
+function completedInnings(linescore) {
+  const innings = linescore?.innings || [];
+  return innings.filter((inning) => {
+    const awayRuns = inning?.away?.runs;
+    const homeRuns = inning?.home?.runs;
+    return awayRuns !== undefined && awayRuns !== null && homeRuns !== undefined && homeRuns !== null;
+  });
+}
+
+function firstFiveScore(linescore) {
+  const innings = completedInnings(linescore);
+  const fiveComplete = [1, 2, 3, 4, 5].every((number) =>
+    innings.some((inning) => Number(inning?.num) === number)
+  );
+
+  if (!fiveComplete) {
+    return {
+      available: false,
+      reason: 'FIVE_INNINGS_NOT_COMPLETE',
+      away: null,
+      home: null
+    };
+  }
+
+  let away = 0;
+  let home = 0;
+  for (let inning = 1; inning <= 5; inning += 1) {
+    away += inningRuns(linescore, 'away', inning);
+    home += inningRuns(linescore, 'home', inning);
+  }
+
+  return {
+    available: true,
+    reason: null,
+    away,
+    home
+  };
+}
+
+function probableOrActualPitcher(gameData, liveData, side) {
+  const probable = gameData?.probablePitchers?.[side];
+  const teamId = gameData?.teams?.[side]?.id;
+  const players = liveData?.boxscore?.teams?.[side]?.players || {};
+  const pitcherIds = liveData?.boxscore?.teams?.[side]?.pitchers || [];
+  const firstPitcherId = pitcherIds[0];
+  const firstPitcher = firstPitcherId ? players[`ID${firstPitcherId}`]?.person : null;
+  const pitcher = probable || firstPitcher;
+  if (!pitcher) return null;
+
+  return {
+    id: pitcher.id ?? null,
+    fullName: pitcher.fullName || null,
+    source: probable ? 'probablePitcher' : 'boxscoreStarter'
+  };
+}
+
+function normalizeGameFeed(payload) {
+  const gameData = payload?.gameData || {};
+  const liveData = payload?.liveData || {};
+  const linescore = liveData?.linescore || {};
+  const awayTeam = gameData?.teams?.away || {};
+  const homeTeam = gameData?.teams?.home || {};
+  const awayAbbr = teamAbbreviation(awayTeam);
+  const homeAbbr = teamAbbreviation(homeTeam);
+  const awayRuns = linescore?.teams?.away?.runs;
+  const homeRuns = linescore?.teams?.home?.runs;
+  const detailedState = gameData?.status?.detailedState || null;
+  const abstractState = gameData?.status?.abstractGameState || null;
+  const isFinal = abstractState === 'Final' || /final|game over|completed early/i.test(detailedState || '');
+
+  return {
+    gamePk: gameData?.game?.pk ?? null,
+    officialDate: gameData?.datetime?.officialDate || null,
+    gameDate: gameData?.datetime?.dateTime || null,
+    matchup: `${awayAbbr} @ ${homeAbbr}`,
+    awayTeam: {
+      id: awayTeam?.id ?? null,
+      abbreviation: awayAbbr,
+      name: awayTeam?.name || null,
+      score: Number.isFinite(Number(awayRuns)) ? Number(awayRuns) : null,
+      startingPitcher: probableOrActualPitcher(gameData, liveData, 'away')
+    },
+    homeTeam: {
+      id: homeTeam?.id ?? null,
+      abbreviation: homeAbbr,
+      name: homeTeam?.name || null,
+      score: Number.isFinite(Number(homeRuns)) ? Number(homeRuns) : null,
+      startingPitcher: probableOrActualPitcher(gameData, liveData, 'home')
+    },
+    status: {
+      abstract: abstractState,
+      detailed: detailedState,
+      coded: gameData?.status?.codedGameState || null,
+      isFinal
+    },
+    venue: gameData?.venue ? {
+      id: gameData.venue.id ?? null,
+      name: gameData.venue.name || null
+    } : null,
+    seriesDescription: gameData?.game?.seriesDescription || null,
+    seriesGameNumber: gameData?.game?.seriesGameNumber ?? null,
+    gamesInSeries: gameData?.game?.gamesInSeries ?? null,
+    dayNight: gameData?.datetime?.dayNight || null,
+    finalScore: {
+      available: awayRuns !== undefined && homeRuns !== undefined,
+      away: Number.isFinite(Number(awayRuns)) ? Number(awayRuns) : null,
+      home: Number.isFinite(Number(homeRuns)) ? Number(homeRuns) : null
+    },
+    firstFiveScore: firstFiveScore(linescore),
+    innings: (linescore?.innings || []).map((inning) => ({
+      inning: inning?.num ?? null,
+      away: inning?.away?.runs ?? null,
+      home: inning?.home?.runs ?? null
+    })),
+    linescore
+  };
+}
+
 function queryValue(req, key) {
   const value = req?.query?.[key];
   return Array.isArray(value) ? value[0] : value;
@@ -188,7 +331,29 @@ export default async function handler(req, res) {
   try {
     const requestedDate = cleanString(queryValue(req, 'date'));
     const requestedTeam = cleanString(queryValue(req, 'team'));
+    const requestedGamePk = cleanString(queryValue(req, 'gamePk'));
     const date = requestedDate || new Date().toISOString().slice(0, 10);
+
+    if (requestedGamePk) {
+      if (!isGamePk(requestedGamePk)) {
+        return res.status(400).json({
+          ok: false,
+          error: 'INVALID_GAME_PK',
+          message: 'Use a numeric gamePk.'
+        });
+      }
+
+      const payload = await fetchGameFeed(requestedGamePk);
+      const game = normalizeGameFeed(payload);
+      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+      return res.status(200).json({
+        ok: true,
+        mode: 'official-game-result',
+        source: 'Official MLB Stats API',
+        game,
+        fetchedAt: new Date().toISOString()
+      });
+    }
 
     if (!isIsoDate(date)) {
       return res.status(400).json({
