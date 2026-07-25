@@ -2207,3 +2207,141 @@ function openPick(i){
     start();
   }
 })();
+
+/* Release 3: Official matchup resolution connected to Today's Picks.
+   Uses the existing /api/live-data?date=YYYY-MM-DD&team=XXX endpoint.
+   API context is preferred; existing stored/manual context remains a fallback. */
+(function sportsEdgeOfficialMatchupConnection(){
+  const contextCache = new Map();
+  const pendingRequests = new Map();
+  const baseMatchupContextForPick = matchupContextForPick;
+  const baseOpenPick = openPick;
+
+  function resolverTeamForPick(p){
+    const teams = teamsFromPickText(p?.pick || '');
+    return teams.length ? teamAbbr(teams[0]) : '';
+  }
+
+  function contextKeyForPick(p){
+    const date = slateDateIso(p);
+    const team = resolverTeamForPick(p);
+    return date && team ? `${date}|${team}` : '';
+  }
+
+  function apiContextFromPayload(payload){
+    if(!payload?.resolved || !payload?.game) return null;
+    const game = payload.game;
+    const away = teamAbbr(game?.awayTeam?.abbreviation || '');
+    const home = teamAbbr(game?.homeTeam?.abbreviation || '');
+    if(!away || !home) return null;
+    return {
+      away,
+      home,
+      label: game.matchup || `${away} @ ${home}`,
+      opponent: teamAbbr(payload.opponent || ''),
+      role: payload.role || '',
+      gamePk: game.gamePk || null,
+      officialDate: game.officialDate || null,
+      gameDate: game.gameDate || null,
+      venue: game?.venue?.name || '',
+      status: game?.status?.detailed || game?.status?.abstract || '',
+      seriesDescription: game.seriesDescription || '',
+      seriesGameNumber: game.seriesGameNumber ?? null,
+      gamesInSeries: game.gamesInSeries ?? null,
+      dayNight: game.dayNight || '',
+      awayPitcher: game?.awayTeam?.probablePitcher?.fullName || 'Probable starter pending',
+      homePitcher: game?.homeTeam?.probablePitcher?.fullName || 'Probable starter pending',
+      source: 'Official MLB Stats API'
+    };
+  }
+
+  matchupContextForPick = function(p){
+    if(p?._officialMatchupContext) return p._officialMatchupContext;
+    const key = contextKeyForPick(p);
+    if(key && contextCache.has(key)) return contextCache.get(key);
+    return baseMatchupContextForPick(p);
+  };
+
+  async function resolvePickContext(p){
+    const key = contextKeyForPick(p);
+    if(!key) return null;
+    if(p?._officialMatchupContext) return p._officialMatchupContext;
+    if(contextCache.has(key)){
+      p._officialMatchupContext = contextCache.get(key);
+      return p._officialMatchupContext;
+    }
+    if(pendingRequests.has(key)) return pendingRequests.get(key);
+
+    const [date, team] = key.split('|');
+    const request = fetch(`/api/live-data?date=${encodeURIComponent(date)}&team=${encodeURIComponent(team)}`, {cache:'no-store'})
+      .then(async response => {
+        if(!response.ok) throw new Error(`Matchup API returned ${response.status}`);
+        const payload = await response.json();
+        if(payload?.reason === 'AMBIGUOUS_MULTIPLE_GAMES'){
+          p._matchupResolutionReason = 'AMBIGUOUS_MULTIPLE_GAMES';
+          return null;
+        }
+        const ctx = apiContextFromPayload(payload);
+        if(ctx){
+          contextCache.set(key, ctx);
+          p._officialMatchupContext = ctx;
+          p.gamePk = p.gamePk || ctx.gamePk;
+          p.opponent = p.opponent || ctx.opponent;
+          p.homeAway = p.homeAway || ctx.role;
+        }else{
+          p._matchupResolutionReason = payload?.reason || 'NO_MATCHING_GAME';
+        }
+        return ctx;
+      })
+      .catch(error => {
+        console.warn('Sports Edge matchup resolution failed:', key, error);
+        p._matchupResolutionReason = 'API_REQUEST_FAILED';
+        return null;
+      })
+      .finally(() => pendingRequests.delete(key));
+
+    pendingRequests.set(key, request);
+    return request;
+  }
+
+  function latestSlateRows(){
+    if(!Array.isArray(dailyPicks) || !dailyPicks.length) return [];
+    const dated = dailyPicks
+      .map(p => ({p, date: slateDateIso(p)}))
+      .filter(x => x.date)
+      .sort((a,b) => b.date.localeCompare(a.date));
+    if(!dated.length) return [];
+    const latest = dated[0].date;
+    return dated.filter(x => x.date === latest).map(x => x.p);
+  }
+
+  async function resolveLatestSlate(){
+    const rows = latestSlateRows();
+    if(!rows.length) return;
+    await Promise.all(rows.map(resolvePickContext));
+    try{ renderPicks(); }catch(error){ console.warn('Could not refresh picks after matchup resolution:', error); }
+  }
+
+  openPick = function(index){
+    const p = dailyPicks[index];
+    baseOpenPick(index);
+    if(!p?._officialMatchupContext){
+      resolvePickContext(p).then(ctx => {
+        if(ctx && !$('#modal')?.classList.contains('hidden')) baseOpenPick(index);
+      });
+    }
+  };
+
+  const baseStartingPitcherBlock = startingPitcherBlock;
+  startingPitcherBlock = function(p){
+    const ctx = matchupContextForPick(p);
+    if(ctx?._unused) return baseStartingPitcherBlock(p);
+    if(ctx?.source === 'Official MLB Stats API'){
+      const seriesText = ctx.seriesGameNumber ? `Game ${ctx.seriesGameNumber}${ctx.gamesInSeries ? ` of ${ctx.gamesInSeries}` : ''}` : (ctx.seriesDescription || 'Series context pending');
+      return `<div class="pitcher-card"><div><small>${ctx.away}</small><strong>${ctx.awayPitcher}</strong><span>Road starter</span></div><div><small>${ctx.home}</small><strong>${ctx.homePitcher}</strong><span>Home starter</span></div></div><div class="meta"><span class="pill">Official game ${ctx.gamePk || '-'}</span><span class="pill">${ctx.venue || 'Venue pending'}</span><span class="pill">${seriesText}</span><span class="pill">${ctx.status || 'Status pending'}</span></div>`;
+    }
+    return baseStartingPitcherBlock(p);
+  };
+
+  setTimeout(resolveLatestSlate, 150);
+})();
