@@ -2146,3 +2146,64 @@ function openPick(i){
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
+
+
+// Release 1 repository stabilization: customer-facing encoding guard.
+// Stored pick and trend records are not changed. Only rendered text is cleaned.
+(function sportsEdgeEncodingGuard(){
+  const knownHeadings = [
+    "Today's MLB Picks", "Series Board", "F5 Performance", "Trend Database",
+    "Verified Result", "Matched Trend Evidence", "Starting Pitchers / K Prop History",
+    "Model Breakdown"
+  ];
+
+  function cleanRenderedText(value){
+    let text = String(value ?? '');
+    // Remove common single- and multi-decoded UTF-8 mojibake tokens.
+    text = text
+      .replace(/(?:Ã.|Â.|â..|ð...|�)+/g, '')
+      .replace(/⚾|🎯|📊/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .trimStart();
+
+    // Restore exact customer-facing headings if damaged text precedes them.
+    for (const heading of knownHeadings) {
+      const index = text.indexOf(heading);
+      if (index > 0) text = text.slice(index);
+    }
+    return text;
+  }
+
+  function cleanNode(root){
+    if (!root) return;
+    if (root.nodeType === Node.TEXT_NODE) {
+      const cleaned = cleanRenderedText(root.nodeValue);
+      if (cleaned !== root.nodeValue) root.nodeValue = cleaned;
+      return;
+    }
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(node => {
+      const cleaned = cleanRenderedText(node.nodeValue);
+      if (cleaned !== node.nodeValue) node.nodeValue = cleaned;
+    });
+  }
+
+  function start(){
+    cleanNode(document.body);
+    const observer = new MutationObserver(records => {
+      for (const record of records) {
+        if (record.type === 'characterData') cleanNode(record.target);
+        record.addedNodes.forEach(cleanNode);
+      }
+    });
+    observer.observe(document.body, {subtree:true, childList:true, characterData:true});
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, {once:true});
+  } else {
+    start();
+  }
+})();
