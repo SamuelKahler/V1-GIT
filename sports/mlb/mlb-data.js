@@ -14056,6 +14056,13 @@ function sportsEdgeParseDailyImportText(raw){
   return out;
 }
 const SPORTS_EDGE_DAILY_IMPORT_FALLBACK = `
+07/25
+KC / DET U8 -105
+ARI / WSH O9 -120
+F5 TOR -0.5 +105
+F5 SEA -0.5 +125
+F5 LAD -0.5 +100
+
 07/24
 CHC ML -110; no CLV - LIVE
 CHC / PIT O8 -112
