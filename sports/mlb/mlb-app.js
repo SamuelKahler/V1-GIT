@@ -999,7 +999,31 @@ function trendRowQualifiesForPick(row, p){
   const match = trendMatchScore(row, p);
   return Boolean(match && match.score >= 50);
 }
+function computedLedgerEvidenceForPick(p, limit=8){
+  const engine = window.SportsEdgeIntelligence;
+  if(!engine || typeof engine.matchPick !== 'function') return [];
+  return engine.matchPick(p, limit).map(e=>({
+    team:e.team || targetTeamForPick(p) || 'TEAM',
+    style:e.market === 'MONEYLINE' ? 'ML' : e.market === 'SPREAD' ? 'SPRD' : e.market === 'TOTAL' ? (/\bU\s*\d|UNDER/i.test(String(p.pick||'')) ? 'UNDER' : 'OVER') : e.market,
+    situation:e.matchTier,
+    date:e.supportingObservations[0]?.date || '-',
+    opponent:e.supportingObservations[0]?.opponent || '-',
+    notes:`Calculated automatically from ${e.decisions} permanently graded ledger decisions. ROI ${e.roi == null ? 'pending' : e.roi.toFixed(1)+'%'}. Confidence ${e.confidence}.`,
+    hitRate:e.hitRate == null ? null : e.hitRate.toFixed(1)+'%',
+    duration:`${e.decisions} decisions`,
+    winEvidence:e.supportingObservations.filter(x=>x.result==='WIN').map(x=>`${x.date} • ${x.team} • ${x.market} • ${x.odds ?? 'odds n/a'}`),
+    lossEvidence:e.supportingObservations.filter(x=>x.result==='LOSS').map(x=>`${x.date} • ${x.team} • ${x.market} • ${x.odds ?? 'odds n/a'}`),
+    normalizedStyle:e.market,
+    hitRateNumber:e.hitRate,
+    matchScore:e.matchScore,
+    matchReasons:e.matchReasons,
+    matchTier:e.matchTier,
+    evidenceId:e.evidenceId,
+    computedFromLedger:true
+  }));
+}
 function matchedTrendEvidenceForPick(p, limit=8){
+  const computed = computedLedgerEvidenceForPick(p, limit);
   const rows = trendRows.map(r=>{
     const match = trendMatchScore(r, p);
     return match ? {
@@ -1013,7 +1037,7 @@ function matchedTrendEvidenceForPick(p, limit=8){
     } : null;
   }).filter(Boolean).filter(r=>r.matchScore >= 50);
 
-  return rows.sort((a,b)=>{
+  const imported = rows.sort((a,b)=>{
     if(a.matchScore !== b.matchScore) return b.matchScore - a.matchScore;
     const aSample = trendEvidenceRecord(a).total;
     const bSample = trendEvidenceRecord(b).total;
@@ -1022,6 +1046,11 @@ function matchedTrendEvidenceForPick(p, limit=8){
     const bp = b.hitRateNumber ?? -1;
     if(ap !== bp) return bp - ap;
     return trendDateSortValue(b)-trendDateSortValue(a);
+  });
+  return [...computed, ...imported].sort((a,b)=>{
+    if(Boolean(a.computedFromLedger)!==Boolean(b.computedFromLedger)) return a.computedFromLedger ? -1 : 1;
+    if(a.matchScore !== b.matchScore) return b.matchScore-a.matchScore;
+    return trendEvidenceRecord(b).total-trendEvidenceRecord(a).total;
   }).slice(0,limit);
 }
 function trendEvidenceTitle(row){

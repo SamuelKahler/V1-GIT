@@ -1,0 +1,100 @@
+[Sports Edge Core] Master ledger initialized {
+  preservedRows: 1240,
+  masterRecords: 1168,
+  duplicateGroups: 32,
+  conflictGroups: 38,
+  missingDate: 0,
+  missingTeam: 15,
+  missingOpponent: 1069,
+  unknownMarket: 199,
+  statusCounts: { PENDING: 682, LIVE: 139, WIN: 141, LOSS: 130, UNVERIFIED: 148 }
+}
+[Sports Edge Intelligence] Evidence index initialized {
+  version: '4.0.0',
+  generatedAt: '2026-07-26T18:16:46.272Z',
+  sourcePicks: 1168,
+  observations: 1168,
+  graded: 239,
+  countedInHitRates: 239,
+  pending: 929,
+  environments: 445,
+  untraceable: 0,
+  missingGameId: 1168,
+  missingOpponent: 998,
+  unknownMarket: 38
+}
+{
+  "core": {
+    "preservedRows": 1240,
+    "masterRecords": 1168,
+    "duplicateGroups": 32,
+    "conflictGroups": 38,
+    "missingDate": 0,
+    "missingTeam": 15,
+    "missingOpponent": 1069,
+    "unknownMarket": 199,
+    "statusCounts": {
+      "PENDING": 682,
+      "LIVE": 139,
+      "WIN": 141,
+      "LOSS": 130,
+      "UNVERIFIED": 148
+    }
+  },
+  "intelligence": {
+    "version": "4.0.0",
+    "generatedAt": "2026-07-26T18:16:46.272Z",
+    "sourcePicks": 1168,
+    "observations": 1168,
+    "graded": 239,
+    "countedInHitRates": 239,
+    "pending": 929,
+    "environments": 445,
+    "untraceable": 0,
+    "missingGameId": 1168,
+    "missingOpponent": 998,
+    "unknownMarket": 38
+  },
+  "latest": [
+    {
+      "date": "2026-07-24",
+      "pick": "F5 STL -0.5",
+      "status": "PENDING"
+    },
+    {
+      "date": "2026-07-24",
+      "pick": "NYY / PHI O7.5",
+      "status": "PENDING"
+    },
+    {
+      "date": "2026-07-24",
+      "pick": "WSH ML",
+      "status": "PENDING"
+    },
+    {
+      "date": "2026-07-25",
+      "pick": "ARI / WSH O9",
+      "status": "PENDING"
+    },
+    {
+      "date": "2026-07-25",
+      "pick": "F5 LAD -0.5",
+      "status": "PENDING"
+    },
+    {
+      "date": "2026-07-25",
+      "pick": "F5 SEA -0.5",
+      "status": "PENDING"
+    },
+    {
+      "date": "2026-07-25",
+      "pick": "F5 TOR -0.5",
+      "status": "PENDING"
+    },
+    {
+      "date": "2026-07-25",
+      "pick": "KC / DET U8",
+      "status": "PENDING"
+    }
+  ]
+}
