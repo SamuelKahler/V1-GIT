@@ -1198,15 +1198,18 @@ function f5AllBets(){ const base=Array.isArray(window.f5PerformanceBets) ? windo
 function f5Teams(){ return Array.isArray(window.mlbTeams) ? window.mlbTeams : (typeof mlbTeams !== 'undefined' ? mlbTeams : []); }
 function f5Stats(rows){
   const total = rows.length;
-  const wins = rows.filter(r=>r.outcome==='win' || Number(r.result)>0).length;
-  const losses = rows.filter(r=>r.outcome==='loss' || Number(r.result)<0).length;
+  const decisions = rows.filter(r=>r.outcome==='win' || r.outcome==='loss' || Number(r.result)!==0);
+  const wins = decisions.filter(r=>r.outcome==='win' || Number(r.result)>0).length;
+  const losses = decisions.filter(r=>r.outcome==='loss' || Number(r.result)<0).length;
+  const pushes = rows.filter(r=>r.outcome==='push').length;
   const profit = rows.reduce((s,r)=>s+Number(r.result||0),0);
-  const risk = wins + losses;
-  const winRate = risk ? (wins / risk) * 100 : 0;
+  const risk = decisions.reduce((s,r)=>s+(Number(String(r.units||1).replace(/[^0-9.]/g,''))||1),0);
+  const winRate = wins + losses ? (wins / (wins + losses)) * 100 : 0;
   const roi = risk ? (profit / risk) * 100 : 0;
-  const avgScore = total ? rows.reduce((s,r)=>s+Number(r.score||0),0) / total : 0;
+  const scores = rows.map(r=>Number(r.score)).filter(Number.isFinite);
+  const avgScore = scores.length ? scores.reduce((s,v)=>s+v,0) / scores.length : 0;
   const avgOdds = total ? rows.reduce((s,r)=>s+(Number.parseInt(String(r.odds||'').replace(/[^+\-\d]/g,''),10)||0),0) / total : 0;
-  return {total,wins,losses,profit,risk,winRate,roi,avgScore,avgOdds};
+  return {total,wins,losses,pushes,profit,risk,winRate,roi,avgScore,avgOdds};
 }
 function f5MetricClass(value){ return Number(value) >= 0 ? 'metric-pop positive-metric' : 'metric-pop negative-metric'; }
 function f5FormatPct(value){ return `${Number(value||0).toFixed(2)}%`; }
@@ -1244,7 +1247,7 @@ function renderF5SelectedTeam(){
   sub.textContent = rows.length ? `${rows.length} tracked F5 bets for ${team.name}.` : `${team.name} has no F5 bets in the database yet.`;
   statsEl.innerHTML = `<div><strong>${rows.length}</strong><small>Team Bets</small></div><div><strong>${s.wins}-${s.losses}</strong><small>Record</small></div><div><strong class="metric-pop positive-metric">${rows.length?f5FormatPct(s.winRate):'—'}</strong><small>Win %</small></div><div><strong class="${f5MetricClass(s.roi)}">${rows.length?f5FormatPct(s.roi):'—'}</strong><small>ROI</small></div><div><strong class="${f5MetricClass(s.profit)}">${rows.length?f5FormatUnits(s.profit):'—'}</strong><small>Profit</small></div><div><strong>${rows.length?s.avgScore.toFixed(2):'—'}</strong><small>Avg AI Score</small></div>`;
   if(!rows.length){ table.innerHTML = '<p class="subtle">No F5 bets for this team yet. This team card is ready for future updates.</p>'; return; }
-  table.innerHTML = `<div class="f5-table-wrap"><table class="f5-bet-table"><thead><tr><th>Date</th><th>Bet</th><th>Odds</th><th>Result</th><th>W/L</th><th>AI Score</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.date}</td><td><strong>${r.bet}</strong></td><td><strong class="f5-odds">${r.odds}</strong></td><td class="${Number(r.result)>=0?'status-WIN':'status-LOSS'}">${f5FormatUnits(r.result)}</td><td>${r.outcome==='win'?'✅':'❌'}</td><td><strong>${Number(r.score).toFixed(2)}</strong></td></tr>`).join('')}</tbody></table></div>`;
+  table.innerHTML = `<div class="f5-table-wrap"><table class="f5-bet-table"><thead><tr><th>Date</th><th>Bet</th><th>Odds</th><th>Result</th><th>W/L</th><th>AI Score</th></tr></thead><tbody>${rows.map(r=>{const outcome=String(r.outcome||'').toLowerCase();const icon=outcome==='win'?'✅':outcome==='loss'?'❌':'➖';const status=outcome==='loss'?'status-LOSS':'status-WIN';const score=Number(r.score);return `<tr><td>${r.date}</td><td><strong>${r.bet}</strong></td><td><strong class="f5-odds">${r.odds}</strong></td><td class="${status}">${f5FormatUnits(r.result)}</td><td>${icon}</td><td><strong>${Number.isFinite(score)?score.toFixed(2):'—'}</strong></td></tr>`;}).join('')}</tbody></table></div>`;
 }
 function renderF5PerformanceLab(){
   if(!$('#f5OverallSummary')) return;
