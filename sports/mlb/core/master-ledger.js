@@ -91,6 +91,16 @@
     return null;
   }
 
+  function extractTeams(value) {
+    const raw = cleanText(value).toUpperCase().replace(/\./g,'').replace(/[^A-Z0-9' +\-/]/g,' ');
+    const found = [];
+    for (const key of Object.keys(TEAM_ALIASES).sort((a,b)=>b.length-a.length)) {
+      const re = new RegExp(`(^|[^A-Z])${key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}([^A-Z]|$)`);
+      if (re.test(raw)) found.push(TEAM_ALIASES[key]);
+    }
+    return [...new Set(found)];
+  }
+
   function normalizeMarket(rawPick, type) {
     const s = `${cleanText(type)} ${cleanText(rawPick)}`.toUpperCase();
     if (/SERIES/.test(s)) return 'SERIES';
@@ -146,8 +156,11 @@
     const row = sourceRow.row || {};
     const rawPick = cleanText(row.pick || row.bet || row.selection || row.edge || row.description);
     const rawDate = row.date || row.slate || row.gameDate;
-    const team = normalizeTeam(row.team || row.selectedTeam || rawPick);
-    const opponent = normalizeTeam(row.opponent || row.opp || row.matchup);
+    const rawTeams = extractTeams(rawPick);
+    const explicitTeam = normalizeTeam(row.team || row.selectedTeam);
+    const team = explicitTeam || rawTeams[0] || normalizeTeam(rawPick);
+    const explicitOpponent = normalizeTeam(row.opponent || row.opp || row.matchup);
+    const opponent = explicitOpponent || rawTeams.find(value => value !== team) || null;
     const market = normalizeMarket(rawPick, row.type || row.category);
     const period = normalizePeriod(rawPick, row.type || row.category);
     const status = normalizeStatus(row.status || row.result);
