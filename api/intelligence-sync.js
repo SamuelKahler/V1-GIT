@@ -176,13 +176,15 @@ module.exports = async function handler(req, res) {
     const feeds = new Map();
     for (const gamePk of uniqueGamePks) feeds.set(gamePk, feedSummary(await getJson(`${FEED_URL}/${gamePk}/feed/live`)));
     const rows = resolved.map(({pick,resolution}) => {
+      const sourceStatus = upper(pick.status || pick.result);
+      if (sourceStatus === 'VOID' || sourceStatus === 'DISREGARD') return { pickId:pick.id || pick.coreId || pick.preservationId, date:pick.date || pick.normalizedDate, selectedTeam:pick.selectedTeam || null, opponent:pick.opponent || null, market:market(pick), period:period(pick), line:line(pick), odds:finite(pick.odds), gamePk:resolution.game?.gamePk || null, result:'VOID', gradeReason:'SOURCE_MARKED_VOID', resolutionConfidence:resolution.game ? resolution.confidence : 100, environment:null, sourceRecord:pick };
       if (!resolution.game) return { pickId:pick.id || pick.coreId || pick.preservationId, date:pick.date || pick.normalizedDate, selectedTeam:pick.selectedTeam || null, opponent:pick.opponent || null, market:market(pick), period:period(pick), line:line(pick), odds:finite(pick.odds), gamePk:null, result:'UNVERIFIED', gradeReason:resolution.reason, resolutionConfidence:0, environment:null, sourceRecord:pick };
       const game = feeds.get(resolution.game.gamePk); const graded = grade(pick, game); const env = environment(pick,resolution.game,game);
       return { pickId:pick.id || pick.coreId || pick.preservationId, date:pick.date || pick.normalizedDate, selectedTeam:env.team, opponent:env.opponent, market:env.market, period:env.period, line:env.line, odds:env.odds, gamePk:resolution.game.gamePk, result:graded.result, gradeReason:graded.reason, resolutionConfidence:resolution.confidence, environment:env, sourceRecord:pick };
     });
     const persistence = req.query.persist === '1' ? await persist(rows) : { enabled:false, inserted:0, reason:'PREVIEW_MODE' };
     const counts = rows.reduce((out,row)=>{ out[row.result]=(out[row.result]||0)+1; return out; },{});
-    return res.status(200).json({ version:'6.0.0', generatedAt:new Date().toISOString(), total:rows.length, counts, unresolved:rows.filter(r=>r.result==='UNVERIFIED').length, persistence, rows });
+    return res.status(200).json({ version:'7.0.0', generatedAt:new Date().toISOString(), total:rows.length, counts, unresolved:rows.filter(r=>r.result==='UNVERIFIED').length, persistence, rows });
   } catch (error) {
     return res.status(500).json({ error:'INTELLIGENCE_SYNC_FAILED', message:error.message });
   }
