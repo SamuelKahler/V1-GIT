@@ -3,12 +3,13 @@ const FEED_URL = 'https://statsapi.mlb.com/api/v1.1/game';
 
 const TEAM = Object.freeze({
   ARI:'ARI',ATL:'ATL',BAL:'BAL',BOS:'BOS',CHC:'CHC',CWS:'CWS',CIN:'CIN',CLE:'CLE',COL:'COL',DET:'DET',HOU:'HOU',KC:'KC',KCR:'KC',LAA:'LAA',LAD:'LAD',MIA:'MIA',MIL:'MIL',MIN:'MIN',NYM:'NYM',NYY:'NYY',ATH:'ATH',OAK:'ATH',PHI:'PHI',PIT:'PIT',SD:'SD',SDP:'SD',SEA:'SEA',SF:'SF',SFG:'SF',STL:'STL',TB:'TB',TBR:'TB',TEX:'TEX',TOR:'TOR',WSH:'WSH',WAS:'WSH',
-  'A\'S':'ATH',ATHLETICS:'ATH',ROYALS:'KC',DODGERS:'LAD',ANGELS:'LAA',MARINERS:'SEA',TIGERS:'DET',NATIONALS:'WSH',BLUEJAYS:'TOR','BLUE JAYS':'TOR',YANKEES:'NYY',METS:'NYM',CUBS:'CHC',WHITESOX:'CWS','WHITE SOX':'CWS',REDS:'CIN',GUARDIANS:'CLE',ROCKIES:'COL',ASTROS:'HOU',MARLINS:'MIA',BREWERS:'MIL',TWINS:'MIN',PHILLIES:'PHI',PIRATES:'PIT',PADRES:'SD',GIANTS:'SF',CARDINALS:'STL',RAYS:'TB',RANGERS:'TEX',BRAVES:'ATL',ORIOLES:'BAL',REDSOX:'BOS','RED SOX':'BOS',DIAMONDBACKS:'ARI'
+  'ARIZONA DIAMONDBACKS':'ARI',DIAMONDBACKS:'ARI','ATLANTA BRAVES':'ATL',BRAVES:'ATL','BALTIMORE ORIOLES':'BAL',ORIOLES:'BAL','BOSTON RED SOX':'BOS','RED SOX':'BOS','CHICAGO CUBS':'CHC',CUBS:'CHC','CHICAGO WHITE SOX':'CWS','WHITE SOX':'CWS','CINCINNATI REDS':'CIN',REDS:'CIN','CLEVELAND GUARDIANS':'CLE',GUARDIANS:'CLE','COLORADO ROCKIES':'COL',ROCKIES:'COL','DETROIT TIGERS':'DET',TIGERS:'DET','HOUSTON ASTROS':'HOU',ASTROS:'HOU','KANSAS CITY ROYALS':'KC',ROYALS:'KC','LOS ANGELES ANGELS':'LAA',ANGELS:'LAA','LOS ANGELES DODGERS':'LAD',DODGERS:'LAD','MIAMI MARLINS':'MIA',MARLINS:'MIA','MILWAUKEE BREWERS':'MIL',BREWERS:'MIL','MINNESOTA TWINS':'MIN',TWINS:'MIN','NEW YORK METS':'NYM',METS:'NYM','NEW YORK YANKEES':'NYY',YANKEES:'NYY','OAKLAND ATHLETICS':'ATH',ATHLETICS:'ATH','A\'S':'ATH','PHILADELPHIA PHILLIES':'PHI',PHILLIES:'PHI','PITTSBURGH PIRATES':'PIT',PIRATES:'PIT','SAN DIEGO PADRES':'SD',PADRES:'SD','SEATTLE MARINERS':'SEA',MARINERS:'SEA','SAN FRANCISCO GIANTS':'SF',GIANTS:'SF','ST LOUIS CARDINALS':'STL','ST. LOUIS CARDINALS':'STL',CARDINALS:'STL','TAMPA BAY RAYS':'TB',RAYS:'TB','TEXAS RANGERS':'TEX',RANGERS:'TEX','TORONTO BLUE JAYS':'TOR','BLUE JAYS':'TOR','WASHINGTON NATIONALS':'WSH',NATIONALS:'WSH'
 });
+const TEAM_ID = Object.freeze({109:'ARI',144:'ATL',110:'BAL',111:'BOS',112:'CHC',145:'CWS',113:'CIN',114:'CLE',115:'COL',116:'DET',117:'HOU',118:'KC',108:'LAA',119:'LAD',146:'MIA',158:'MIL',142:'MIN',121:'NYM',147:'NYY',133:'ATH',143:'PHI',134:'PIT',135:'SD',136:'SEA',137:'SF',138:'STL',139:'TB',140:'TEX',141:'TOR',120:'WSH'});
 
 const clean = value => String(value ?? '').trim();
 const upper = value => clean(value).toUpperCase().replace(/\s+/g,' ');
-const normalizeTeam = value => TEAM[upper(value).replace(/\./g,'')] || upper(value).replace(/\./g,'');
+const normalizeTeam = value => { const raw=upper(value).replace(/\./g,''); if(!raw) return null; if(TEAM[raw]) return TEAM[raw]; for(const key of Object.keys(TEAM).sort((a,b)=>b.length-a.length)){ if(raw.includes(key.replace(/\./g,''))) return TEAM[key]; } return raw; };
 const finite = value => {
   if (value === null || value === undefined || value === '') return null;
   const number = Number(value);
@@ -33,7 +34,7 @@ async function getJson(url, attempts = 3) {
     const timer = setTimeout(() => controller.abort(), 8000);
     try {
       const response = await fetch(url, {
-        headers:{ Accept:'application/json', 'User-Agent':'Sports-Edge/8.0' },
+        headers:{ Accept:'application/json', 'User-Agent':'Sports-Edge/11.0' },
         signal:controller.signal
       });
       if (!response.ok) throw new Error(`Upstream MLB request failed (${response.status})`);
@@ -66,8 +67,8 @@ function scheduleGames(payload) {
     gamePk: game.gamePk,
     date: game.officialDate,
     status: game?.status?.detailedState || game?.status?.abstractGameState,
-    away: normalizeTeam(game?.teams?.away?.team?.abbreviation || game?.teams?.away?.team?.name),
-    home: normalizeTeam(game?.teams?.home?.team?.abbreviation || game?.teams?.home?.team?.name),
+    away: TEAM_ID[game?.teams?.away?.team?.id] || normalizeTeam(game?.teams?.away?.team?.abbreviation || game?.teams?.away?.team?.name),
+    home: TEAM_ID[game?.teams?.home?.team?.id] || normalizeTeam(game?.teams?.home?.team?.abbreviation || game?.teams?.home?.team?.name),
     awayName: game?.teams?.away?.team?.name || null,
     homeName: game?.teams?.home?.team?.name || null,
     venue: game?.venue?.name || null,
@@ -101,8 +102,8 @@ function feedSummary(payload) {
   const ls = ld.linescore || {};
   const innings = Array.isArray(ls.innings) ? ls.innings : [];
   const sum = (side, count) => innings.filter(row=>Number(row.num)<=count).reduce((total,row)=>total + (finite(row?.[side]?.runs) || 0),0);
-  const away = normalizeTeam(gd?.teams?.away?.abbreviation || gd?.teams?.away?.name);
-  const home = normalizeTeam(gd?.teams?.home?.abbreviation || gd?.teams?.home?.name);
+  const away = TEAM_ID[gd?.teams?.away?.id] || normalizeTeam(gd?.teams?.away?.abbreviation || gd?.teams?.away?.name);
+  const home = TEAM_ID[gd?.teams?.home?.id] || normalizeTeam(gd?.teams?.home?.abbreviation || gd?.teams?.home?.name);
   const awayRuns = finite(ls?.teams?.away?.runs);
   const homeRuns = finite(ls?.teams?.home?.runs);
   const f5Available = [1,2,3,4,5].every(num=>innings.some(row=>Number(row.num)===num && row?.away?.runs != null && row?.home?.runs != null));
@@ -180,58 +181,50 @@ function environment(pick, schedule, game) {
   return { team:selected || null, opponent, role, market:market(pick), period:period(pick), line:line(pick), odds, oddsBucket, venue:game.venue || schedule.venue, dayNight:game.dayNight || schedule.dayNight, seriesGameNumber:schedule.seriesGameNumber, gamesInSeries:schedule.gamesInSeries, starters:game.starters, weather:game.weather };
 }
 
-async function persist(rows) {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return { enabled:false, inserted:0, reason:'SUPABASE_ENV_NOT_CONFIGURED' };
-  const response = await fetch(`${url}/rest/v1/pick_observations?on_conflict=pick_id`, {
-    method:'POST', headers:{ apikey:key, Authorization:`Bearer ${key}`, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates,return=minimal' },
-    body:JSON.stringify(rows.map(row=>({ pick_id:row.pickId, game_pk:row.gamePk, pick_date:row.date, selected_team:row.selectedTeam, opponent:row.opponent, market:row.market, period:row.period, line:row.line, odds:row.odds, result:row.result, grade_reason:row.gradeReason, resolution_confidence:row.resolutionConfidence, environment:row.environment, source_record:row.sourceRecord })))
-  });
-  if (!response.ok) throw new Error(`Supabase persistence failed (${response.status}): ${await response.text()}`);
-  return { enabled:true, inserted:rows.length };
+function authoritativeResult(pick){
+  const candidate=upper(pick.result||pick.status);
+  return ['WIN','LOSS','PUSH','VOID'].includes(candidate)?candidate:null;
 }
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error:'METHOD_NOT_ALLOWED' });
-  try {
-    const picks = Array.isArray(req.body?.picks) ? req.body.picks : [];
-    if (!picks.length) return res.status(400).json({ error:'NO_PICKS' });
-    if (picks.length > 2500) return res.status(413).json({ error:'TOO_MANY_PICKS', limit:2500 });
-    const dates = [...new Set(picks.map(p=>p.date || p.normalizedDate).filter(Boolean))];
-    const scheduleRows = await mapWithConcurrency(dates, 4, async date => {
-      const payload = await getJson(`${SCHEDULE_URL}?sportId=1&date=${encodeURIComponent(date)}&hydrate=team,linescore,probablePitcher,venue`);
-      return [date, scheduleGames(payload)];
+async function persist(rows) {
+  const url=process.env.SUPABASE_URL; const key=process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if(!url||!key) return {enabled:false,inserted:0,reason:'SUPABASE_ENV_NOT_CONFIGURED'};
+  const body=rows.map(row=>({pick_id:row.pickId,game_pk:row.gamePk,pick_date:row.date,selected_team:row.selectedTeam,opponent:row.opponent,market:row.market,period:row.period,line:row.line,odds:row.odds,result:row.result,grade_reason:row.gradeReason,resolution_confidence:row.resolutionConfidence,environment:row.environment,source_record:row.sourceRecord}));
+  const response=await fetch(`${url}/rest/v1/pick_observations?on_conflict=pick_id`,{method:'POST',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(body)});
+  if(!response.ok) throw new Error(`Supabase persistence failed (${response.status}): ${await response.text()}`);
+  return {enabled:true,inserted:rows.length};
+}
+
+export default async function handler(req,res){
+  if(req.method!=='POST') return res.status(405).json({error:'METHOD_NOT_ALLOWED'});
+  try{
+    const picks=Array.isArray(req.body?.picks)?req.body.picks:[];
+    if(!picks.length) return res.status(400).json({error:'NO_PICKS'});
+    if(picks.length>100) return res.status(413).json({error:'BATCH_TOO_LARGE',limit:100});
+    const dates=[...new Set(picks.map(p=>p.date||p.normalizedDate).filter(Boolean))];
+    const scheduleRows=await mapWithConcurrency(dates,4,async date=>{
+      try{return [date,scheduleGames(await getJson(`${SCHEDULE_URL}?sportId=1&date=${encodeURIComponent(date)}&hydrate=team,linescore,probablePitcher,venue`))];}
+      catch(error){return [date,{error:error.message,games:[]}];}
     });
-    const schedules = new Map(scheduleRows);
-    const resolved = picks.map(pick => ({ pick, resolution:resolveGame(pick, schedules.get(pick.date || pick.normalizedDate) || []) }));
-    const uniqueGamePks = [...new Set(resolved.map(row=>row.resolution.game?.gamePk).filter(Boolean))];
-    const feedRows = await mapWithConcurrency(uniqueGamePks, 8, async gamePk => [
-      gamePk,
-      feedSummary(await getJson(`${FEED_URL}/${gamePk}/feed/live`))
-    ]);
-    const feeds = new Map(feedRows);
-    const rows = resolved.map(({pick,resolution}) => {
-      const sourceStatus = upper(pick.status || pick.result);
-      if (sourceStatus === 'VOID' || sourceStatus === 'DISREGARD') return { pickId:pick.id || pick.coreId || pick.preservationId, date:pick.date || pick.normalizedDate, selectedTeam:pick.selectedTeam || null, opponent:pick.opponent || null, market:market(pick), period:period(pick), line:line(pick), odds:finite(pick.odds), gamePk:resolution.game?.gamePk || null, result:'VOID', gradeReason:'SOURCE_MARKED_VOID', resolutionConfidence:resolution.game ? resolution.confidence : 100, environment:null, sourceRecord:pick };
-      if (!resolution.game) return { pickId:pick.id || pick.coreId || pick.preservationId, date:pick.date || pick.normalizedDate, selectedTeam:pick.selectedTeam || null, opponent:pick.opponent || null, market:market(pick), period:period(pick), line:line(pick), odds:finite(pick.odds), gamePk:null, result:'UNVERIFIED', gradeReason:resolution.reason, resolutionConfidence:0, environment:null, sourceRecord:pick };
-      const game = feeds.get(resolution.game.gamePk); const graded = grade(pick, game); const env = environment(pick,resolution.game,game);
-      return { pickId:pick.id || pick.coreId || pick.preservationId, date:pick.date || pick.normalizedDate, selectedTeam:env.team, opponent:env.opponent, market:env.market, period:env.period, line:env.line, odds:env.odds, gamePk:resolution.game.gamePk, result:graded.result, gradeReason:graded.reason, resolutionConfidence:resolution.confidence, environment:env, sourceRecord:pick };
+    const schedules=new Map(scheduleRows);
+    const resolved=picks.map(pick=>{
+      const entry=schedules.get(pick.date||pick.normalizedDate); const games=Array.isArray(entry)?entry:(entry?.games||[]);
+      return {pick,resolution:resolveGame(pick,games),scheduleError:entry?.error||null};
     });
-    const persistence = req.query.persist === '1' ? await persist(rows) : { enabled:false, inserted:0, reason:'PREVIEW_MODE' };
-    const counts = rows.reduce((out,row)=>{ out[row.result]=(out[row.result]||0)+1; return out; },{});
-    return res.status(200).json({
-      version:'8.0.0',
-      generatedAt:new Date().toISOString(),
-      total:rows.length,
-      counts,
-      unresolved:rows.filter(r=>r.result==='UNVERIFIED').length,
-      pending:rows.filter(r=>r.result==='PENDING').length,
-      diagnostics:{ dates:dates.length, gamesResolved:uniqueGamePks.length, source:'Official MLB Stats API', paidCreditsRequired:false },
-      persistence,
-      rows
+    const gamePks=[...new Set(resolved.map(x=>x.resolution.game?.gamePk).filter(Boolean))];
+    const feedRows=await mapWithConcurrency(gamePks,8,async gamePk=>{try{return [gamePk,feedSummary(await getJson(`${FEED_URL}/${gamePk}/feed/live`))];}catch(error){return [gamePk,{error:error.message}];}});
+    const feeds=new Map(feedRows);
+    const rows=resolved.map(({pick,resolution,scheduleError})=>{
+      const preserved=authoritativeResult(pick); const pickId=pick.id||pick.sourceId||pick.coreId||pick.preservationId;
+      const base={pickId,date:pick.date||pick.normalizedDate,selectedTeam:pick.selectedTeam||null,opponent:pick.opponent||null,market:market(pick),period:period(pick),line:line(pick),odds:finite(pick.odds),gamePk:resolution.game?.gamePk||pick.gamePk||null,sourceRecord:pick};
+      if(!resolution.game){return {...base,result:preserved||'UNVERIFIED',gradeReason:preserved?'PRESERVED_EXISTING_GRADE_METADATA_UNRESOLVED':(scheduleError?`SCHEDULE_API_FAILED: ${scheduleError}`:resolution.reason),metadataStatus:'RETRY_REQUIRED',resolutionConfidence:0,environment:null};}
+      const game=feeds.get(resolution.game.gamePk);
+      if(!game||game.error){return {...base,result:preserved||'UNVERIFIED',gradeReason:preserved?'PRESERVED_EXISTING_GRADE_FEED_UNRESOLVED':`GAME_FEED_FAILED: ${game?.error||'UNKNOWN'}`,metadataStatus:'RETRY_REQUIRED',resolutionConfidence:resolution.confidence,environment:null};}
+      const env=environment(pick,resolution.game,game); const computed=grade(pick,game);
+      return {...base,selectedTeam:env.team,opponent:env.opponent,gamePk:resolution.game.gamePk,result:preserved||computed.result,gradeReason:preserved?'PRESERVED_EXISTING_GRADE':computed.reason,metadataStatus:'RESOLVED',resolutionConfidence:resolution.confidence,environment:env};
     });
-  } catch (error) {
-    return res.status(500).json({ error:'INTELLIGENCE_SYNC_FAILED', message:error.message });
-  }
-};
+    const persistence=req.query.persist==='1'?await persist(rows):{enabled:false,inserted:0,reason:'PREVIEW_MODE'};
+    const counts={}; rows.forEach(r=>counts[r.result]=(counts[r.result]||0)+1);
+    return res.status(200).json({version:'11.0.0',generatedAt:new Date().toISOString(),total:rows.length,counts,unresolved:rows.filter(r=>r.result==='UNVERIFIED').length,pending:rows.filter(r=>r.result==='PENDING').length,diagnostics:{dates:dates.length,gamesResolved:gamePks.length,source:'Official MLB Stats API',paidCreditsRequired:false},persistence,rows});
+  }catch(error){return res.status(500).json({error:'INTELLIGENCE_SYNC_FAILED',message:error.message});}
+}
