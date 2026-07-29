@@ -1,7 +1,7 @@
 (function(){
   'use strict';
   const MIN_DATE='2026-07-26';
-  const CACHE_KEY='sports-edge-recent-grades-v7';
+  const CACHE_KEY='sports-edge-recent-grades-v8';
   const clean=v=>String(v??'').toUpperCase().replace(/[^A-Z0-9.+-]/g,'');
   const iso=v=>{
     const d=new Date(v); if(Number.isFinite(d.getTime())) return d.toISOString().slice(0,10);
@@ -73,6 +73,12 @@
     apply(data);
     return {generatedAt:data.generatedAt,total:data.total,counts:data.counts,recent:window.SportsEdgeRecentGrades.length,f5:window.SportsEdgeRecentF5Results.length,persistence:data.persistence};
   }
+  async function syncAll(){
+    if(!window.SportsEdgePipeline) throw new Error('SportsEdgePipeline unavailable');
+    const data=await window.SportsEdgePipeline.syncAll(true);
+    apply(data);
+    return {generatedAt:data.generatedAt,total:data.total,counts:data.counts,recent:window.SportsEdgeRecentGrades.length,f5:window.SportsEdgeRecentF5Results.length,persistence:data.persistence,diagnostics:data.diagnostics};
+  }
   async function preview(){
     if(!window.SportsEdgePipeline) throw new Error('SportsEdgePipeline unavailable');
     const data=await window.SportsEdgePipeline.recentSync(MIN_DATE,false);
@@ -80,10 +86,10 @@
   }
   function cached(){ try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null');}catch{return null;} }
   const prior=cached(); if(prior?.rows) apply({rows:prior.rows,generatedAt:prior.generatedAt});
-  window.SportsEdgeRecent=Object.freeze({version:'7.0.0',sync,preview,cached,apply,grades:()=>window.SportsEdgeRecentGrades||[],f5:()=>window.SportsEdgeRecentF5Results||[]});
+  window.SportsEdgeRecent=Object.freeze({version:'8.0.0',sync,syncAll,preview,cached,apply,grades:()=>window.SportsEdgeRecentGrades||[],f5:()=>window.SportsEdgeRecentF5Results||[],unresolved:()=> (window.SportsEdgeRecentGrades||[]).filter(row=>['UNVERIFIED','PENDING'].includes(row.result))});
   const start=()=>setTimeout(()=>sync().catch(async e=>{
-    console.warn('[Sports Edge V7] persistent sync failed; trying preview:',e.message);
-    try{ await preview(); }catch(err){ console.warn('[Sports Edge V7] automatic grading deferred:',err.message); }
+    console.warn('[Sports Edge V8] persistent sync failed; trying preview:',e.message);
+    try{ await preview(); }catch(err){ console.warn('[Sports Edge V8] automatic grading deferred:',err.message); }
   }),1800);
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
