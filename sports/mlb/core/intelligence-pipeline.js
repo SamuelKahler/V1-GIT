@@ -1,202 +1,69 @@
 (function(){
   'use strict';
+  const CACHE_KEY='sports-edge-intelligence-sync-v11';
+  const MAX_PICKS_PER_REQUEST=90;
+  const CONCURRENCY=4;
+  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
-  const CACHE_KEY = 'sports-edge-intelligence-v8';
-  const REQUEST_TIMEOUT_MS = 25000;
-  const RETRIES = 2;
-
-  const iso = value => {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isFinite(date.getTime())) return date.toISOString().slice(0, 10);
-    const match = String(value).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-    return match ? `${match[3]}-${match[1].padStart(2,'0')}-${match[2].padStart(2,'0')}` : '';
-  };
-
-  function ledgerPicks(){
-    return window.SportsEdgeCore && Array.isArray(window.SportsEdgeCore.picks)
-      ? window.SportsEdgeCore.picks
-      : [];
+  function payload(options={}){
+    if(!window.SportsEdgeDatabase) return [];
+    return window.SportsEdgeDatabase.payload(options).filter(row=>row.date);
   }
-
-  function payload(options = {}){
-    const from = options.from || '';
-    const to = options.to || '';
-    return ledgerPicks().map(row => ({
-      id: row.id || row.coreId || row.preservationId,
-      date: iso(row.date || row.normalizedDate || row.slate),
-      rawPick: row.rawPick || row.pick || row.selection,
-      selectedTeam: row.selectedTeam,
-      opponent: row.opponent,
-      market: row.market,
-      period: row.period,
-      line: row.line,
-      odds: row.odds,
-      units: row.units,
-      status: row.status || row.result,
-      gamePk: row.gamePk,
-      sourceRecords: row.sourceRecords
-    })).filter(row => row.date && (!from || row.date >= from) && (!to || row.date <= to));
-  }
-
   function groupByDate(rows){
-    const groups = new Map();
-    rows.forEach(row => {
-      if (!groups.has(row.date)) groups.set(row.date, []);
-      groups.get(row.date).push(row);
+    const groups=new Map();
+    rows.forEach(row=>{if(!groups.has(row.date)) groups.set(row.date,[]);groups.get(row.date).push(row);});
+    const batches=[];
+    [...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,dateRows])=>{
+      for(let i=0;i<dateRows.length;i+=MAX_PICKS_PER_REQUEST)batches.push({date,rows:dateRows.slice(i,i+MAX_PICKS_PER_REQUEST)});
     });
-    return [...groups.entries()].sort((a,b) => a[0].localeCompare(b[0]));
+    return batches;
   }
-
-  async function postRows(rows, persist){
-    let lastError;
-    for (let attempt = 1; attempt <= RETRIES + 1; attempt += 1){
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-      try {
-        const response = await fetch(`/api/intelligence-sync${persist ? '?persist=1' : ''}`, {
-          method: 'POST',
-          headers: { 'Content-Type':'application/json' },
-          cache: 'no-store',
-          signal: controller.signal,
-          body: JSON.stringify({ picks:rows })
-        });
-        let data;
-        try { data = await response.json(); }
-        catch { throw new Error(`Grading API returned invalid JSON (${response.status}).`); }
-        if (!response.ok) throw new Error(data.message || data.error || `Grading API failed (${response.status}).`);
-        return data;
-      } catch (error) {
-        lastError = error;
-        if (attempt <= RETRIES) await new Promise(resolve => setTimeout(resolve, attempt * 500));
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-    throw lastError || new Error('Grading request failed.');
+  async function post(rows,persist,attempt=1){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),55000);
+    try{
+      const response=await fetch(`/api/intelligence-sync${persist?'?persist=1':''}`,{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({picks:rows}),signal:controller.signal,cache:'no-store'
+      });
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(data.message||data.error||`HTTP ${response.status}`);
+      return data;
+    }catch(error){
+      if(attempt<3){await sleep(700*attempt);return post(rows,persist,attempt+1);}
+      throw error;
+    }finally{clearTimeout(timer);}
   }
-
-  function combine(parts, request){
-    const rows = parts.flatMap(part => part.rows || []);
-    const counts = rows.reduce((out,row) => {
-      out[row.result] = (out[row.result] || 0) + 1;
-      return out;
-    }, {});
-    const persistence = {
-      enabled: parts.some(part => part.persistence?.enabled),
-      inserted: parts.reduce((sum,part) => sum + Number(part.persistence?.inserted || 0), 0),
-      reasons: [...new Set(parts.map(part => part.persistence?.reason).filter(Boolean))]
-    };
-    return {
-      version:'8.0.0',
-      generatedAt:new Date().toISOString(),
-      total:rows.length,
-      counts,
-      unresolved:rows.filter(row => row.result === 'UNVERIFIED').length,
-      pending:rows.filter(row => row.result === 'PENDING').length,
-      persistence,
-      diagnostics:{
-        batches:parts.length,
-        dates:parts.map(part => part.batchDate).filter(Boolean),
-        paidCreditsRequired:false,
-        source:'Official MLB Stats API'
-      },
-      request,
-      rows
-    };
+  async function workers(items,limit,fn){
+    const results=new Array(items.length);let cursor=0;
+    async function worker(){while(cursor<items.length){const index=cursor++;results[index]=await fn(items[index],index);}}
+    await Promise.all(Array.from({length:Math.min(limit,items.length||1)},worker));
+    return results;
   }
-
-  async function run(persist, options = {}){
-    const rows = payload(options);
-    if (!rows.length) throw new Error('No ledger picks matched the requested date range.');
-
-    const groups = groupByDate(rows);
-    const parts = [];
-    for (const [date, dateRows] of groups){
-      try {
-        const result = await postRows(dateRows, persist);
-        parts.push({ ...result, batchDate:date });
-      } catch (error) {
-        parts.push({
-          batchDate:date,
-          rows:dateRows.map(row => ({
-            pickId:row.id,
-            date:row.date,
-            selectedTeam:row.selectedTeam || null,
-            opponent:row.opponent || null,
-            market:row.market,
-            period:row.period,
-            line:row.line,
-            odds:row.odds,
-            gamePk:null,
-            result:'UNVERIFIED',
-            gradeReason:`API_BATCH_FAILED: ${error.message}`,
-            resolutionConfidence:0,
-            environment:null,
-            sourceRecord:row
-          })),
-          persistence:{ enabled:false, inserted:0, reason:'API_BATCH_FAILED' }
-        });
-      }
-    }
-
-    const cache = combine(parts, {
-      from:options.from || null,
-      to:options.to || null,
-      persist:Boolean(persist)
+  function failureRows(batch,error){
+    return batch.rows.map(row=>({pickId:row.id,date:row.date,selectedTeam:row.selectedTeam,opponent:row.opponent,market:row.market,period:row.period,line:row.line,odds:row.odds,result:row.authoritativeResult&&row.result?row.result:'UNVERIFIED',gradeReason:`API_BATCH_FAILED: ${error.message}`,metadataStatus:'RETRY_REQUIRED',gamePk:row.gamePk||null,environment:null,sourceRecord:row}));
+  }
+  function combine(parts,request){
+    const rows=parts.flatMap(part=>part.rows||[]);const counts={};const reasons={};
+    rows.forEach(row=>{counts[row.result]=(counts[row.result]||0)+1;const reason=row.gradeReason||'NO_REASON';reasons[reason]=(reasons[reason]||0)+1;});
+    return {version:'11.0.0',generatedAt:new Date().toISOString(),total:rows.length,counts,reasons,unresolved:rows.filter(row=>row.result==='UNVERIFIED').length,pending:rows.filter(row=>row.result==='PENDING').length,rows,request,persistence:{enabled:parts.some(part=>part.persistence?.enabled),inserted:parts.reduce((sum,part)=>sum+Number(part.persistence?.inserted||0),0),reasons:[...new Set(parts.map(part=>part.persistence?.reason).filter(Boolean))]},diagnostics:{batches:parts.length,dates:[...new Set(parts.map(part=>part.batchDate).filter(Boolean))].length,failedBatches:parts.filter(part=>part.failed).length,source:'Official MLB Stats API',paidCreditsRequired:false}};
+  }
+  async function run(persist=true,options={}){
+    const rows=payload(options);if(!rows.length)throw new Error('No dated picks were found in the canonical database.');
+    const batches=groupByDate(rows);let completed=0;
+    window.dispatchEvent(new CustomEvent('sportsedge:sync-progress',{detail:{completed,total:batches.length,rows:rows.length}}));
+    const parts=await workers(batches,CONCURRENCY,async batch=>{
+      let part;
+      try{part=await post(batch.rows,persist);part.batchDate=batch.date;}
+      catch(error){part={failed:true,batchDate:batch.date,rows:failureRows(batch,error),persistence:{enabled:false,inserted:0,reason:'API_BATCH_FAILED'}};}
+      completed++;window.dispatchEvent(new CustomEvent('sportsedge:sync-progress',{detail:{completed,total:batches.length,rows:rows.length,date:batch.date}}));return part;
     });
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-    window.dispatchEvent(new CustomEvent('sportsedge:intelligence-synced', { detail:cache }));
-    return cache;
+    const data=combine(parts,{persist:Boolean(persist),from:options.from||null,to:options.to||null});
+    window.SportsEdgeDatabase.applyGrades(data.rows);
+    try{localStorage.setItem(CACHE_KEY,JSON.stringify({...data,rows:undefined}));}catch{}
+    window.dispatchEvent(new CustomEvent('sportsedge:intelligence-synced',{detail:data}));return data;
   }
-
-  function cached(){
-    try { return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); }
-    catch { return null; }
-  }
-
-  function health(){
-    const data = cached();
-    if (!data) return { status:'NOT_RUN', message:'Run SportsEdgePipeline.recentSync() or syncAll().' };
-    const graded = (data.counts?.WIN || 0) + (data.counts?.LOSS || 0) + (data.counts?.PUSH || 0) + (data.counts?.VOID || 0);
-    return {
-      status:data.unresolved === 0 ? 'HEALTHY' : 'REVIEW_REQUIRED',
-      total:data.total,
-      graded,
-      pending:data.pending || 0,
-      unresolved:data.unresolved,
-      coverage:data.total ? Number((graded / data.total * 100).toFixed(1)) : 0,
-      counts:data.counts,
-      persistence:data.persistence,
-      diagnostics:data.diagnostics,
-      request:data.request,
-      generatedAt:data.generatedAt
-    };
-  }
-
-  function exportReport(){
-    const data = cached();
-    if (!data) throw new Error('No cached sync exists. Run recentSync() or syncAll() first.');
-    const blob = new Blob([JSON.stringify(data,null,2)], { type:'application/json' });
-    const anchor = document.createElement('a');
-    anchor.href = URL.createObjectURL(blob);
-    anchor.download = `sports-edge-resolution-${new Date().toISOString().slice(0,10)}.json`;
-    anchor.click();
-    URL.revokeObjectURL(anchor.href);
-  }
-
-  const api = {
-    version:'8.0.0',
-    preview:(options={}) => run(false, options),
-    sync:(options={}) => run(true, options),
-    recentSync:(from='2026-07-26', persist=true) => run(Boolean(persist), { from }),
-    syncAll:(persist=true) => run(Boolean(persist), {}),
-    cached,
-    health,
-    exportReport,
-    payload
-  };
-
-  window.SportsEdgePipeline = Object.freeze(api);
-  console.info('[Sports Edge Pipeline] V8 ready. Grading is batched by date with retries and partial-failure preservation.');
+  function cached(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null');}catch{return null;}}
+  function health(){const audit=window.SportsEdgeDatabase?.audit()||{};const cache=cached();return{status:audit.needsGrade===0?'HEALTHY':'REVIEW_REQUIRED',...audit,lastSync:cache?.generatedAt||null,lastSyncDiagnostics:cache?.diagnostics||null,lastSyncReasons:cache?.reasons||null,persistence:cache?.persistence||null};}
+  function exportReport(){const data={database:window.SportsEdgeDatabase?.audit(),sync:cached(),unresolved:(window.SportsEdgeDatabase?.observations||[]).filter(row=>!['WIN','LOSS','PUSH','VOID'].includes(row.result))};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const anchor=document.createElement('a');anchor.href=URL.createObjectURL(blob);anchor.download=`sports-edge-audit-${new Date().toISOString().slice(0,10)}.json`;anchor.click();URL.revokeObjectURL(anchor.href);}
+  window.SportsEdgePipeline=Object.freeze({version:'11.0.0',payload,preview:(options={})=>run(false,options),sync:(options={})=>run(true,options),recentSync:(from,persist=true)=>run(Boolean(persist),{from}),syncAll:(persist=true)=>run(Boolean(persist),{}),cached,health,exportReport});
 })();
