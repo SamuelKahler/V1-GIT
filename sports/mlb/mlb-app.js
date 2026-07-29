@@ -1,6 +1,8 @@
 // Sports Edge Core V2: Today's Picks now reads the reconciled master ledger view.
 // The original data remains preserved in mlb-data.js and SportsEdgeCore.preserved.
-const coreDailyPicks = (window.SportsEdgeCore && Array.isArray(window.SportsEdgeCore.uiPicks) && window.SportsEdgeCore.uiPicks.length)
+const coreDailyPicks = (window.SportsEdgeDatabase && Array.isArray(window.SportsEdgeDatabase.displayPicks) && window.SportsEdgeDatabase.displayPicks.length)
+  ? window.SportsEdgeDatabase.displayPicks
+  : (window.SportsEdgeCore && Array.isArray(window.SportsEdgeCore.uiPicks) && window.SportsEdgeCore.uiPicks.length)
   ? window.SportsEdgeCore.uiPicks
   : ((typeof trackedPickResults !== 'undefined' && Array.isArray(trackedPickResults)) ? trackedPickResults : []);
 
@@ -1194,7 +1196,7 @@ function renderPerformanceLab(){
 
 // V42 F5 Performance Lab
 let selectedF5Team = 'ALL';
-function f5AllBets(){ const base=Array.isArray(window.f5PerformanceBets) ? window.f5PerformanceBets : (typeof f5PerformanceBets !== 'undefined' ? f5PerformanceBets : []); const recent=Array.isArray(window.SportsEdgeRecentF5Results) ? window.SportsEdgeRecentF5Results : []; const seen=new Set(); return [...base,...recent].filter(row=>{ const key=`${row.date}|${String(row.bet||'').toUpperCase().replace(/[^A-Z0-9.+-]/g,'')}`; if(seen.has(key)) return false; seen.add(key); return true; }); }
+function f5AllBets(){ if(window.SportsEdgeDatabase && Array.isArray(window.SportsEdgeDatabase.f5Bets)) return window.SportsEdgeDatabase.f5Bets.slice(); const base=Array.isArray(window.f5PerformanceBets) ? window.f5PerformanceBets : (typeof f5PerformanceBets !== 'undefined' ? f5PerformanceBets : []); const recent=Array.isArray(window.SportsEdgeRecentF5Results) ? window.SportsEdgeRecentF5Results : []; const seen=new Set(); return [...base,...recent].filter(row=>{ const key=`${row.date}|${String(row.bet||'').toUpperCase().replace(/[^A-Z0-9.+-]/g,'')}`; if(seen.has(key)) return false; seen.add(key); return true; }); }
 function f5Teams(){ return Array.isArray(window.mlbTeams) ? window.mlbTeams : (typeof mlbTeams !== 'undefined' ? mlbTeams : []); }
 function f5Stats(rows){
   const total = rows.length;
@@ -2078,6 +2080,9 @@ function openPick(i){
   }
   const originalF5AllBets = window.f5AllBets || f5AllBets;
   window.f5AllBets = function f5AllBetsV57(){
+    if(window.SportsEdgeDatabase && Array.isArray(window.SportsEdgeDatabase.f5Bets)){
+      return window.SportsEdgeDatabase.f5Bets.slice();
+    }
     const base = originalF5AllBets();
     const map = new Map();
     [...base,...dailyF5Rows()].forEach(r=>{
