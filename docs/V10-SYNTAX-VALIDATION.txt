@@ -1,6 +1,0 @@
-
-> sports-edge@10.0.0 check
-> node --check api/live-data.js && node --check api/grade-picks.js && node --check api/odds.js && node --check api/intelligence-sync.js && node --check sports/mlb/core/sports-edge-database.js && node --check sports/mlb/core/master-ledger.js && node --check sports/mlb/core/intelligence-engine.js && node --check sports/mlb/core/intelligence-pipeline.js && node --check sports/mlb/core/recent-results.js && node --check sports/mlb/core/performance-engine.js && node --check sports/mlb/mlb-app.js && node --check sports/mlb/mlb-data.js && node --check sports/nfl/nfl-app.js
-
-
-Validation completed: all JavaScript syntax checks passed.
