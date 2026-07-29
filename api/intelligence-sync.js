@@ -9,7 +9,11 @@ const TEAM = Object.freeze({
 const clean = value => String(value ?? '').trim();
 const upper = value => clean(value).toUpperCase().replace(/\s+/g,' ');
 const normalizeTeam = value => TEAM[upper(value).replace(/\./g,'')] || upper(value).replace(/\./g,'');
-const finite = value => Number.isFinite(Number(value)) ? Number(value) : null;
+const finite = value => {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
 const finalState = value => /final|game over|completed/i.test(clean(value));
 
 function aliasesInText(value) {
@@ -22,10 +26,39 @@ function aliasesInText(value) {
   return [...new Set(found)];
 }
 
-async function getJson(url) {
-  const response = await fetch(url, { headers:{ Accept:'application/json' } });
-  if (!response.ok) throw new Error(`Upstream MLB request failed (${response.status})`);
-  return response.json();
+async function getJson(url, attempts = 3) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch(url, {
+        headers:{ Accept:'application/json', 'User-Agent':'Sports-Edge/8.0' },
+        signal:controller.signal
+      });
+      if (!response.ok) throw new Error(`Upstream MLB request failed (${response.status})`);
+      return await response.json();
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) await new Promise(resolve => setTimeout(resolve, 250 * attempt));
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw lastError || new Error('Upstream MLB request failed');
+}
+
+async function mapWithConcurrency(items, limit, worker) {
+  const output = new Array(items.length);
+  let cursor = 0;
+  async function runner() {
+    while (cursor < items.length) {
+      const index = cursor++;
+      output[index] = await worker(items[index], index);
+    }
+  }
+  await Promise.all(Array.from({ length:Math.min(limit, items.length || 1) }, runner));
+  return output;
 }
 
 function scheduleGames(payload) {
@@ -159,22 +192,25 @@ async function persist(rows) {
   return { enabled:true, inserted:rows.length };
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error:'METHOD_NOT_ALLOWED' });
   try {
     const picks = Array.isArray(req.body?.picks) ? req.body.picks : [];
     if (!picks.length) return res.status(400).json({ error:'NO_PICKS' });
     if (picks.length > 2500) return res.status(413).json({ error:'TOO_MANY_PICKS', limit:2500 });
     const dates = [...new Set(picks.map(p=>p.date || p.normalizedDate).filter(Boolean))];
-    const schedules = new Map();
-    for (const date of dates) {
+    const scheduleRows = await mapWithConcurrency(dates, 4, async date => {
       const payload = await getJson(`${SCHEDULE_URL}?sportId=1&date=${encodeURIComponent(date)}&hydrate=team,linescore,probablePitcher,venue`);
-      schedules.set(date, scheduleGames(payload));
-    }
+      return [date, scheduleGames(payload)];
+    });
+    const schedules = new Map(scheduleRows);
     const resolved = picks.map(pick => ({ pick, resolution:resolveGame(pick, schedules.get(pick.date || pick.normalizedDate) || []) }));
     const uniqueGamePks = [...new Set(resolved.map(row=>row.resolution.game?.gamePk).filter(Boolean))];
-    const feeds = new Map();
-    for (const gamePk of uniqueGamePks) feeds.set(gamePk, feedSummary(await getJson(`${FEED_URL}/${gamePk}/feed/live`)));
+    const feedRows = await mapWithConcurrency(uniqueGamePks, 8, async gamePk => [
+      gamePk,
+      feedSummary(await getJson(`${FEED_URL}/${gamePk}/feed/live`))
+    ]);
+    const feeds = new Map(feedRows);
     const rows = resolved.map(({pick,resolution}) => {
       const sourceStatus = upper(pick.status || pick.result);
       if (sourceStatus === 'VOID' || sourceStatus === 'DISREGARD') return { pickId:pick.id || pick.coreId || pick.preservationId, date:pick.date || pick.normalizedDate, selectedTeam:pick.selectedTeam || null, opponent:pick.opponent || null, market:market(pick), period:period(pick), line:line(pick), odds:finite(pick.odds), gamePk:resolution.game?.gamePk || null, result:'VOID', gradeReason:'SOURCE_MARKED_VOID', resolutionConfidence:resolution.game ? resolution.confidence : 100, environment:null, sourceRecord:pick };
@@ -184,7 +220,17 @@ module.exports = async function handler(req, res) {
     });
     const persistence = req.query.persist === '1' ? await persist(rows) : { enabled:false, inserted:0, reason:'PREVIEW_MODE' };
     const counts = rows.reduce((out,row)=>{ out[row.result]=(out[row.result]||0)+1; return out; },{});
-    return res.status(200).json({ version:'7.0.0', generatedAt:new Date().toISOString(), total:rows.length, counts, unresolved:rows.filter(r=>r.result==='UNVERIFIED').length, persistence, rows });
+    return res.status(200).json({
+      version:'8.0.0',
+      generatedAt:new Date().toISOString(),
+      total:rows.length,
+      counts,
+      unresolved:rows.filter(r=>r.result==='UNVERIFIED').length,
+      pending:rows.filter(r=>r.result==='PENDING').length,
+      diagnostics:{ dates:dates.length, gamesResolved:uniqueGamePks.length, source:'Official MLB Stats API', paidCreditsRequired:false },
+      persistence,
+      rows
+    });
   } catch (error) {
     return res.status(500).json({ error:'INTELLIGENCE_SYNC_FAILED', message:error.message });
   }
