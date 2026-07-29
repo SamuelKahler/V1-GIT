@@ -14029,11 +14029,11 @@ function sportsEdgeParseDailyImportText(raw){
     const dateMatch = l.match(/^(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\s*$/);
     if(dateMatch){ currentSlate=sportsEdgeTitleCaseDate(dateMatch[1]); return; }
     if(!currentSlate) return;
-    if(/DISREGARD/i.test(l)) return;
+    const isVoid = /DISREGARD|\bVOID\b/i.test(l);
     const isWin = /✅|\bWIN\b/i.test(l);
     const isLoss = /❌|\bLOSS\b/i.test(l);
     const live = /\bLIVE\b/i.test(l);
-    const status = isWin ? 'WIN' : isLoss ? 'LOSS' : live ? 'LIVE' : 'PENDING';
+    const status = isVoid ? 'VOID' : isWin ? 'WIN' : isLoss ? 'LOSS' : live ? 'LIVE' : 'PENDING';
     const unitMatch = l.match(/(?:,|\s)(\.\d+|\d+(?:\.\d+)?)\s*U\b/i);
     const units = unitMatch ? `${unitMatch[1]}U` : '';
     const trendTags=[];

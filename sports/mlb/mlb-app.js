@@ -1194,7 +1194,7 @@ function renderPerformanceLab(){
 
 // V42 F5 Performance Lab
 let selectedF5Team = 'ALL';
-function f5AllBets(){ return Array.isArray(window.f5PerformanceBets) ? window.f5PerformanceBets : (typeof f5PerformanceBets !== 'undefined' ? f5PerformanceBets : []); }
+function f5AllBets(){ const base=Array.isArray(window.f5PerformanceBets) ? window.f5PerformanceBets : (typeof f5PerformanceBets !== 'undefined' ? f5PerformanceBets : []); const recent=Array.isArray(window.SportsEdgeRecentF5Results) ? window.SportsEdgeRecentF5Results : []; const seen=new Set(); return [...base,...recent].filter(row=>{ const key=`${row.date}|${String(row.bet||'').toUpperCase().replace(/[^A-Z0-9.+-]/g,'')}`; if(seen.has(key)) return false; seen.add(key); return true; }); }
 function f5Teams(){ return Array.isArray(window.mlbTeams) ? window.mlbTeams : (typeof mlbTeams !== 'undefined' ? mlbTeams : []); }
 function f5Stats(rows){
   const total = rows.length;
