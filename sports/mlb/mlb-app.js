@@ -1008,19 +1008,30 @@ function computedLedgerEvidenceForPick(p, limit=8){
     team:e.team || targetTeamForPick(p) || 'TEAM',
     style:e.market === 'MONEYLINE' ? 'ML' : e.market === 'SPREAD' ? 'SPRD' : e.market === 'TOTAL' ? (/\bU\s*\d|UNDER/i.test(String(p.pick||'')) ? 'UNDER' : 'OVER') : e.market,
     situation:e.matchTier,
+    title:e.title,
+    evidenceType:'GAME_LOG',
+    evidenceCategory:e.evidenceCategory,
     date:e.supportingObservations[0]?.date || '-',
     opponent:e.supportingObservations[0]?.opponent || '-',
-    notes:`Calculated automatically from ${e.decisions} permanently graded ledger decisions. ROI ${e.roi == null ? 'pending' : e.roi.toFixed(1)+'%'}. Confidence ${e.confidence}.`,
+    notes:'',
     hitRate:e.hitRate == null ? null : e.hitRate.toFixed(1)+'%',
-    duration:`${e.decisions} decisions`,
-    winEvidence:e.supportingObservations.filter(x=>x.result==='WIN').map(x=>`${x.date} • ${x.team} • ${x.market} • ${x.odds ?? 'odds n/a'}`),
-    lossEvidence:e.supportingObservations.filter(x=>x.result==='LOSS').map(x=>`${x.date} • ${x.team} • ${x.market} • ${x.odds ?? 'odds n/a'}`),
+    duration:`${e.decisions} graded decisions`,
+    winEvidence:e.supportingObservations.filter(x=>x.result==='WIN').map(x=>`${x.date} • ${x.team}${x.opponent ? ' vs '+x.opponent : ''} • ${x.market} • ${x.odds ?? 'odds n/a'}`),
+    lossEvidence:e.supportingObservations.filter(x=>x.result==='LOSS').map(x=>`${x.date} • ${x.team}${x.opponent ? ' vs '+x.opponent : ''} • ${x.market} • ${x.odds ?? 'odds n/a'}`),
     normalizedStyle:e.market,
     hitRateNumber:e.hitRate,
+    wins:e.wins,
+    losses:e.losses,
+    decisions:e.decisions,
+    roi:e.roi,
+    profit:e.profit,
+    confidence:e.confidence,
     matchScore:e.matchScore,
     matchReasons:e.matchReasons,
+    matchedDimensions:e.matchedDimensions || [],
     matchTier:e.matchTier,
     evidenceId:e.evidenceId,
+    supportingObservations:e.supportingObservations,
     computedFromLedger:true
   }));
 }
@@ -1035,7 +1046,8 @@ function matchedTrendEvidenceForPick(p, limit=8){
       matchScore: match.score,
       matchReasons: match.reasons,
       matchTier: match.tier,
-      matchedOpponent: match.opponent
+      matchedOpponent: match.opponent,
+      evidenceType:'TREND'
     } : null;
   }).filter(Boolean).filter(r=>r.matchScore >= 50);
 
@@ -1056,7 +1068,10 @@ function matchedTrendEvidenceForPick(p, limit=8){
   }).slice(0,limit);
 }
 function trendEvidenceTitle(row){
-  return `${row.team} ${trendDisplayStyle(row.style)}${row.situation ? ' — ' + row.situation : ''}`;
+  if(row.title) return row.title;
+  const style = trendDisplayStyle(row.style);
+  const situation = row.situation && row.situation !== '-' ? ` — ${row.situation}` : '';
+  return `${row.team} ${style}${situation}`;
 }
 /* Legacy trendEvidenceMetric implementation removed during clean sweep. */
 
@@ -1918,25 +1933,70 @@ function trendEvidenceRecordClean(row){
   }
   return { wins:null, losses:null, total:'Needs more rows', rate:'Pending', source:'Trend database' };
 }
+function evidencePercent(value){
+  const n = pct(value);
+  return n === null ? '—' : `${Number(n).toFixed(1)}%`;
+}
+function evidenceRecordText(row){
+  const wins = Number.isFinite(Number(row.wins)) ? Number(row.wins) : trendEvidenceRecord(row).wins;
+  const losses = Number.isFinite(Number(row.losses)) ? Number(row.losses) : trendEvidenceRecord(row).losses;
+  return wins + losses > 0 ? `${wins}-${losses}` : 'Stored rate';
+}
+function evidenceRelevanceLine(row){
+  const reasons = (row.matchReasons || []).filter(Boolean);
+  if(!reasons.length) return 'Matched to this pick by the stored trend condition.';
+  return reasons.join(' • ');
+}
+function gameLogEvidenceCard(row){
+  const rate = evidencePercent(row.hitRate);
+  const roi = row.roi == null ? '—' : `${Number(row.roi).toFixed(1)}%`;
+  const sample = Number(row.decisions || 0);
+  const games = Array.isArray(row.supportingObservations) ? row.supportingObservations : [];
+  const gameRows = games.slice(0,12).map(g=>`<tr><td>${formatTrendDate(g.date)}</td><td>${g.team}${g.opponent ? ` vs ${g.opponent}` : ''}</td><td>${g.result}</td><td>${g.odds ?? '—'}</td></tr>`).join('');
+  return `<article class="evidence-report-card game-log-proof">
+    <div class="evidence-card-heading"><div><span class="evidence-type-label game-log-label">Verified Game Log</span><h4>${trendEvidenceTitle(row)}</h4></div><span class="proof-badge">${row.confidence || 'VERIFIED'}</span></div>
+    <div class="evidence-percent-hero"><strong>${rate}</strong><span>${evidenceRecordText(row)} • ${sample} graded bets</span></div>
+    <div class="evidence-stat-row"><div><small>ROI</small><b>${roi}</b></div><div><small>Match</small><b>${row.matchScore}/100</b></div><div><small>Profit</small><b>${row.profit == null ? '—' : `${Number(row.profit).toFixed(2)}U`}</b></div></div>
+    <div class="evidence-relevance"><b>Why this applies:</b> ${evidenceRelevanceLine(row)}</div>
+    ${gameRows ? `<details class="trend-history-dropdown"><summary>View ${sample} graded game-log results</summary><div class="evidence-game-table"><table><thead><tr><th>Date</th><th>Matchup</th><th>Result</th><th>Odds</th></tr></thead><tbody>${gameRows}</tbody></table></div></details>` : ''}
+  </article>`;
+}
+function storedTrendEvidenceCard(row){
+  const rec = trendEvidenceRecordClean(row);
+  return `<article class="evidence-report-card stored-trend-proof">
+    <div class="evidence-card-heading"><div><span class="evidence-type-label trend-label">Trend Database</span><h4>${trendEvidenceTitle(row)}</h4></div><span class="proof-badge medium">${trendEvidenceConfidence(row)}</span></div>
+    <div class="evidence-percent-hero"><strong>${rec.rate}</strong><span>${rec.wins!==null ? `${rec.wins}-${rec.losses} documented outcomes` : rec.total}</span></div>
+    <div class="evidence-stat-row"><div><small>Match</small><b>${row.matchScore}/100</b></div><div><small>Team</small><b>${row.team || '—'}</b></div><div><small>Market</small><b>${trendDisplayStyle(row.style)}</b></div></div>
+    <div class="evidence-relevance"><b>Why this applies:</b> ${evidenceRelevanceLine(row)}</div>
+    ${trendEvidenceHistoryHtml(row)}
+  </article>`;
+}
 function trendEvidenceHtml(p){
-  const trends = matchedTrendEvidenceForPick(p, 6);
-  if(!trends.length){
-    return `<div class="trend-evidence empty-evidence"><strong>No qualifying matched environment yet</strong><p class="subtle">Sports Edge did not find a same-team, same-market historical row above the minimum match threshold. This pick remains visible, but no unsupported hit rate is shown.</p></div>`;
+  const evidence = matchedTrendEvidenceForPick(p, 12);
+  const gameLogs = evidence.filter(row=>row.evidenceType==='GAME_LOG');
+  const trends = evidence.filter(row=>row.evidenceType!=='GAME_LOG');
+  if(!gameLogs.length && !trends.length){
+    return `<div class="trend-evidence empty-evidence"><strong>No verified evidence match yet</strong><p class="subtle">No same-team, same-market result set or stored trend condition met the relevance threshold for this pick.</p></div>`;
   }
-  return `<div class="trend-evidence upgraded-trend-evidence"><strong>Matched Trend Evidence</strong><p class="subtle">Ranked by team, market, current role, opponent, and explicit historical environment. Imported rates remain labeled separately from calculated game-log records.</p><div class="trend-evidence-grid">${trends.map(t=>{
-    const rec = trendEvidenceRecordClean(t);
-    const badgeClass = t.matchScore >= 85 ? '' : (t.matchScore >= 70 ? 'medium' : 'pending');
-    const reasons = (t.matchReasons || []).map(reason=>`<li>${reason}</li>`).join('');
-    return `<article class="trend-proof-card clean-proof"><div class="trend-proof-top"><b>${trendEvidenceTitle(t)}</b><span class="proof-badge ${badgeClass}">${trendEvidenceConfidence(t)}</span></div><div class="trend-proof-metrics"><div><small>Hit Rate</small><strong>${rec.rate}</strong></div><div><small>Record</small><strong>${rec.wins!==null ? `${rec.wins}-${rec.losses}` : 'Imported'}</strong></div><div><small>Match Score</small><strong>${t.matchScore}/100</strong></div></div><p class="subtle"><b>Data source:</b> ${rec.source}</p><p class="subtle"><b>Stored environment:</b> ${String(t.situation || '-')}</p><ul class="clean evidence-list match-reason-list">${reasons}</ul><p class="subtle"><b>Date:</b> ${formatTrendDate(t.date)}${t.opponent && t.opponent !== '-' ? ` • ${t.opponent}` : ''}</p>${t.notes && t.notes !== '-' ? `<p class="subtle"><b>Note:</b> ${t.notes}</p>` : ''}${trendEvidenceHistoryHtml(t)}</article>`;
-  }).join('')}</div></div>`;
+  const strongest = [...gameLogs, ...trends].filter(r=>pct(r.hitRate)!==null).sort((a,b)=>(pct(b.hitRate)||0)-(pct(a.hitRate)||0))[0];
+  const topRate = strongest ? evidencePercent(strongest.hitRate) : '—';
+  const topLabel = strongest ? trendEvidenceTitle(strongest) : 'No qualified rate';
+  return `<div class="trend-evidence evidence-report-v2">
+    <div class="evidence-report-header"><div><span class="evidence-kicker">Matched Evidence Report</span><h3>Why this pick has historical support</h3></div><div class="top-evidence-rate"><small>Best qualified hit rate</small><strong>${topRate}</strong><span>${topLabel}</span></div></div>
+    ${gameLogs.length ? `<section class="evidence-section"><div class="evidence-section-title"><div><span>Game Logs</span><h4>Calculated from individually graded wagers</h4></div><small>Each result is traceable to a dated pick.</small></div><div class="evidence-report-grid">${gameLogs.map(gameLogEvidenceCard).join('')}</div></section>` : ''}
+    ${trends.length ? `<section class="evidence-section"><div class="evidence-section-title"><div><span>Trends</span><h4>Stored situational trend signals</h4></div><small>Shown separately from game-log calculations.</small></div><div class="evidence-report-grid">${trends.map(storedTrendEvidenceCard).join('')}</div></section>` : ''}
+  </div>`;
 }
 function trendEvidenceCardSummary(p){
-  const trends = matchedTrendEvidenceForPick(p, 1);
-  if(!trends.length) return '';
-  const t = trends[0];
-  const rec = trendEvidenceRecordClean(t);
-  const reason = (t.matchReasons || []).slice(0,2).join(' • ');
-  return `<div class="matched-trend-card upgraded-card-evidence"><strong>Matched Trend Evidence</strong><div class="pick-card-proof"><div><small>Hit Rate</small><strong>${rec.rate}</strong></div><div><small>Record</small><strong>${rec.wins!==null ? `${rec.wins}-${rec.losses}` : 'Imported'}</strong></div><div><small>Match</small><strong>${t.matchScore}/100</strong></div></div><small>${trendEvidenceConfidence(t)} • ${reason || trendEvidenceTitle(t)}</small></div>`;
+  const evidence = matchedTrendEvidenceForPick(p, 8);
+  const qualified = evidence.filter(r=>pct(r.hitRate)!==null).sort((a,b)=>{
+    if(Boolean(a.computedFromLedger)!==Boolean(b.computedFromLedger)) return a.computedFromLedger ? -1 : 1;
+    return (pct(b.hitRate)||0)-(pct(a.hitRate)||0);
+  });
+  if(!qualified.length) return '';
+  const top = qualified[0];
+  const type = top.evidenceType==='GAME_LOG' ? 'Verified Game Log' : 'Trend Database';
+  return `<div class="matched-trend-card upgraded-card-evidence"><span class="evidence-type-label ${top.evidenceType==='GAME_LOG'?'game-log-label':'trend-label'}">${type}</span><div class="pick-card-proof emphasis-proof"><div><small>Hit Rate</small><strong>${evidencePercent(top.hitRate)}</strong></div><div><small>Record</small><strong>${evidenceRecordText(top)}</strong></div><div><small>Sample</small><strong>${top.decisions || trendEvidenceRecord(top).total || '—'}</strong></div></div><small>${trendEvidenceTitle(top)} • ${evidenceRelevanceLine(top)}</small></div>`;
 }
 function apiProofStrip(p){
   const st = normalizedPickStatus(p);
