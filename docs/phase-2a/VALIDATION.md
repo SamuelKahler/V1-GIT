@@ -1,28 +1,24 @@
-# Phase 2A Validation Checklist
+# Phase 2A Validation
 
-## Automated checks performed
+## Local static checks
 
-- `npm run check` — passed
-- `npm run validate:phase2a` — passed
-- mock official-feed transformation — passed
-- mock first-five scoring — passed
-- required-file manifest — passed
+```bash
+npm run check
+npm run validate:phase2a
+```
 
-The build environment could not resolve external DNS for `statsapi.mlb.com`, so a live upstream request could not be completed during packaging. The included Preview dry-run command is the required live validation in Vercel.
+## Database checks
 
-## Data validation rules
+After importing a completed date:
 
-1. `game_pk` is the permanent primary key.
-2. A game cannot have the same home and away team.
-3. Missing values remain SQL `NULL`; they are not guessed.
-4. F5 scores are populated only when innings 1 through 5 each contain both team run values.
-5. Final status is based on official MLB status codes or final-state text.
-6. Team and venue records are upserted from official feed identifiers.
-7. Re-importing a `game_pk` updates the existing record.
-8. Inning and pitcher child records are replaced transactionally per game bundle.
-9. Import failures are written to `ops.mlb_import_errors`.
-10. Sports Edge picks are never inserted into MLB game tables.
+1. `/api/mlb/status` reports games greater than zero.
+2. Final games have official final scores when MLB provides them.
+3. `f5Available` is greater than zero for completed regulation games.
+4. Innings are uniquely keyed by `game_pk + inning_number`.
+5. `duplicateGamePks` equals zero.
+6. Re-importing the same date does not increase total game count.
+7. Sports Edge performance views remain unchanged.
 
-## UI regression check
+## First-five rule
 
-Open the Preview deployment and verify all existing pages and tabs still render. This release does not reference the new database from `mlb-app.js`, so no visible data or design change is expected.
+F5 is stored only when innings 1 through 5 each contain both away and home run values. Missing innings never become zero by inference. When incomplete, `f5_available=false` and both F5 scores remain null.

@@ -1,15 +1,14 @@
-SPORTS EDGE MLB INTELLIGENCE DATABASE V2 — PHASE 2A
+SPORTS EDGE MLB INTELLIGENCE DATABASE V2 - PHASE 2A
 
-START HERE:
-1. Read docs/phase-2a/INSTALL.md
-2. Upload this repository to branch: phase-2-mlb-database
-3. Add Vercel secret: MLB_IMPORT_ADMIN_TOKEN
-4. Run supabase/migrations/002_mlb_intelligence_foundation.sql once
-5. Test the Preview deployment in dry-run mode
-6. Import one date
-7. Re-import the same date to prove no duplicates
-8. Check /api/mlb/status
-9. Merge only after validation
+Start here: docs/phase-2a/INSTALL.md
 
-NO UI FILES WERE CHANGED.
-SPORTS EDGE PICKS ARE NOT USED AS MLB GAME-LOG EVIDENCE.
+This release adds a separate MLB Intelligence database foundation and importer.
+It does not modify the customer-facing UI, existing tabs, Sports Edge grading,
+or public.pick_observations.
+
+Required before import:
+1. Create a Supabase project.
+2. Run supabase/migrations/002_mlb_intelligence_foundation.sql once.
+3. Add SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and MLB_IMPORT_ADMIN_TOKEN to Vercel.
+4. Deploy to Preview.
+5. Run a one-day dry run, then a one-day real import.

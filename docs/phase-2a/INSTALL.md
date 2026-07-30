@@ -1,110 +1,64 @@
-# Sports Edge MLB Intelligence Database V2 — Phase 2A Installation
+# Phase 2A Installation
 
-## Release boundary
+## Purpose
 
-This release adds the MLB database foundation and protected import APIs. It does not change the customer-facing UI, current tabs, Sports Edge grading, or `public.pick_observations`.
+This release creates a separate MLB Intelligence data system. It does not use Sports Edge picks as historical game evidence and does not change the UI.
 
-## Files to install
+## 1. Create the database
 
-Upload the complete repository ZIP to the existing `phase-2-mlb-database` branch, replacing matching files and preserving all others.
+The current Vercel project has no Supabase variables, so create a Supabase project at the Supabase dashboard. Keep the generated database password private.
 
-## Required one-time database action
-
-A database owner must run this file once in the Supabase SQL Editor:
+In the new project, open **SQL Editor**, create a query, paste the complete contents of:
 
 `supabase/migrations/002_mlb_intelligence_foundation.sql`
 
-This cannot be performed safely from a public browser endpoint because it creates schemas, tables, indexes, grants, and security-definer functions.
+Run it once. The migration is idempotent for tables and indexes and does not alter `public.pick_observations`.
 
-### How to find the Supabase project
+## 2. Add Vercel environment variables
 
-1. Open the Sports Edge project in Vercel.
-2. Open **Settings → Environment Variables**.
-3. Confirm these names exist: `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
-4. Copy only the hostname from `SUPABASE_URL`, for example `abcdefgh.supabase.co`.
-5. Sign in at Supabase using the account that owns that project and match the project reference at the start of the hostname.
+In the `v1-git` Vercel project, add these variables for **Preview and Production**:
 
-Never paste the service-role key into chat, source code, GitHub, or screenshots.
+- `SUPABASE_URL`: Project Settings > API > Project URL
+- `SUPABASE_SERVICE_ROLE_KEY`: Project Settings > API > service_role key
+- `MLB_IMPORT_ADMIN_TOKEN`: a private random string with at least 32 characters
 
-## Vercel environment variable
+Never place these values in GitHub or send them in chat.
 
-Add one new secret in Vercel for Preview and Production:
+Redeploy the Preview deployment after saving variables.
 
-`MLB_IMPORT_ADMIN_TOKEN`
+## 3. Dry-run one completed date
 
-Use a long random value of at least 32 characters. Example generation command:
+Replace the domain and token below:
 
 ```bash
-openssl rand -hex 32
-```
-
-Do not put the generated value in the repository.
-
-## Deploy safely
-
-1. Push this package to `phase-2-mlb-database`.
-2. Allow Vercel to create a Preview deployment.
-3. Do not merge to `main` yet.
-4. Run the database migration once.
-5. Redeploy the Preview after adding `MLB_IMPORT_ADMIN_TOKEN`.
-
-## First test: dry run
-
-Replace the placeholders below. Dry run fetches and validates official MLB data but does not write games.
-
-```bash
-curl -X POST "https://YOUR-PREVIEW-DOMAIN.vercel.app/api/mlb/import" \
+curl -X POST "https://YOUR-PREVIEW-DOMAIN/api/mlb/import" \
   -H "Content-Type: application/json" \
-  -H "x-sports-edge-admin-token: YOUR_ADMIN_TOKEN" \
+  -H "x-sports-edge-admin-token: YOUR_PRIVATE_TOKEN" \
   -d '{"startDate":"2026-07-29","endDate":"2026-07-29","dryRun":true}'
 ```
 
-Expected result:
+A dry run downloads and validates official MLB data but writes no game records.
 
-- HTTP 200, or 207 if individual upstream feeds fail
-- `counters.discovered` greater than zero on a normal MLB date
-- `counters.dryRun` equals the number of successfully validated games
-- no database rows written
-
-## First database import
-
-After dry run succeeds:
+## 4. Import the same date
 
 ```bash
-curl -X POST "https://YOUR-PREVIEW-DOMAIN.vercel.app/api/mlb/import" \
+curl -X POST "https://YOUR-PREVIEW-DOMAIN/api/mlb/import" \
   -H "Content-Type: application/json" \
-  -H "x-sports-edge-admin-token: YOUR_ADMIN_TOKEN" \
+  -H "x-sports-edge-admin-token: YOUR_PRIVATE_TOKEN" \
   -d '{"startDate":"2026-07-29","endDate":"2026-07-29","dryRun":false}'
 ```
 
-## Verify import
+## 5. Validate
 
 ```bash
-curl "https://YOUR-PREVIEW-DOMAIN.vercel.app/api/mlb/status" \
-  -H "x-sports-edge-admin-token: YOUR_ADMIN_TOKEN"
+curl "https://YOUR-PREVIEW-DOMAIN/api/mlb/audit" \
+  -H "x-sports-edge-admin-token: YOUR_PRIVATE_TOKEN"
 ```
 
-Verify:
+`uniqueGamePk` must be `true` and `duplicateGamePks` must be `0`.
 
-- `database.games` equals the games discovered for the test date
-- `database.duplicate_game_pks` equals `0`
-- `database.innings` is greater than zero for completed games
-- recent import status is `COMPLETED` or a reviewed `COMPLETED_WITH_ERRORS`
+Run the real import a second time. Game count must stay constant; records should report as updated rather than duplicated.
 
-## Deduplication test
+## Import constraints
 
-Run the same non-dry import a second time. Expected behavior:
-
-- total game count does not increase
-- second run reports games as `updated`, not duplicated
-- `duplicate_game_pks` remains `0`
-
-## Merge rule
-
-Merge into `main` only after:
-
-- dry run succeeds
-- first import succeeds
-- second import proves idempotency
-- status endpoint shows no unexplained errors
-- current customer UI is visually unchanged
+Phase 2A limits each request to seven calendar days to stay within serverless execution limits. Full-season backfill belongs to Phase 3 and will use date batching and resumable jobs.

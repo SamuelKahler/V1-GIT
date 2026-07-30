@@ -1,5 +1,0 @@
-
-> sports-edge@11.1.0 validate:phase2a
-> node scripts/validate-phase2a.mjs
-
-PHASE_2A_VALIDATION_PASSED

@@ -1,76 +1,25 @@
-# Phase 2A Audit Output
+# Phase 2A Audit
 
-## Existing system preserved
+## Baseline
 
-- `sports/mlb/mlb-app.js`: unchanged
-- `sports/mlb/mlb-data.js`: unchanged
-- `sports/mlb/core/*`: unchanged
-- `api/intelligence-sync.js`: unchanged
-- `public.pick_observations`: untouched by migration
-- existing navigation, tabs, colors, and layouts: unchanged
+The supplied repository was a static Vercel application with MLB Stats API and odds endpoints. It had one Supabase migration for `public.pick_observations`, but the active Vercel project showed only `ODDS_API_KEY`; no active Supabase connection was configured.
 
-## Added database objects
+## Separation enforced
 
-Schemas:
+- Existing Sports Edge pick grading remains unchanged.
+- Existing `public.pick_observations` remains unchanged.
+- New official MLB games live only in `mlb.*`.
+- Import operational records live only in `ops.*`.
+- No UI reads from the new database in Phase 2A.
+- No imported trend is represented as calculated game-log evidence.
 
-- `mlb`
-- `ops`
-- `trends`
-- `performance`
+## Data integrity
 
-Tables:
-
-- `mlb.teams`
-- `mlb.venues`
-- `mlb.games`
-- `mlb.game_innings`
-- `mlb.game_pitchers`
-- `ops.mlb_import_runs`
-- `ops.mlb_import_errors`
-
-Protected RPC functions:
-
-- `public.mlb_start_import_run`
-- `public.mlb_upsert_game_bundle`
-- `public.mlb_log_import_error`
-- `public.mlb_finish_import_run`
-- `public.mlb_import_audit`
-
-All RPC functions are revoked from `public`, `anon`, and `authenticated`; execution is granted only to `service_role`.
-
-## Added server routes
-
-- `POST /api/mlb/import`
-- `GET /api/mlb/status`
-- `GET /api/mlb/audit`
-
-All require `MLB_IMPORT_ADMIN_TOKEN`.
-
-## Official source fields imported
-
-- MLB `gamePk`
-- official date and season
-- game status
-- home and away official team IDs
-- venue
-- final score
-- inning-by-inning score
-- first-five score when verifiable
-- probable and confirmed starting pitchers when available
-- pitcher handedness when available
-- day/night
-- series description and position
-- doubleheader/game number
-- weather condition, temperature, and wind when supplied
-
-## Deliberately deferred
-
-- moneyline, run line, total, closing odds
-- favorite/underdog and odds buckets
-- rest and previous-game environments
-- bullpen workload
-- full-season backfill
-- customer-facing evidence UI
-- daily automation
-
-These belong to later verified releases and are not fabricated in Phase 2A.
+- `mlb.games.game_pk` is the primary key.
+- Game import uses a database upsert function.
+- Innings use `(game_pk, inning_number)` as the primary key.
+- Pitcher assignments use `(game_pk, team_side, role)` as the primary key.
+- Unknown fields remain null.
+- F5 requires five verified inning rows.
+- Imports are limited to seven days per request.
+- Administrative endpoints require a constant-time token check.
