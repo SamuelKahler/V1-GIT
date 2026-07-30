@@ -1,0 +1,15 @@
+SPORTS EDGE MLB V2 PHASE 2A BUILD VALIDATION
+
+PASS: npm run check
+PASS: npm run validate:phase2a
+PASS: deterministic first-five calculation (away 4, home 3)
+PASS: incomplete first-five remains unavailable
+PASS: transformed game preserves gamePk and final status
+PASS: required migration and API files present
+PASS: existing UI files were not modified by this release
+
+NOT EXECUTED IN BUILD CONTAINER:
+- Live MLB API request (container DNS returned EAI_AGAIN)
+- Supabase migration execution (no project credentials were available)
+
+These two checks are deliberately included in the Preview installation workflow.

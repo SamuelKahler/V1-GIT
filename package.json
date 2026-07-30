@@ -1,9 +1,10 @@
 {
   "name": "sports-edge",
-  "version": "10.0.0",
+  "version": "11.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check api/live-data.js && node --check api/grade-picks.js && node --check api/odds.js && node --check api/intelligence-sync.js && node --check sports/mlb/core/sports-edge-database.js && node --check sports/mlb/core/master-ledger.js && node --check sports/mlb/core/intelligence-engine.js && node --check sports/mlb/core/intelligence-pipeline.js && node --check sports/mlb/core/recent-results.js && node --check sports/mlb/core/performance-engine.js && node --check sports/mlb/mlb-app.js && node --check sports/mlb/mlb-data.js && node --check sports/nfl/nfl-app.js"
+    "check": "node --check api/live-data.js && node --check api/grade-picks.js && node --check api/odds.js && node --check api/intelligence-sync.js && node --check sports/mlb/core/sports-edge-database.js && node --check sports/mlb/core/master-ledger.js && node --check sports/mlb/core/intelligence-engine.js && node --check sports/mlb/core/intelligence-pipeline.js && node --check sports/mlb/core/recent-results.js && node --check sports/mlb/core/performance-engine.js && node --check sports/mlb/mlb-app.js && node --check sports/mlb/mlb-data.js && node --check sports/nfl/nfl-app.js && node --check api/mlb/import.js && node --check api/mlb/status.js && node --check api/mlb/audit.js && node --check lib/mlb/auth.js && node --check lib/mlb/http.js && node --check lib/mlb/supabase.js && node --check lib/mlb/transform.js && node --check lib/mlb/importer.js",
+    "validate:phase2a": "node scripts/validate-phase2a.mjs"
   }
 }
