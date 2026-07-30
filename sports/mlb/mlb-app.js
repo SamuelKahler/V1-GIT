@@ -1211,7 +1211,21 @@ function renderPerformanceLab(){
 
 // V42 F5 Performance Lab
 let selectedF5Team = 'ALL';
-function f5AllBets(){ if(window.SportsEdgeDatabase && Array.isArray(window.SportsEdgeDatabase.f5Bets)) return window.SportsEdgeDatabase.f5Bets.slice(); const base=Array.isArray(window.f5PerformanceBets) ? window.f5PerformanceBets : (typeof f5PerformanceBets !== 'undefined' ? f5PerformanceBets : []); const recent=Array.isArray(window.SportsEdgeRecentF5Results) ? window.SportsEdgeRecentF5Results : []; const seen=new Set(); return [...base,...recent].filter(row=>{ const key=`${row.date}|${String(row.bet||'').toUpperCase().replace(/[^A-Z0-9.+-]/g,'')}`; if(seen.has(key)) return false; seen.add(key); return true; }); }
+function f5AllBets(){
+  // F5 Performance is intentionally isolated from the Evidence Engine.
+  // The historical F5 ledger remains the locked baseline; only newly graded
+  // canonical F5 wagers are appended by performance-engine.js.
+  if(Array.isArray(window.SportsEdgeStableF5Bets)) return window.SportsEdgeStableF5Bets.slice();
+  const base=Array.isArray(window.f5PerformanceBets) ? window.f5PerformanceBets : (typeof f5PerformanceBets !== 'undefined' ? f5PerformanceBets : []);
+  const recent=Array.isArray(window.SportsEdgeRecentF5Results) ? window.SportsEdgeRecentF5Results : [];
+  const seen=new Set();
+  return [...base,...recent].filter(row=>{
+    const key=`${row.date}|${String(row.team||'').toUpperCase()}|${String(row.bet||'').toUpperCase().replace(/[^A-Z0-9.+-]/g,'')}`;
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 function f5Teams(){ return Array.isArray(window.mlbTeams) ? window.mlbTeams : (typeof mlbTeams !== 'undefined' ? mlbTeams : []); }
 function f5Stats(rows){
   const total = rows.length;
