@@ -10,7 +10,15 @@
     return error;
   }
 
-  async function request(path, payload, token) {
+  async function parseResponse(response) {
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.ok) {
+      throw apiError(data?.error || `MLB Intelligence request failed (${response.status}).`, response.status, data?.details);
+    }
+    return data;
+  }
+
+  async function adminRequest(path, payload, token) {
     const adminToken = token || global.sessionStorage?.getItem(ADMIN_TOKEN_STORAGE_KEY) || '';
     if (!adminToken) throw apiError('MLB Intelligence admin token is required.', 401);
 
@@ -23,11 +31,20 @@
       body: JSON.stringify(payload || {})
     });
 
-    const data = await response.json().catch(() => null);
-    if (!response.ok || !data?.ok) {
-      throw apiError(data?.error || `MLB Intelligence request failed (${response.status}).`, response.status, data?.details);
-    }
-    return data;
+    return parseResponse(response);
+  }
+
+  async function publicRequest(path, payload) {
+    const response = await fetch(path, {
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload || {})
+    });
+
+    return parseResponse(response);
   }
 
   const client = Object.freeze({
@@ -41,16 +58,25 @@
       global.sessionStorage?.removeItem(ADMIN_TOKEN_STORAGE_KEY);
     },
     async query(criteria, options = {}) {
-      const result = await request('/api/mlb/query', { criteria }, options.token);
+      const result = await adminRequest('/api/mlb/query', { criteria }, options.token);
       return result.intelligence;
     },
     async evidence(criteria, options = {}) {
-      const result = await request('/api/mlb/evidence', {
+      const result = await adminRequest('/api/mlb/evidence', {
         criteria,
         minimumSample: options.minimumSample,
         maximumVariants: options.maximumVariants,
         limit: options.limit
       }, options.token);
+      return result.report;
+    },
+    async publicEvidence(criteria, options = {}) {
+      const result = await publicRequest('/api/mlb/public-evidence', {
+        criteria,
+        minimumSample: options.minimumSample || 10,
+        maximumVariants: options.maximumVariants || 6,
+        limit: options.limit || 50
+      });
       return result.report;
     }
   });

@@ -521,3 +521,24 @@ body.theme-nfl{background:radial-gradient(circle at top left,#53200b 0,#111827 3
 .evidence-game-table th,.evidence-game-table td{padding:8px;border-bottom:1px solid rgba(25,57,80,.1);text-align:left}
 .emphasis-proof strong{font-size:1.45rem}
 @media (max-width:720px){.evidence-report-header,.evidence-section-title{align-items:flex-start;flex-direction:column}.top-evidence-rate{text-align:left;min-width:0}.evidence-report-grid{grid-template-columns:1fr}.evidence-stat-row{grid-template-columns:1fr 1fr}.evidence-percent-hero strong{font-size:2.15rem}}
+
+/* Release 4: customer-facing verified MLB evidence */
+.mlb-db-evidence-live{min-height:160px}
+.evidence-loading{display:grid;gap:6px;padding:20px;border:1px solid rgba(18,74,122,.16);border-radius:18px;background:linear-gradient(135deg,#fff,#f5f9fc)}
+.evidence-loading strong{color:#143c5c;font-size:1.05rem}.evidence-loading span{color:#667888}
+.verified-mlb-report{display:grid;gap:18px}
+.verified-evidence-hero{display:flex;justify-content:space-between;gap:22px;align-items:flex-end;padding:22px;border:1px solid rgba(18,74,122,.16);border-radius:20px;background:linear-gradient(135deg,#fff,#f3f8fc)}
+.verified-evidence-hero h3{margin:.25rem 0 .3rem;color:#173a55}.verified-evidence-hero p{margin:0;color:#627080;max-width:580px}
+.verified-hit-rate{text-align:right;min-width:210px}.verified-hit-rate small,.verified-hit-rate span{display:block;color:#627080}.verified-hit-rate strong{display:block;font-size:2.8rem;line-height:1;color:#0d4e82;margin:.25rem 0}
+.verified-evidence-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.verified-evidence-metrics>div{padding:14px;border:1px solid rgba(20,57,84,.12);border-radius:16px;background:#fff}
+.verified-evidence-metrics small,.verified-evidence-metrics span{display:block}.verified-evidence-metrics small{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#73818d;font-weight:900}.verified-evidence-metrics strong{display:block;margin:.35rem 0;font-size:1.5rem;color:#123d5e}.verified-evidence-metrics span{font-size:.78rem;color:#71808e;line-height:1.35}
+.verified-evidence-columns{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.verified-evidence-columns section{padding:16px;border:1px solid rgba(20,57,84,.12);border-radius:16px;background:#fff}.verified-evidence-columns h4{margin:.1rem 0 .7rem;color:#173a55}
+.verified-reason-list{display:grid;gap:7px;margin:0;padding-left:20px}.verified-reason-list li{color:#334d60;line-height:1.4}
+.contradiction-panel{background:#fff8f4!important;border-color:rgba(183,83,36,.18)!important}.contradiction-panel strong{color:#9a3f1d}.contradiction-panel p{color:#6e574e;margin:.4rem 0 0}
+.qualified-relaxations{padding:14px 16px;border:1px solid rgba(239,139,34,.22);border-radius:16px;background:#fff9f1}.qualified-relaxations summary{cursor:pointer;font-weight:900;color:#7c4a14}.qualified-relaxations p{color:#6f6253}.qualified-relaxations ul{margin-bottom:0}
+.verified-source-note{margin:0;padding:12px 14px;border-radius:12px;background:#f5f8fb;color:#687887;font-size:.8rem;line-height:1.45}
+.history-result{display:inline-flex;padding:4px 7px;border-radius:999px;font-weight:900;font-size:.72rem}.history-WIN{background:rgba(34,167,95,.13);color:#13713e}.history-LOSS{background:rgba(204,71,71,.12);color:#a23232}.history-PUSH,.history-N\2FA{background:rgba(112,128,144,.13);color:#596675}
+.evidence-error{border-color:rgba(204,71,71,.22)!important;background:#fff7f7!important}
+@media (max-width:900px){.verified-evidence-metrics{grid-template-columns:1fr 1fr}.verified-evidence-columns{grid-template-columns:1fr}}
+@media (max-width:650px){.verified-evidence-hero{align-items:flex-start;flex-direction:column}.verified-hit-rate{text-align:left;min-width:0}.verified-hit-rate strong{font-size:2.3rem}.verified-evidence-metrics{grid-template-columns:1fr}}
