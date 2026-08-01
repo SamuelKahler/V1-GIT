@@ -35,7 +35,7 @@ document.getElementById('run').addEventListener('click',async()=>{
   result.textContent='Running two imports. This can take a minute...'; result.className='';
   output.textContent='Working...';
   try{
-    const response=await fetch('/api/mlb/release-a-test',{method:'POST',headers:{'Content-Type':'application/json','x-sports-edge-admin-token':token},body:JSON.stringify({date,concurrency:3})});
+    const response=await fetch('/api/mlb',{method:'POST',headers:{'Content-Type':'application/json','x-sports-edge-admin-token':token},body:JSON.stringify({action:'releaseATest',date,concurrency:3})});
     const payload=await response.json();
     result.textContent=payload.passed?'RELEASE A PASSED':'RELEASE A DID NOT PASS';
     result.className=payload.passed?'pass':'fail';

@@ -40,13 +40,13 @@ assert.equal(normalizePeriod("f5"), "F5");
 assert.equal(normalizePeriod("full game"), "FULL_GAME");
 expectThrow(() => normalizePeriod("first inning"), /FULL_GAME or F5/i);
 
-const publicEndpoint = fs.readFileSync(new URL("../api/mlb/public-evidence.js", import.meta.url), "utf8");
+const publicEndpoint = fs.readFileSync(new URL("../api/mlb.js", import.meta.url), "utf8");
 assert.match(publicEndpoint, /CUSTOMER_READ_ONLY/);
-assert.doesNotMatch(publicEndpoint, /requireAdmin/);
+assert.match(publicEndpoint, /publicEvidence: \{ method: "POST", admin: false \}/);
 
 const browserClient = fs.readFileSync(new URL("../sports/mlb/core/mlb-intelligence-client.js", import.meta.url), "utf8");
 assert.match(browserClient, /publicEvidence/);
-assert.match(browserClient, /\/api\/mlb\/public-evidence/);
+assert.match(browserClient, /action: 'publicEvidence'/);
 
 const app = fs.readFileSync(new URL("../sports/mlb/mlb-app.js", import.meta.url), "utf8");
 assert.match(app, /Verified MLB Game Logs/);

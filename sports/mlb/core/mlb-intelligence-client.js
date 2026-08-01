@@ -58,11 +58,12 @@
       global.sessionStorage?.removeItem(ADMIN_TOKEN_STORAGE_KEY);
     },
     async query(criteria, options = {}) {
-      const result = await adminRequest('/api/mlb/query', { criteria }, options.token);
+      const result = await adminRequest('/api/mlb', { action: 'query', criteria }, options.token);
       return result.intelligence;
     },
     async evidence(criteria, options = {}) {
-      const result = await adminRequest('/api/mlb/evidence', {
+      const result = await adminRequest('/api/mlb', {
+        action: 'evidence',
         criteria,
         minimumSample: options.minimumSample,
         maximumVariants: options.maximumVariants,
@@ -71,7 +72,8 @@
       return result.report;
     },
     async publicEvidence(criteria, options = {}) {
-      const result = await publicRequest('/api/mlb/public-evidence', {
+      const result = await publicRequest('/api/mlb', {
+        action: 'publicEvidence',
         criteria,
         minimumSample: options.minimumSample || 10,
         maximumVariants: options.maximumVariants || 6,
