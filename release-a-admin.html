@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sports Edge Release A Test</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 20px;background:#f6f8fb;color:#172033}
+    .card{background:white;border:1px solid #dce3ee;border-radius:14px;padding:24px;box-shadow:0 8px 24px rgba(20,40,80,.08)}
+    label{display:block;font-weight:700;margin:14px 0 6px} input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #b8c4d6;border-radius:8px}
+    button{margin-top:18px;padding:12px 18px;border:0;border-radius:8px;background:#f97316;color:white;font-weight:800;cursor:pointer}
+    pre{white-space:pre-wrap;overflow:auto;background:#0f172a;color:#e2e8f0;padding:16px;border-radius:10px;margin-top:20px}
+    .note{font-size:14px;color:#526079}.pass{color:#16803c;font-weight:800}.fail{color:#b42318;font-weight:800}
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>MLB Release A Acceptance Test</h1>
+  <p>This runs one completed MLB date twice and verifies storage, innings, starters and gamePk deduplication.</p>
+  <p class="note">Use only on the Vercel Preview deployment. Your token is sent only to your protected API and is not stored by this page.</p>
+  <label for="date">Completed MLB date</label>
+  <input id="date" type="date">
+  <label for="token">MLB_IMPORT_ADMIN_TOKEN</label>
+  <input id="token" type="password" autocomplete="off">
+  <button id="run">Run Release A Test</button>
+  <div id="result"></div>
+  <pre id="output">Ready.</pre>
+</div>
+<script>
+const output=document.getElementById('output');
+const result=document.getElementById('result');
+document.getElementById('run').addEventListener('click',async()=>{
+  const date=document.getElementById('date').value;
+  const token=document.getElementById('token').value;
+  result.textContent='Running two imports. This can take a minute...'; result.className='';
+  output.textContent='Working...';
+  try{
+    const response=await fetch('/api/mlb/release-a-test',{method:'POST',headers:{'Content-Type':'application/json','x-sports-edge-admin-token':token},body:JSON.stringify({date,concurrency:3})});
+    const payload=await response.json();
+    result.textContent=payload.passed?'RELEASE A PASSED':'RELEASE A DID NOT PASS';
+    result.className=payload.passed?'pass':'fail';
+    output.textContent=JSON.stringify(payload,null,2);
+  }catch(error){result.textContent='TEST ERROR';result.className='fail';output.textContent=String(error);}
+});
+</script>
+</body>
+</html>

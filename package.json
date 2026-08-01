@@ -1,13 +1,14 @@
 {
   "name": "sports-edge",
-  "version": "14.0.0",
+  "version": "15.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check api/live-data.js && node --check api/grade-picks.js && node --check api/odds.js && node --check api/intelligence-sync.js && node --check sports/mlb/core/sports-edge-database.js && node --check sports/mlb/core/master-ledger.js && node --check sports/mlb/core/intelligence-engine.js && node --check sports/mlb/core/intelligence-pipeline.js && node --check sports/mlb/core/recent-results.js && node --check sports/mlb/core/performance-engine.js && node --check sports/mlb/mlb-app.js && node --check sports/mlb/mlb-data.js && node --check sports/nfl/nfl-app.js && node --check api/mlb/import.js && node --check api/mlb/status.js && node --check api/mlb/audit.js && node --check lib/mlb/auth.js && node --check lib/mlb/http.js && node --check lib/mlb/supabase.js && node --check lib/mlb/transform.js && node --check lib/mlb/stats-api-client.js && node --check lib/mlb/importer.js && node --check api/mlb/environments.js && node --check api/mlb/query.js && node --check lib/mlb/environment-engine.js && node --check lib/mlb/query-engine.js && node --check api/mlb/evidence.js && node --check lib/mlb/evidence-engine.js && node --check sports/mlb/core/mlb-intelligence-client.js && node --check api/mlb/public-evidence.js",
+    "check": "node --check api/live-data.js && node --check api/grade-picks.js && node --check api/odds.js && node --check api/intelligence-sync.js && node --check sports/mlb/core/sports-edge-database.js && node --check sports/mlb/core/master-ledger.js && node --check sports/mlb/core/intelligence-engine.js && node --check sports/mlb/core/intelligence-pipeline.js && node --check sports/mlb/core/recent-results.js && node --check sports/mlb/core/performance-engine.js && node --check sports/mlb/mlb-app.js && node --check sports/mlb/mlb-data.js && node --check sports/nfl/nfl-app.js && node --check api/mlb/import.js && node --check api/mlb/status.js && node --check api/mlb/audit.js && node --check lib/mlb/auth.js && node --check lib/mlb/http.js && node --check lib/mlb/supabase.js && node --check lib/mlb/transform.js && node --check lib/mlb/stats-api-client.js && node --check lib/mlb/importer.js && node --check api/mlb/environments.js && node --check api/mlb/query.js && node --check lib/mlb/environment-engine.js && node --check lib/mlb/query-engine.js && node --check api/mlb/evidence.js && node --check lib/mlb/evidence-engine.js && node --check sports/mlb/core/mlb-intelligence-client.js && node --check api/mlb/public-evidence.js && node --check api/mlb/release-a-test.js && node --check api/mlb/release-a-audit.js",
     "validate:phase2a": "node scripts/validate-phase2a.mjs",
     "validate:release2a": "node scripts/validate-release2a.mjs",
     "validate:release3": "node scripts/validate-release3.mjs",
-    "validate:release4": "node scripts/validate-release4.mjs"
+    "validate:release4": "node scripts/validate-release4.mjs",
+    "validate:release-a": "node scripts/validate-release-a.mjs"
   }
 }
