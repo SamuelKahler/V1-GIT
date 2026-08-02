@@ -21,6 +21,7 @@ import {
 } from "../lib/mlb/http.js";
 import { rebuildEnvironments } from "../lib/mlb/environment-engine.js";
 import sportsEdgeEvidenceEngine from "../lib/mlb/evidence-engine.js";
+import sportsEdgeCustomerIntelligence from "../lib/mlb/customer-intelligence.js";
 import { importDateRange } from "../lib/mlb/importer.js";
 import sportsEdgeQueryEngine from "../lib/mlb/query-engine.js";
 import { callRpc, checkDatabaseHealth } from "../lib/mlb/supabase.js";
@@ -31,6 +32,7 @@ const ACTIONS = Object.freeze({
     environments: { method: "POST", admin: true },
     evidence: { method: "POST", admin: true },
     import: { method: "POST", admin: true },
+    publicCustomerIntelligence: { method: "POST", admin: false },
     publicEvidence: { method: "POST", admin: false },
     query: { method: "POST", admin: true },
     releaseAAudit: { method: "GET", admin: true },
@@ -144,6 +146,27 @@ async function handleEvidence(body, isPublic) {
     return isPublic
         ? { report, visibility: "CUSTOMER_READ_ONLY" }
         : { report };
+}
+
+
+async function handleCustomerIntelligence(body) {
+    const criteria = body.criteria || body.pick || body;
+    const minimumSample = requireInteger(body.minimumSample, "minimumSample", {
+        defaultValue: 10, minimum: 3, maximum: 100
+    });
+    const maximumVariants = requireInteger(body.maximumVariants, "maximumVariants", {
+        defaultValue: 6, minimum: 1, maximum: 8
+    });
+    const limit = requireInteger(body.limit, "limit", {
+        defaultValue: 50, minimum: 5, maximum: 100
+    });
+
+    return {
+        customerIntelligence: await sportsEdgeCustomerIntelligence.report(criteria, {
+            minimumSample, maximumVariants, limit
+        }),
+        visibility: "CUSTOMER_READ_ONLY"
+    };
 }
 
 async function handleReleaseAAudit(request) {
@@ -268,6 +291,9 @@ export default async function handler(request, response) {
                 break;
             case "evidence":
                 result = await handleEvidence(body, false);
+                break;
+            case "publicCustomerIntelligence":
+                result = await handleCustomerIntelligence(body);
                 break;
             case "publicEvidence":
                 result = await handleEvidence(body, true);

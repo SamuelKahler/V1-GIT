@@ -80,6 +80,16 @@
         limit: options.limit || 50
       });
       return result.report;
+    },
+    async customerIntelligence(criteria, options = {}) {
+      const result = await publicRequest('/api/mlb', {
+        action: 'publicCustomerIntelligence',
+        criteria,
+        minimumSample: options.minimumSample || 10,
+        maximumVariants: options.maximumVariants || 6,
+        limit: options.limit || 50
+      });
+      return result.customerIntelligence;
     }
   });
 
