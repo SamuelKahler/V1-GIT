@@ -1,0 +1,15 @@
+ADDED
+supabase/migrations/006_evidence_engine_v2.sql
+scripts/validate-evidence-engine-v2.mjs
+
+UPDATED
+index.html
+package.json
+lib/mlb/query-engine.js
+lib/mlb/evidence-engine.js
+lib/mlb/customer-intelligence.js
+sports/mlb/mlb-app.js
+sports/mlb/mlb.css
+scripts/validate-release4.mjs
+scripts/validate-customer-intelligence.mjs
+scripts/validate-customer-experience-v1.mjs

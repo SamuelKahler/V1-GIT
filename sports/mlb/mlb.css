@@ -184,3 +184,25 @@
   .performance-proof-metrics { grid-template-columns: 1fr; }
   .exact-game-row { align-items: flex-start; }
 }
+
+/* ============================================================
+   Evidence Engine V2
+   One MLB source of truth, strict market isolation
+============================================================ */
+.historical-evidence-v2{display:grid;gap:18px}
+.season-evidence-primary,.season-baseline-card,.season-evidence-empty{border-radius:20px;padding:22px;border:1px solid #d7e2eb;background:#fff}
+.season-evidence-primary{background:linear-gradient(135deg,#eef9f5 0%,#fff 100%);border-color:#bfe3d6}
+.season-evidence-primary small,.season-baseline-card small{display:block;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#64768a}
+.season-evidence-primary strong,.season-baseline-card strong{display:block;margin:6px 0 4px;font-size:clamp(2.6rem,7vw,4.4rem);line-height:1;color:#0d4e7d}
+.season-evidence-primary span,.season-baseline-card span{font-weight:800;color:#596b7d}
+.season-baseline-card{background:#f7faff}
+.season-baseline-card p,.season-evidence-empty p{margin:8px 0 0;color:#68798c}
+.season-evidence-empty{background:#fff9f1;border-color:#f0d5b2}
+.season-evidence-empty strong{color:#8b4a13}
+.official-f5-card,.verified-season-card{display:grid;gap:10px}
+.verified-season-card>strong{font-size:1.15rem;color:#123550}
+.trend-backbone-intro{margin:22px 0;padding:24px;border:1px solid #cfddea;border-radius:22px;background:linear-gradient(135deg,#f4f9ff,#fff)}
+.trend-backbone-intro h3{margin:5px 0 8px;color:#102b44}
+.trend-backbone-intro p:last-child{margin:0;color:#65778b;max-width:850px}
+.trend-backbone-results{width:100%}
+.trend-backbone-grid{margin-top:16px}

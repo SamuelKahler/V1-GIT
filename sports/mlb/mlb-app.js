@@ -429,26 +429,14 @@ function initFilters(){
   });
 }
 function renderTrends(){
-  refreshTrendDropdowns();
-  const sport=$('#sportFilter')?.value || 'MLB', category=$('#betCategoryFilter')?.value || 'Win Trend', winStyle=$('#winStyleFilter')?.value || 'all', mlEnv=$('#mlEnvironmentFilter')?.value || 'all', propTeamRaw=$('#propTeamSearch')?.value || '', propTeam=teamFromSearch(propTeamRaw), propEnv=$('#propEnvironmentFilter')?.value || 'all', gameLogEnv=$('#gameLogEnvironmentFilter')?.value || 'all', min=$('#hitFilter')?.value || 'all', q=($('#trendSearch')?.value || '').toLowerCase();
-  let rows=activeTrendRows().filter(r=>sport==='MLB' && rowCategory(r)===category);
-  if(category==='Win Trend' && winStyle!=='all') rows=rows.filter(r=>normalizeStyleKey(r.style)===winStyle);
-  if(category==='Win Trend Hit Rate') rows=rows.filter(r=>(mlEnv==='all'||r.situation===mlEnv));
-  if(category==='Prop'){
-    if(propTeamRaw.trim()) rows=rows.filter(r=>r.team===propTeam);
-    const detectedEnvs = propTeamRaw.trim() ? detectedPropEnvironments(propTeam) : [];
-    if(propEnv!=='all') rows=rows.filter(r=>r.situation===propEnv);
-    else if(detectedEnvs.length) rows=rows.filter(r=>detectedEnvs.includes(r.situation));
-  }
-  if(category==='Game Log Trend') rows=rows.filter(r=>!['ML','SPRD'].includes(normalizeStyleKey(r.style)));
-  if(category==='Game Log Trend' && gameLogEnv!=='all') rows=rows.filter(r=>gameLogEnvironment(r)===gameLogEnv);
-  if(min!=='all') rows=rows.filter(r=>hasHitRateEvidence(r) && (pct(r.hitRate)||0)>=Number(min));
-  if(q) rows=rows.filter(r=>Object.values(r).join(' ').toLowerCase().includes(q));
-  rows = rows.sort((a,b)=>trendDateSortValue(b)-trendDateSortValue(a));
-  const todayNote = todaysTeamAbbrs().length ? ` for ${todaysTeamAbbrs().length} teams on today's MLB slate` : ' using all stored MLB rows until live slate loads';
-  $('#trendCount').textContent=`Showing ${rows.length} ${category} records${todayNote}`;
-  if($('#importSummary') && typeof importSummary !== 'undefined') $('#importSummary').textContent = `${importSummary.version}: ${importSummary.importedRows} imported rows + ${importSummary.baseRows} base rows = ${importSummary.totalRows} total. ${importSummary.note}`;
-  $('#trendTable').innerHTML=`<table><thead><tr><th>Date</th><th>Team</th><th>Data Type</th><th>Environment / Auto Tags</th><th>Description<br><small>Opponent / Location</small></th><th>Hit Rate / Status</th><th>Win/Loss Evidence</th><th>Notes</th></tr></thead><tbody>${rows.map(r=>`<tr class="${rowCategory(r)==='Game Log Trend'?'game-log-row':''}"><td>${formatTrendDate(r.date)}</td><td>${r.team}<br>${liveMatchupForTeam(r.team)}</td><td><strong>${rowCategory(r)}</strong><br><small>${evidenceStatus(r)}</small></td><td>${rowCategory(r)==='Game Log Trend' ? `<b>${gameLogEnvironment(r) || r.situation || '-'}</b><br>${gameLogStyleSummary(r)}` : (category==='Win Trend Hit Rate'||category==='Prop'?r.situation:trendDisplayStyle(r.style))}</td><td>${opponentLocationDescription(r)}</td><td>${trendHitRateCell(r)}</td><td>${resultEvidenceCell(r, rows)}</td><td>${r.notes}</td></tr>`).join('')}</tbody></table>`;
+  const latest = latestPickDateKey();
+  const rows = coreDailyPicks.filter(p=>dateKey(parseSlateDate(p.slate))===latest && isClassifiedPick(p));
+  const count = document.getElementById('trendCount');
+  const table = document.getElementById('trendTable');
+  const summary = document.getElementById('importSummary');
+  if(summary) summary.textContent = 'Legacy spreadsheet percentages retired. Every customer percentage now comes from the imported 2026 MLB database or the separate Sports Edge official-performance ledger.';
+  if(count) count.textContent = `${rows.length} current picks with market-specific 2026 evidence`;
+  if(table) table.innerHTML = `<div class="slate-play-grid trend-backbone-grid">${rows.map(slatePlayCard).join('')}</div>`;
 }
 function liveMatchupForTeam(team){
   const g = liveState.games.find(game => [teamAbbr(game.away_team_abbr || game.away_team), teamAbbr(game.home_team_abbr || game.home_team)].includes(team));
@@ -1982,6 +1970,23 @@ function currentLiveGameForPick(p){
     return away === teamAbbr(ctx.away) && home === teamAbbr(ctx.home);
   }) || null;
 }
+function f5LineForPick(p){
+  const title = cleanPickTitle(p).toUpperCase();
+  const match = title.match(/^F5\s+[A-Z']+\s*([+-])\s*(0?\.5|1\.5)/);
+  if(!match) return null;
+  const value = Number(match[2]);
+  return match[1] === '-' ? -value : value;
+}
+function pickSeasonBounds(p){
+  const date = parseSlateDate(p.slate) || new Date();
+  const year = date.getFullYear();
+  const prior = new Date(date.getTime());
+  prior.setDate(prior.getDate()-1);
+  return {
+    dateFrom: `${year}-01-01`,
+    dateTo: `${prior.getFullYear()}-${String(prior.getMonth()+1).padStart(2,'0')}-${String(prior.getDate()).padStart(2,'0')}`
+  };
+}
 function mlbEvidenceCriteriaForPick(p){
   const team = targetTeamForPick(p);
   const ctx = matchupContextForPick(p);
@@ -1992,17 +1997,41 @@ function mlbEvidenceCriteriaForPick(p){
   const role = normalizedTeam === home ? 'HOME' : 'AWAY';
   const opponent = normalizedTeam === home ? away : home;
   const title = cleanPickTitle(p).toUpperCase();
+  const period = /^F5\b/.test(title) ? 'F5' : 'FULL_GAME';
   const game = currentLiveGameForPick(p);
+  const season = pickSeasonBounds(p);
   const criteria = {
     teamAbbreviation: normalizedTeam,
     opponentAbbreviation: opponent,
     role,
-    period: /^F5\b/.test(title) ? 'F5' : 'FULL_GAME'
+    period,
+    dateFrom: season.dateFrom,
+    dateTo: season.dateTo,
+    limit: 200
   };
+  if(period === 'F5'){
+    const line = f5LineForPick(p);
+    if(line !== null) criteria.f5Line = line;
+  } else {
+    const favorite = targetIsFavorite(p);
+    if(favorite === true) criteria.favorite = true;
+    if(favorite === false) criteria.underdog = true;
+    const price = oddsValue(p);
+    const bucket = mlbOddsBucket(price);
+    if(bucket) criteria.oddsBucket = bucket;
+  }
   const seriesGameNumber = Number(game?.seriesGameNumber ?? game?.series_game_number);
   if(Number.isInteger(seriesGameNumber) && seriesGameNumber > 0) criteria.seriesGameNumber = seriesGameNumber;
   const dayNight = String(game?.dayNight ?? game?.day_night ?? '').trim().toLowerCase();
   if(dayNight === 'day' || dayNight === 'night') criteria.dayNight = dayNight;
+  const opponentHand = role === 'HOME'
+    ? String(game?.away_pitcher_hand ?? game?.awayPitcherHand ?? '').toUpperCase()
+    : String(game?.home_pitcher_hand ?? game?.homePitcherHand ?? '').toUpperCase();
+  if(['L','R','S'].includes(opponentHand)) criteria.opponentPitcherHand = opponentHand;
+  const previousResult = String(role === 'HOME' ? (game?.home_previous_result ?? '') : (game?.away_previous_result ?? '')).toUpperCase();
+  if(['WIN','LOSS','PUSH'].includes(previousResult)) criteria.previousResult = previousResult;
+  const restAdvantage = role === 'HOME' ? game?.home_rest_advantage : game?.away_rest_advantage;
+  if(typeof restAdvantage === 'boolean') criteria.restAdvantage = restAdvantage;
   return criteria;
 }
 function mlbEvidenceElementId(index){ return 'mlb-db-evidence-' + index; }
@@ -2011,7 +2040,7 @@ function verifiedMLBEvidenceShell(p,index){
   if(!criteria){
     return '<div class="empty-evidence"><strong>Verified game logs are not available for this market yet.</strong><p class="subtle">The current database query supports team-side MLB and F5 selections. Totals and series markets will be added without using Sports Edge picks as game-log evidence.</p></div>';
   }
-  return '<div id="'+mlbEvidenceElementId(index)+'" class="mlb-db-evidence-live"><div class="evidence-loading"><strong>Loading verified MLB game logs...</strong><span>Matching '+evidenceHtmlEscape(criteria.teamAbbreviation)+' '+evidenceHtmlEscape(criteria.role)+' historical environments.</span></div></div>';
+  return '<div id="'+mlbEvidenceElementId(index)+'" class="mlb-db-evidence-live"><div class="evidence-loading"><strong>Loading this-season MLB evidence...</strong><span>Checking '+evidenceHtmlEscape(criteria.teamAbbreviation)+' '+evidenceHtmlEscape(criteria.period)+' results from this season only.</span></div></div>';
 }
 function evidenceMetric(value, fallback='—'){
   return value === null || value === undefined || value === '' ? fallback : value;
@@ -2064,29 +2093,35 @@ function sportsEdgeF5PerformanceHtml(period){
 }
 function renderVerifiedMLBEvidence(report){
   const exact = report?.exactMatch || {};
-  const summary = exact.record || exact.summary || {};
-  const period = report?.period || summary.period || 'FULL_GAME';
-  const sample = Number((summary.sampleSize ?? summary.sample_size) || 0);
-  const wins = Number(summary.wins || 0);
-  const losses = Number(summary.losses || 0);
-  const pushes = Number(summary.pushes || 0);
-  const decisions = wins + losses;
-  const hitRateValue = summary.hitRate ?? summary.hit_rate;
-  const hitRate = hitRateValue == null ? '—' : Number(hitRateValue).toFixed(1)+'%';
-  const record = wins+'-'+losses+(pushes ? '-'+pushes : '');
+  const baseline = report?.seasonBaseline || {};
+  const exactSummary = exact.record || {};
+  const baseSummary = baseline.record || {};
+  const period = report?.period || 'FULL_GAME';
+  const criteria = report?.criteria || {};
+  const exactSample = Number(exactSummary.sampleSize || 0);
+  const baseSample = Number(baseSummary.sampleSize || 0);
+  const exactRecord = `${Number(exactSummary.wins||0)}-${Number(exactSummary.losses||0)}${Number(exactSummary.pushes||0)?'-'+Number(exactSummary.pushes||0):''}`;
+  const baseRecord = `${Number(baseSummary.wins||0)}-${Number(baseSummary.losses||0)}${Number(baseSummary.pushes||0)?'-'+Number(baseSummary.pushes||0):''}`;
+  const exactRate = exactSummary.hitRate == null ? '—' : Number(exactSummary.hitRate).toFixed(1)+'%';
+  const baseRate = baseSummary.hitRate == null ? '—' : Number(baseSummary.hitRate).toFixed(1)+'%';
   const details = Array.isArray(report?.exactEnvironmentMatchDetails) ? report.exactEnvironmentMatchDetails : [];
-  const chips = details.filter(item=>item.key!=='limit' && item.key!=='teamAbbreviation').map(item=>'<span>'+evidenceHtmlEscape(criteriaLabel(item.key,item.value))+'</span>').join('');
-  const performance = sportsEdgeF5PerformanceHtml(period);
-  if(!sample){
-    return '<div class="historical-evidence-v1"><div class="historical-evidence-header"><div><span class="evidence-kicker">MLB Intelligence Database</span><h3>Exact Environment Evidence</h3><p>No completed game currently matches every verified condition below. Sports Edge will not broaden the sample or substitute unrelated team history.</p></div></div><div class="environment-match-strip">'+(chips || '<span>Current environment is still being verified.</span>')+'</div>'+performance+'<p class="verified-source-note">Official MLB games only. Missing values are excluded and never guessed.</p></div>';
-  }
-  return '<div class="historical-evidence-v1">'
-    +'<div class="historical-evidence-header"><div><span class="evidence-kicker">MLB Intelligence Database</span><h3>Exact Environment Evidence</h3><p>Only completed games matching every verified condition shown below.</p></div><div class="historical-headline"><strong>'+hitRate+'</strong><span>'+record+' • '+sample+' games</span></div></div>'
-    +'<div class="environment-match-strip">'+chips+'</div>'
-    +'<div class="historical-proof-grid"><div><small>Record</small><strong>'+record+'</strong></div><div><small>Hit Rate</small><strong>'+hitRate+'</strong></div><div><small>Exact Sample</small><strong>'+sample+'</strong></div></div>'
-    +renderVerifiedGameRows(exact.supportingGames,period)
-    +performance
-    +'<p class="verified-source-note">Source: official MLB game records stored in Sports Edge. No relaxed conditions and no Sports Edge picks are included in this historical sample.</p>'
+  const chips = details.filter(item=>!['limit','teamAbbreviation','dateFrom','dateTo','f5Line'].includes(item.key)).map(item=>'<span>'+evidenceHtmlEscape(criteriaLabel(item.key,item.value))+'</span>').join('');
+  const lineText = period === 'F5' && Number.isFinite(Number(criteria.f5Line)) ? ` ${Number(criteria.f5Line)>0?'+':''}${Number(criteria.f5Line)}` : '';
+  const marketLabel = period === 'F5' ? `F5${lineText}` : 'Full Game Moneyline';
+  const officialPerformance = sportsEdgeF5PerformanceHtml(period);
+  const exactBlock = exactSample
+    ? '<section class="season-evidence-primary"><div><small>Today&apos;s Exact Environment</small><strong>'+exactRate+'</strong><span>'+exactRecord+' • '+exactSample+' games</span></div></section>'+renderVerifiedGameRows(exact.supportingGames,period)
+    : '<section class="season-evidence-empty"><strong>No exact same-environment game yet this season.</strong><p>The app will not substitute full-game moneylines, spreads, or a broader market for this '+evidenceHtmlEscape(marketLabel)+' wager.</p></section>';
+  const baselineBlock = baseSample
+    ? '<section class="season-baseline-card"><div><small>'+evidenceHtmlEscape(report?.criteria?.teamAbbreviation || '')+' '+evidenceHtmlEscape(marketLabel)+' — This Season</small><strong>'+baseRate+'</strong><span>'+baseRecord+' • '+baseSample+' games</span></div><p>Every completed '+evidenceHtmlEscape(period === 'F5' ? 'first-five result at this exact F5 line' : 'full-game moneyline result')+' for this team in the imported MLB season.</p></section>'
+    : '';
+  return '<div class="historical-evidence-v2">'
+    +'<div class="historical-evidence-header"><div><span class="evidence-kicker">2026 MLB Intelligence Database</span><h3>This Season MLB Evidence</h3><p>Market-specific results only. F5 evidence ends after five innings and never uses full-game spreads or moneylines.</p></div></div>'
+    +'<div class="environment-match-strip">'+(chips || '<span>Team, opponent, market, and location verified.</span>')+'</div>'
+    +exactBlock
+    +baselineBlock
+    +officialPerformance
+    +'<p class="verified-source-note">Source: completed official MLB games stored in Sports Edge. Legacy spreadsheet trends are not used in these percentages.</p>'
     +'</div>';
 }
 async function loadVerifiedMLBEvidenceForPick(p,index){
@@ -2197,12 +2232,20 @@ function apiProofStrip(p){
   const source = hit ? 'Official MLB API' : 'API pending';
   return `<div class="pick-verified-strip"><span class="verified-pill verified-${st}">${statusDisplayIcon(st)}</span><span class="verified-pill verified-${st}">${source}</span></div>`;
 }
+function customerEvidenceCardSummary(p){
+  const category = bettorCategory(p);
+  if(category === 'First Five' && window.SportsEdgePerformance && typeof window.SportsEdgePerformance.stats === 'function'){
+    const stats = window.SportsEdgePerformance.stats();
+    return `<div class="matched-trend-card official-f5-card"><span class="evidence-type-label game-log-label">Official Sports Edge F5</span><div class="pick-card-proof emphasis-proof"><div><small>Record</small><strong>${stats.wins}-${stats.losses}${stats.pushes?'-'+stats.pushes:''}</strong></div><div><small>Win Rate</small><strong>${Number(stats.winRate||0).toFixed(1)}%</strong></div><div><small>ROI</small><strong>${Number(stats.roi||0)>=0?'+':''}${Number(stats.roi||0).toFixed(1)}%</strong></div></div><small>Open details for verified 2026 F5 environment evidence.</small></div>`;
+  }
+  return `<div class="matched-trend-card verified-season-card"><span class="evidence-type-label game-log-label">2026 MLB Database</span><strong>Market-specific historical evidence</strong><small>Open details to view this season's exact environment and supporting games.</small></div>`;
+}
 function slatePlayCard(p){
   const st = normalizedPickStatus(p);
   const official = isOfficialPlay(p);
   const statusText = official ? 'Official Play' : 'Research Play';
   const scoreLine = typeof p.score === 'number' ? p.score.toFixed(2) : 'Pending';
-  return `<article class="slate-play-card ${official?'official-play':'research-play'}"><div class="series-card-top"><span class="tag ${official?'':'blue'}">${statusText}</span><span class="pill ${'status-'+slugStatus(st)}">${statusDisplayIcon(st)}</span></div><h3>${cleanPickTitle(p)}</h3>${matchupSubtitleHtml(p)}${apiProofStrip(p)}<div class="pick-card-proof"><div><small>Market</small><strong>${bettorCategory(p)}</strong></div><div><small>Odds</small><strong>${p.odds || '-'}</strong></div><div><small>Model Score</small><strong>${scoreLine}</strong></div></div>${trendEvidenceCardSummary(p) || `<p class="card-summary">${consumerReasoningNotes(p)[0] || compactWhy(p)[0] || 'Sports Edge is waiting for connected evidence on this pick.'}</p>`}<button class="secondary details-cta" onclick="openPick(${coreDailyPicks.indexOf(p)})">Open Bet Details</button></article>`;
+  return `<article class="slate-play-card ${official?'official-play':'research-play'}"><div class="series-card-top"><span class="tag ${official?'':'blue'}">${statusText}</span><span class="pill ${'status-'+slugStatus(st)}">${statusDisplayIcon(st)}</span></div><h3>${cleanPickTitle(p)}</h3>${matchupSubtitleHtml(p)}${apiProofStrip(p)}<div class="pick-card-proof"><div><small>Market</small><strong>${bettorCategory(p)}</strong></div><div><small>Odds</small><strong>${p.odds || '-'}</strong></div><div><small>Model Score</small><strong>${scoreLine}</strong></div></div>${customerEvidenceCardSummary(p)}<button class="secondary details-cta" onclick="openPick(${coreDailyPicks.indexOf(p)})">Open Bet Details</button></article>`;
 }
 function startingPitcherBlock(p){
   const ctx = matchupContextForPick(p);
@@ -2249,8 +2292,7 @@ function openPick(i){
   const st = normalizedPickStatus(p);
   const scoreMeta = typeof p.score === 'number' ? `<span class="pill">Model Score ${p.score}</span>` : `<span class="pill ${'status-'+slugStatus(st)}">Result ${pickScoreDisplay(p)}</span>`;
   const sections=[];
-  sections.push(detailAccordion('Trend Database', trendEvidenceHtml(p), true));
-  sections.push(detailAccordion('Exact Historical Evidence', verifiedMLBEvidenceShell(p,i), true));
+  sections.push(detailAccordion('This Season MLB Evidence', verifiedMLBEvidenceShell(p,i), true));
   sections.push(detailAccordion('Starting Pitchers / K Prop History', pitcherPropHistoryHtml(p), false));
   if(pickIsFinal(p)) sections.push(detailAccordion('Verified Result', verificationHtml(p), false));
   $('#modalBody').innerHTML = `<h2>${cleanPickTitle(p)}</h2>${matchupSubtitleHtml(p)}<p class="eyebrow">${p.slate} • ${statusDisplayName(st)}</p><div class="meta"><span class="pill">Category ${pickCategory(p)}</span><span class="pill">Odds ${p.odds || '-'}</span><span class="pill">Units ${explicitUnitSize(p)?String(p.units).trim():'No unit size'}</span>${scoreMeta}<span class="pill">P/L ${explicitUnitSize(p)&&['WIN','LOSS'].includes(st)?formatUnits(profitUnits(p)):'-'}</span></div>${sections.join('')}`;
