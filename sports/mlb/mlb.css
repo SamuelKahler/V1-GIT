@@ -1,0 +1,186 @@
+
+/* ============================================================
+   Customer Experience Rewrite V1
+   Bettor-first evidence hierarchy
+============================================================ */
+.customer-trend-primary .evidence-report-header,
+.historical-evidence-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+.customer-trend-primary .evidence-report-header {
+  background: linear-gradient(135deg, #fff8ef 0%, #ffffff 100%);
+  border: 1px solid #f2d2ad;
+}
+.customer-trend-primary .evidence-report-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.historical-evidence-v1 {
+  display: grid;
+  gap: 22px;
+}
+.historical-evidence-header {
+  padding: 28px;
+  border: 1px solid #cfddea;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #f7fbff 0%, #ffffff 100%);
+}
+.historical-evidence-header h3,
+.customer-trend-primary h3 {
+  margin: 6px 0 8px;
+  color: #102b44;
+}
+.historical-evidence-header p,
+.customer-trend-primary p {
+  margin: 0;
+  color: #66778b;
+  max-width: 680px;
+}
+.historical-headline {
+  min-width: 180px;
+  text-align: right;
+}
+.historical-headline strong {
+  display: block;
+  font-size: clamp(2.8rem, 7vw, 4.8rem);
+  line-height: .95;
+  color: #0c568f;
+}
+.historical-headline span {
+  display: block;
+  margin-top: 10px;
+  color: #627287;
+  font-weight: 700;
+}
+.environment-match-strip,
+.environment-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.environment-match-strip {
+  padding: 18px;
+  border-radius: 18px;
+  background: #f3f7fb;
+  border: 1px solid #d9e3ed;
+}
+.environment-match-strip span,
+.environment-tag-row span {
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #cad8e5;
+  color: #29445d;
+  font-size: .83rem;
+  font-weight: 800;
+}
+.historical-proof-grid,
+.performance-proof-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.historical-proof-grid > div,
+.performance-proof-metrics > div {
+  padding: 18px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid #d7e0e8;
+}
+.historical-proof-grid small,
+.performance-proof-metrics small {
+  display: block;
+  color: #718194;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 800;
+}
+.historical-proof-grid strong,
+.performance-proof-metrics strong {
+  display: block;
+  margin-top: 7px;
+  color: #123550;
+  font-size: 1.65rem;
+}
+.exact-game-list {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+}
+.exact-game-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid #d9e3eb;
+  border-radius: 16px;
+  background: #fff;
+}
+.exact-game-row small,
+.exact-game-row strong {
+  display: block;
+}
+.exact-game-row small { color: #758397; }
+.exact-game-row strong { margin: 3px 0 9px; color: #132a40; }
+.exact-game-result {
+  min-width: 82px;
+  text-align: center;
+  padding: 10px;
+  border-radius: 14px;
+  background: #f4f7fa;
+}
+.exact-game-result b,
+.exact-game-result span { display: block; }
+.exact-game-result.history-WIN { background: #e9f8ef; color: #19884e; }
+.exact-game-result.history-LOSS { background: #fff0eb; color: #a33d1f; }
+.sports-edge-performance-proof {
+  display: grid;
+  grid-template-columns: minmax(220px, .8fr) minmax(360px, 1.2fr);
+  gap: 20px;
+  padding: 22px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #0d3555 0%, #115d93 100%);
+  color: #fff;
+}
+.sports-edge-performance-proof h4 {
+  margin: 6px 0;
+  font-size: 2rem;
+  color: #fff;
+}
+.sports-edge-performance-proof p { margin: 0; opacity: .82; }
+.sports-edge-performance-proof .evidence-kicker { color: #ffbd72; }
+.sports-edge-performance-proof .performance-proof-metrics > div {
+  background: rgba(255,255,255,.1);
+  border-color: rgba(255,255,255,.18);
+}
+.sports-edge-performance-proof .performance-proof-metrics small,
+.sports-edge-performance-proof .performance-proof-metrics strong { color: #fff; }
+.k-line-provider-callout {
+  padding: 18px;
+  border-radius: 16px;
+  background: #fff8ed;
+  border: 1px solid #f1d1a3;
+}
+.k-line-provider-callout strong { color: #8d4b10; }
+.k-line-provider-callout p { margin: 7px 0 0; color: #6d6258; }
+.current-prop-lines { margin-bottom: 18px; }
+.verified-source-note {
+  margin: 0;
+  color: #758397;
+  font-size: .86rem;
+}
+@media (max-width: 760px) {
+  .customer-trend-primary .evidence-report-header,
+  .historical-evidence-header,
+  .sports-edge-performance-proof {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+  .historical-headline { text-align: left; }
+  .historical-proof-grid,
+  .performance-proof-metrics { grid-template-columns: 1fr; }
+  .exact-game-row { align-items: flex-start; }
+}
