@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sports Edge Developer Console</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    :root { color-scheme: light; }
+    body.dev-console { background:#f5f8fc; color:#152033; min-height:100vh; }
+    .dev-shell { width:min(1180px, calc(100% - 32px)); margin:0 auto; padding:28px 0 56px; }
+    .dev-top { display:flex; justify-content:space-between; gap:20px; align-items:center; margin-bottom:24px; }
+    .dev-top h1 { margin:5px 0 4px; font-size:clamp(28px,4vw,44px); }
+    .dev-top p { margin:0; color:#627087; }
+    .dev-badge { background:#eaf2ff; color:#1559a8; border:1px solid #c7dcfb; border-radius:999px; padding:8px 12px; font-weight:800; }
+    .dev-grid { display:grid; grid-template-columns:repeat(12,1fr); gap:18px; }
+    .dev-card { grid-column:span 6; background:white; border:1px solid #dfe7f2; border-radius:18px; padding:20px; box-shadow:0 8px 28px rgba(36,63,99,.07); }
+    .dev-card.full { grid-column:1/-1; }
+    .dev-card h2 { margin:0 0 6px; font-size:20px; }
+    .dev-card > p { margin:0 0 16px; color:#68758a; }
+    .dev-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .dev-field { display:flex; flex-direction:column; gap:6px; }
+    .dev-field.full { grid-column:1/-1; }
+    .dev-field label { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:#536078; }
+    .dev-field input { width:100%; box-sizing:border-box; border:1px solid #cad5e4; border-radius:10px; padding:11px 12px; font:inherit; background:#fff; }
+    .dev-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+    .dev-btn { border:0; border-radius:10px; padding:11px 15px; font-weight:800; cursor:pointer; background:#0f65c5; color:white; }
+    .dev-btn.orange { background:#ef6c27; }
+    .dev-btn.secondary { background:#edf3fa; color:#25415f; border:1px solid #d3dfec; }
+    .dev-btn.danger { background:#a83434; }
+    .dev-btn:disabled { opacity:.55; cursor:not-allowed; }
+    .dev-status { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:14px; }
+    .dev-metric { border:1px solid #e0e7f0; background:#f8fafc; border-radius:12px; padding:13px; }
+    .dev-metric strong { display:block; font-size:22px; }
+    .dev-metric span { color:#66758b; font-size:12px; }
+    .dev-lock { background:#fff7ed; border:1px solid #fed7aa; }
+    .dev-note { font-size:13px; color:#6c7889; margin-top:10px; line-height:1.5; }
+    .dev-output { background:#101827; color:#dce7f7; border-radius:14px; padding:16px; min-height:190px; max-height:520px; overflow:auto; white-space:pre-wrap; word-break:break-word; font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .dev-log-line { padding:9px 0; border-bottom:1px solid rgba(255,255,255,.08); }
+    .dev-progress { height:10px; border-radius:999px; background:#e5ecf5; overflow:hidden; margin-top:12px; }
+    .dev-progress > span { display:block; height:100%; width:0; background:#0f65c5; transition:width .2s; }
+    .dev-hidden { display:none !important; }
+    @media (max-width:800px) { .dev-card { grid-column:1/-1; } .dev-fields,.dev-status { grid-template-columns:1fr; } .dev-top { align-items:flex-start; flex-direction:column; } }
+  </style>
+</head>
+<body class="dev-console">
+  <main class="dev-shell">
+    <header class="dev-top">
+      <div>
+        <div class="dev-badge">Owner-only operations</div>
+        <h1>Sports Edge Developer Console</h1>
+        <p>Import, verify, audit, and maintain the MLB Intelligence Database.</p>
+      </div>
+      <a class="dev-btn secondary" href="/">Back to Sports Edge</a>
+    </header>
+
+    <section id="unlockCard" class="dev-card full dev-lock">
+      <h2>Unlock this browser session</h2>
+      <p>The private token never comes from Supabase or GitHub. It is the value stored in Vercel as <strong>MLB_IMPORT_ADMIN_TOKEN</strong>.</p>
+      <div class="dev-fields">
+        <div class="dev-field full">
+          <label for="adminToken">MLB import admin token</label>
+          <input id="adminToken" type="password" autocomplete="current-password" placeholder="32+ character private token" />
+        </div>
+      </div>
+      <div class="dev-actions">
+        <button id="unlockButton" class="dev-btn orange">Unlock Console</button>
+        <label class="dev-note"><input id="rememberToken" type="checkbox" /> Remember on this device</label>
+      </div>
+      <div class="dev-note">For security, the token is required once per session unless you explicitly choose “Remember on this device.” It is never displayed back by the app.</div>
+    </section>
+
+    <section id="consoleContent" class="dev-grid dev-hidden">
+      <article class="dev-card full">
+        <h2>Database health</h2>
+        <p>Confirm Supabase connectivity, migration status, game counts, and duplicate protection.</p>
+        <div class="dev-actions">
+          <button class="dev-btn" data-action="status">Refresh Health</button>
+          <button class="dev-btn secondary" data-action="audit">Run Full Audit</button>
+          <button id="lockButton" class="dev-btn danger">Lock Console</button>
+        </div>
+        <div id="healthMetrics" class="dev-status"></div>
+      </article>
+
+      <article class="dev-card">
+        <h2>Import one date or range</h2>
+        <p>Imports are idempotent. Re-running a date updates the same official gamePk records.</p>
+        <div class="dev-fields">
+          <div class="dev-field"><label for="startDate">Start date</label><input id="startDate" type="date" /></div>
+          <div class="dev-field"><label for="endDate">End date</label><input id="endDate" type="date" /></div>
+        </div>
+        <div class="dev-actions">
+          <button id="importYesterday" class="dev-btn orange">Import Yesterday</button>
+          <button id="importRange" class="dev-btn">Import Date Range</button>
+          <button id="dryRun" class="dev-btn secondary">Dry Run</button>
+        </div>
+      </article>
+
+      <article class="dev-card">
+        <h2>Release A acceptance</h2>
+        <p>Imports the same completed date twice and verifies scores, F5, innings, starters, and zero duplicate gamePk records.</p>
+        <div class="dev-fields">
+          <div class="dev-field full"><label for="testDate">Completed test date</label><input id="testDate" type="date" /></div>
+        </div>
+        <div class="dev-actions"><button id="releaseATest" class="dev-btn orange">Run Release A Test</button></div>
+      </article>
+
+      <article class="dev-card">
+        <h2>Environment rebuild</h2>
+        <p>Recalculates verified pregame environments for already imported games. Missing fields remain missing.</p>
+        <div class="dev-fields">
+          <div class="dev-field"><label for="envStartDate">Start date</label><input id="envStartDate" type="date" /></div>
+          <div class="dev-field"><label for="envEndDate">End date</label><input id="envEndDate" type="date" /></div>
+        </div>
+        <div class="dev-actions"><button id="rebuildEnvironments" class="dev-btn">Rebuild Environments</button></div>
+      </article>
+
+      <article class="dev-card">
+        <h2>Current-season backfill</h2>
+        <p>Runs controlled seven-day import batches. Keep this page open until all batches finish.</p>
+        <div class="dev-fields">
+          <div class="dev-field"><label for="seasonStart">Season start</label><input id="seasonStart" type="date" /></div>
+          <div class="dev-field"><label for="seasonEnd">Backfill through</label><input id="seasonEnd" type="date" /></div>
+        </div>
+        <div class="dev-actions">
+          <button id="startBackfill" class="dev-btn orange">Start Backfill</button>
+          <button id="stopBackfill" class="dev-btn danger" disabled>Stop After Current Batch</button>
+        </div>
+        <div class="dev-progress"><span id="backfillProgress"></span></div>
+        <div id="backfillLabel" class="dev-note">Not started.</div>
+      </article>
+
+      <article class="dev-card full">
+        <h2>Operations log</h2>
+        <p>Every command and response appears here. Secret values are never logged.</p>
+        <div class="dev-actions"><button id="clearLog" class="dev-btn secondary">Clear Log</button></div>
+        <div id="operationsLog" class="dev-output" aria-live="polite">Developer Console ready.</div>
+      </article>
+    </section>
+  </main>
+  <script src="developer-console.js"></script>
+</body>
+</html>
