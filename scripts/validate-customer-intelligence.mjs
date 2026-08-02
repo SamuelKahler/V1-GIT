@@ -11,7 +11,7 @@ assert.match(api, /buildCustomerIntelligence/);
 assert.match(client, /async customerIntelligence/);
 assert.match(client, /action: 'customerIntelligence'/);
 assert.match(app, /client\.customerIntelligence/);
-assert.match(app, /This Season MLB Evidence/);
+assert.match(app, /Historical Evidence/);
 assert.doesNotMatch(app.slice(app.indexOf('function openPick'), app.indexOf('// V57 Unified MLB Truth Engine')), /trendEvidenceHtml\(p\)/);
 assert.equal(typeof buildCustomerIntelligence, 'function');
 console.log('CUSTOMER_INTELLIGENCE_INTEGRATION_VALIDATION_PASSED');

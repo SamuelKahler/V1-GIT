@@ -49,9 +49,9 @@ assert.match(browserClient, /publicEvidence/);
 assert.match(browserClient, /action: 'publicEvidence'/);
 
 const app = fs.readFileSync(new URL("../sports/mlb/mlb-app.js", import.meta.url), "utf8");
-assert.match(app, /This Season MLB Evidence/);
-assert.match(app, /completed official MLB games stored|official MLB games/i);
-assert.match(app, /2026 MLB Intelligence Database|This Season MLB Evidence/);
+assert.match(app, /Historical Evidence/);
+assert.match(app, /No verified historical sample/);
+assert.doesNotMatch(app, /Source: completed official MLB games stored/);
 assert.doesNotMatch(app, /Calculated from individually graded wagers/);
 assert.match(app, /loadVerifiedMLBEvidenceForPick\(p,i\)/);
 

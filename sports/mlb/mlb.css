@@ -206,3 +206,15 @@
 .trend-backbone-intro p:last-child{margin:0;color:#65778b;max-width:850px}
 .trend-backbone-results{width:100%}
 .trend-backbone-grid{margin-top:16px}
+
+
+/* Decision Engine V1: facts only */
+.decision-engine-v1{display:grid;gap:16px}
+.decision-evidence-card{display:grid;gap:16px;padding:20px;border:1px solid #cfdde8;border-radius:20px;background:#fff}
+.decision-evidence-stat small{display:block;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#68798b}
+.decision-evidence-stat strong{display:block;margin:5px 0 3px;font-size:clamp(2.7rem,8vw,4.5rem);line-height:1;color:#0d4e7d}
+.decision-evidence-stat span{font-weight:850;color:#4e6275}
+.decision-performance p,.decision-engine-v1 .verified-source-note,.decision-engine-v1 .historical-evidence-header,.decision-engine-v1 .season-baseline-card{display:none!important}
+.decision-engine-v1 .environment-match-strip{padding:0;border:0;background:transparent}
+.decision-engine-v1 .season-evidence-empty{padding:18px}
+.compact-dropdown-pick .card-summary{display:none!important}

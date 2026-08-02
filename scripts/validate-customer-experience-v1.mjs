@@ -24,9 +24,9 @@ assert.equal(LABELS.f5Line, 'Same first-five line');
 
 assert.match(migration, /f5Line/);
 assert.match(migration, /team_f5_score \+ x\.f5_line/);
-assert.match(app, /This Season MLB Evidence/);
-assert.match(app, /Sports Edge F5 Performance/);
-assert.match(app, /F5 evidence ends after five innings/);
+assert.match(app, /Historical Evidence/);
+assert.match(app, /Official Sports Edge F5/);
+assert.doesNotMatch(app, /F5 evidence ends after five innings/);
 assert.doesNotMatch(app.slice(app.indexOf('function openPick'), app.indexOf('// V57 Unified MLB Truth Engine')), /Trend Database/);
 assert.doesNotMatch(app.slice(app.indexOf('function openPick'), app.indexOf('// V57 Unified MLB Truth Engine')), /Model Breakdown/);
 assert.doesNotMatch(app.slice(app.indexOf('function openPick'), app.indexOf('// V57 Unified MLB Truth Engine')), /Reasoning Notes/);
