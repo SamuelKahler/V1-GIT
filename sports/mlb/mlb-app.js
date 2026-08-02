@@ -1991,16 +1991,6 @@ function mlbEvidenceCriteriaForPick(p){
   if(favorite === false){ criteria.underdog = true; }
   const bucket = mlbOddsBucket(price);
   if(bucket) criteria.oddsBucket = bucket;
-
-  const liveGame = (liveState.games || []).find(game => {
-    const away = teamAbbr(game?.awayTeam?.abbreviation || game?.away_team_abbr || game?.away_team || game?.awayTeam);
-    const home = teamAbbr(game?.homeTeam?.abbreviation || game?.home_team_abbr || game?.home_team || game?.homeTeam);
-    return away === teamAbbr(ctx.away) && home === teamAbbr(ctx.home);
-  });
-  const seriesGameNumber = Number(liveGame?.seriesGameNumber || liveGame?.series_game_number);
-  if(Number.isInteger(seriesGameNumber) && seriesGameNumber > 0) criteria.seriesGameNumber = seriesGameNumber;
-  const dayNight = String(liveGame?.dayNight || liveGame?.day_night || '').trim().toLowerCase();
-  if(dayNight === 'day' || dayNight === 'night') criteria.dayNight = dayNight;
   return criteria;
 }
 function mlbEvidenceElementId(index){ return 'mlb-db-evidence-' + index; }
@@ -2018,35 +2008,37 @@ function renderVerifiedGameRows(games, period){
   const rows = (Array.isArray(games) ? games : []).slice(0,12);
   if(!rows.length) return '<p class="subtle">No supporting games were returned for this environment.</p>';
   return '<details class="trend-history-dropdown verified-games-dropdown"><summary>View supporting historical games</summary><div class="evidence-game-table"><table><thead><tr><th>Date</th><th>Matchup</th><th>Role</th><th>Result</th><th>Score</th><th>Odds</th></tr></thead><tbody>'+rows.map(game=>{
-    const result = period === 'F5' ? game.f5_result : game.full_game_result;
+    const result = period === 'F5' ? game.result ?? game.f5_result : game.result ?? game.full_game_result;
     const score = period === 'F5'
-      ? evidenceMetric(game.team_f5_score)+'-'+evidenceMetric(game.opponent_f5_score)
-      : evidenceMetric(game.team_score)+'-'+evidenceMetric(game.opponent_score);
-    return '<tr><td>'+evidenceHtmlEscape(game.official_date)+'</td><td><b>'+evidenceHtmlEscape(game.team_abbreviation)+'</b> vs '+evidenceHtmlEscape(game.opponent_abbreviation)+'</td><td>'+evidenceHtmlEscape(game.role)+'</td><td><span class="history-result history-'+evidenceHtmlEscape(result)+'">'+evidenceHtmlEscape(result || 'N/A')+'</span></td><td>'+evidenceHtmlEscape(score)+'</td><td>'+evidenceHtmlEscape(game.moneyline ?? 'N/A')+'</td></tr>';
+      ? evidenceMetric(game.teamScore ?? game.team_f5_score)+'-'+evidenceMetric(game.opponentScore ?? game.opponent_f5_score)
+      : evidenceMetric(game.teamScore ?? game.team_score)+'-'+evidenceMetric(game.opponentScore ?? game.opponent_score);
+    return '<tr><td>'+evidenceHtmlEscape(game.date ?? game.official_date)+'</td><td><b>'+evidenceHtmlEscape(game.team ?? game.team_abbreviation)+'</b> vs '+evidenceHtmlEscape(game.opponent ?? game.opponent_abbreviation)+'</td><td>'+evidenceHtmlEscape(game.role)+'</td><td><span class="history-result history-'+evidenceHtmlEscape(result)+'">'+evidenceHtmlEscape(result || 'N/A')+'</span></td><td>'+evidenceHtmlEscape(score)+'</td><td>'+evidenceHtmlEscape(game.moneyline ?? 'N/A')+'</td></tr>';
   }).join('')+'</tbody></table></div></details>';
 }
 function renderVerifiedMLBEvidence(report){
-  const headline = report?.headline || {};
-  const exact = report?.exactMatch || {};
-  const logs = report?.verifiedGameLogs || {};
-  const period = logs.period || report?.criteria?.period || 'FULL_GAME';
-  const sample = Number(headline.sampleSize || 0);
-  const hitRate = headline.hitRate == null ? '—' : Number(headline.hitRate).toFixed(1)+'%';
-  const record = Number(headline.wins || 0)+'-'+Number(headline.losses || 0)+(Number(headline.pushes || 0) ? '-'+Number(headline.pushes || 0) : '');
-  const roi = headline.roiPercent == null ? 'Odds unavailable' : (Number(headline.roiPercent) >= 0 ? '+' : '')+Number(headline.roiPercent).toFixed(1)+'%';
-  const exactRate = exact.hitRate == null ? '—' : Number(exact.hitRate).toFixed(1)+'%';
+  const best = report?.bestQualified || report?.exactMatch;
+  const exact = report?.exactMatch;
+  const summary = best?.record || best?.summary || {};
+  const exactSummary = exact?.record || exact?.summary || {};
+  const period = report?.period || summary.period || 'FULL_GAME';
+  const sample = Number((summary.sampleSize ?? summary.sample_size) || 0);
+  const hitRateValue = summary.hitRate ?? summary.hit_rate;
+  const hitRate = hitRateValue == null ? '—' : Number(hitRateValue).toFixed(1)+'%';
+  const record = Number(summary.wins || 0)+'-'+Number(summary.losses || 0)+(Number(summary.pushes || 0) ? '-'+Number(summary.pushes || 0) : '');
+  const roiValue = summary.roiPercent ?? summary.roi_percent;
+  const roi = roiValue == null ? (period === 'F5' ? 'Odds unavailable' : '—') : (Number(roiValue) >= 0 ? '+' : '')+Number(roiValue).toFixed(1)+'%';
+  const exactRateValue = exactSummary.hitRate ?? exactSummary.hit_rate;
+  const exactRate = exactRateValue == null ? '—' : Number(exactRateValue).toFixed(1)+'%';
   const reasons = (report?.strongestReasons || []).map(item=>'<li>'+evidenceHtmlEscape(item.label)+'</li>').join('');
-  const relaxed = (logs.removedConditions || []).map(item=>'<li>'+evidenceHtmlEscape(item)+'</li>').join('');
-  const exactDetails = (report?.exactEnvironmentMatchDetails || []).map(item=>'<li><b>'+evidenceHtmlEscape(item.label)+'</b></li>').join('');
+  const relaxed = (best?.relaxedConditions || best?.removedConditions || []).map(item=>'<li>'+evidenceHtmlEscape(item)+'</li>').join('');
   const contradiction = report?.contradictingEvidence || {};
   return '<div class="verified-mlb-report">'
     +'<div class="verified-evidence-hero"><div><span class="evidence-kicker">MLB Intelligence Database</span><h3>Verified Game Logs</h3><p>Calculated from individually stored official MLB games—not Sports Edge picks.</p></div><div class="verified-hit-rate"><small>Best qualified hit rate</small><strong>'+hitRate+'</strong><span>'+record+' • '+sample+' games</span></div></div>'
-    +'<div class="verified-evidence-metrics"><div><small>Evidence Score</small><strong>'+evidenceMetric(headline.evidenceScore)+'/100</strong><span>Sample, rate, ROI, completeness and match quality</span></div><div><small>Exact Match</small><strong>'+exactRate+'</strong><span>'+Number(exact.sampleSize || 0)+' exact games</span></div><div><small>ROI</small><strong>'+roi+'</strong><span>'+evidenceHtmlEscape(period === 'F5' ? 'F5 results; ROI requires verified F5 odds' : 'Full-game moneyline history')+'</span></div><div><small>Environment Match</small><strong>'+evidenceMetric(logs.environmentMatchPercent)+'%</strong><span>Only verified matching fields are counted</span></div></div>'
+    +'<div class="verified-evidence-metrics"><div><small>Evidence Score</small><strong>'+evidenceMetric(best?.evidenceScore)+'/100</strong><span>Sample, rate, ROI, completeness and match quality</span></div><div><small>Exact Match</small><strong>'+exactRate+'</strong><span>'+Number((exactSummary.sampleSize ?? exactSummary.sample_size) || 0)+' exact games</span></div><div><small>ROI</small><strong>'+roi+'</strong><span>'+evidenceHtmlEscape(period === 'F5' ? 'F5 result history' : 'Full-game moneyline history')+'</span></div><div><small>Environment Match</small><strong>'+evidenceMetric(best?.exactnessPercent)+'%</strong><span>'+Number(best?.matchedConditionCount || 0)+' of '+Number(best?.totalConditionCount || 0)+' conditions</span></div></div>'
     +'<div class="verified-evidence-columns"><section><h4>Strongest Reasons</h4>'+(reasons ? '<ul class="verified-reason-list">'+reasons+'</ul>' : '<p class="subtle">No verified conditions were available.</p>')+'</section><section class="contradiction-panel"><h4>Contradicting Evidence</h4><strong>'+Number(contradiction.losses || 0)+' matching losses</strong><p>'+evidenceHtmlEscape(contradiction.statement || 'No contradiction summary available.')+'</p></section></div>'
     +(relaxed ? '<details class="qualified-relaxations"><summary>Why the best-qualified sample is larger than the exact sample</summary><p>The following conditions were relaxed and are disclosed rather than hidden:</p><ul>'+relaxed+'</ul></details>' : '')
-    +(exactDetails ? '<details class="qualified-relaxations"><summary>Exact environment match details</summary><ul>'+exactDetails+'</ul></details>' : '')
-    +renderVerifiedGameRows(logs.supportingGames, period)
-    +'<p class="verified-source-note">'+evidenceHtmlEscape(report?.disclosure?.message || 'Source: official MLB game records stored in the Sports Edge MLB Intelligence Database. Missing environments are excluded, never guessed.')+'</p>'
+    +renderVerifiedGameRows(best?.supportingGames, period)
+    +'<p class="verified-source-note">Source: official MLB game records stored in the Sports Edge MLB Intelligence Database. Missing environments are excluded, never guessed.</p>'
     +'</div>';
 }
 async function loadVerifiedMLBEvidenceForPick(p,index){
@@ -2062,11 +2054,13 @@ async function loadVerifiedMLBEvidenceForPick(p,index){
     return;
   }
   const client = window.SportsEdgeMLBIntelligence;
-  if(!client || typeof client.customerIntelligence !== 'function'){
+  if(!client || (typeof client.customerIntelligence !== 'function' && typeof client.publicEvidence !== 'function')){
     element.innerHTML = '<div class="empty-evidence"><strong>MLB Intelligence client unavailable.</strong><p class="subtle">Refresh the Preview deployment after Release 4 is installed.</p></div>';
     return;
   }
-  const promise = client.customerIntelligence(criteria,{minimumSample:10,maximumVariants:6,limit:50});
+  const promise = typeof client.customerIntelligence === 'function'
+    ? client.customerIntelligence(criteria,{minimumSample:10,maximumVariants:6,limit:50})
+    : client.publicEvidence(criteria,{minimumSample:10,maximumVariants:6,limit:50});
   mlbDatabaseEvidenceState.set(cacheKey,{promise});
   try{
     const report = await promise;
@@ -2131,12 +2125,15 @@ function trendEvidenceHtml(p){
   </div>`;
 }
 function trendEvidenceCardSummary(p){
-  const evidence = matchedTrendEvidenceForPick(p, 8).filter(row=>row.evidenceType!=='GAME_LOG');
-  const qualified = evidence.filter(r=>pct(r.hitRate)!==null).sort((a,b)=>(pct(b.hitRate)||0)-(pct(a.hitRate)||0));
+  const evidence = matchedTrendEvidenceForPick(p, 8);
+  const qualified = evidence.filter(r=>pct(r.hitRate)!==null).sort((a,b)=>{
+    if(Boolean(a.computedFromLedger)!==Boolean(b.computedFromLedger)) return a.computedFromLedger ? -1 : 1;
+    return (pct(b.hitRate)||0)-(pct(a.hitRate)||0);
+  });
   if(!qualified.length) return '';
   const top = qualified[0];
-  const type = 'Stored Trend Database';
-  return `<div class="matched-trend-card upgraded-card-evidence"><span class="evidence-type-label trend-label">${type}</span><div class="pick-card-proof emphasis-proof"><div><small>Hit Rate</small><strong>${evidencePercent(top.hitRate)}</strong></div><div><small>Record</small><strong>${evidenceRecordText(top)}</strong></div><div><small>Sample</small><strong>${top.decisions || trendEvidenceRecord(top).total || '—'}</strong></div></div><small>${trendEvidenceTitle(top)} • ${evidenceRelevanceLine(top)}</small></div>`;
+  const type = top.evidenceType==='GAME_LOG' ? 'Verified Game Log' : 'Trend Database';
+  return `<div class="matched-trend-card upgraded-card-evidence"><span class="evidence-type-label ${top.evidenceType==='GAME_LOG'?'game-log-label':'trend-label'}">${type}</span><div class="pick-card-proof emphasis-proof"><div><small>Hit Rate</small><strong>${evidencePercent(top.hitRate)}</strong></div><div><small>Record</small><strong>${evidenceRecordText(top)}</strong></div><div><small>Sample</small><strong>${top.decisions || trendEvidenceRecord(top).total || '—'}</strong></div></div><small>${trendEvidenceTitle(top)} • ${evidenceRelevanceLine(top)}</small></div>`;
 }
 function apiProofStrip(p){
   const st = normalizedPickStatus(p);

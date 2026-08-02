@@ -1,18 +1,21 @@
 # Customer Intelligence Integration
 
 ## Added
-- `lib/mlb/customer-intelligence.js`: one presentation adapter between the evidence engine and customer UI.
-- `publicCustomerIntelligence` action in the consolidated MLB API.
-- Browser client `customerIntelligence()` method.
-- Exact environment details and transparent relaxed-condition disclosures.
-- Deterministic validation suite.
+- `lib/mlb/customer-intelligence.js`: stable presentation adapter between database evidence and the browser UI.
+- Public read-only `customerIntelligence` action inside the consolidated `/api/mlb` function.
+- Browser client method for customer intelligence reports.
+- Deterministic integration validation.
 
 ## Changed
-- Customer UI now consumes a stable presentation-ready report rather than raw query-engine output.
-- Current game series position and day/night are included when verified by the live MLB schedule feed.
-- Legacy Sports Edge graded-pick observations are no longer labeled as Verified Game Logs in pick-card summaries.
+- Customer evidence UI now consumes a presentation-ready contract rather than database-shaped evidence directly.
+- Supporting-game rendering accepts normalized customer fields.
+- Existing publicEvidence action remains as a compatibility fallback.
 
-## Unchanged
-- Sports Edge grading and performance databases.
-- Current tabs, layouts, navigation, and visual design.
-- Supabase schema.
+## Preserved
+- Existing tabs, navigation, layout and color scheme.
+- Sports Edge performance/grading pipeline.
+- Stored Trend Database separation.
+- Vercel Hobby single MLB function architecture.
+
+## Database
+- No migration required.

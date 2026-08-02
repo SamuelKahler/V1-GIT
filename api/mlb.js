@@ -21,7 +21,7 @@ import {
 } from "../lib/mlb/http.js";
 import { rebuildEnvironments } from "../lib/mlb/environment-engine.js";
 import sportsEdgeEvidenceEngine from "../lib/mlb/evidence-engine.js";
-import sportsEdgeCustomerIntelligence from "../lib/mlb/customer-intelligence.js";
+import { buildCustomerIntelligence } from "../lib/mlb/customer-intelligence.js";
 import { importDateRange } from "../lib/mlb/importer.js";
 import sportsEdgeQueryEngine from "../lib/mlb/query-engine.js";
 import { callRpc, checkDatabaseHealth } from "../lib/mlb/supabase.js";
@@ -32,8 +32,8 @@ const ACTIONS = Object.freeze({
     environments: { method: "POST", admin: true },
     evidence: { method: "POST", admin: true },
     import: { method: "POST", admin: true },
-    publicCustomerIntelligence: { method: "POST", admin: false },
     publicEvidence: { method: "POST", admin: false },
+    customerIntelligence: { method: "POST", admin: false },
     query: { method: "POST", admin: true },
     releaseAAudit: { method: "GET", admin: true },
     releaseATest: { method: "POST", admin: true },
@@ -150,20 +150,15 @@ async function handleEvidence(body, isPublic) {
 
 
 async function handleCustomerIntelligence(body) {
-    const criteria = body.criteria || body.pick || body;
-    const minimumSample = requireInteger(body.minimumSample, "minimumSample", {
-        defaultValue: 10, minimum: 3, maximum: 100
-    });
-    const maximumVariants = requireInteger(body.maximumVariants, "maximumVariants", {
-        defaultValue: 6, minimum: 1, maximum: 8
-    });
-    const limit = requireInteger(body.limit, "limit", {
-        defaultValue: 50, minimum: 5, maximum: 100
-    });
-
+    const criteria = body.criteria || {};
+    if (!criteria.teamAbbreviation && !criteria.teamId) {
+        throw createHttpError("A team is required for customer intelligence requests.", 400);
+    }
     return {
-        customerIntelligence: await sportsEdgeCustomerIntelligence.report(criteria, {
-            minimumSample, maximumVariants, limit
+        intelligence: await buildCustomerIntelligence(criteria, {
+            minimumSample: requireInteger(body.minimumSample, "minimumSample", { defaultValue: 10, minimum: 3, maximum: 100 }),
+            maximumVariants: requireInteger(body.maximumVariants, "maximumVariants", { defaultValue: 6, minimum: 1, maximum: 8 }),
+            limit: requireInteger(body.limit, "limit", { defaultValue: 50, minimum: 5, maximum: 100 })
         }),
         visibility: "CUSTOMER_READ_ONLY"
     };
@@ -292,11 +287,11 @@ export default async function handler(request, response) {
             case "evidence":
                 result = await handleEvidence(body, false);
                 break;
-            case "publicCustomerIntelligence":
-                result = await handleCustomerIntelligence(body);
-                break;
             case "publicEvidence":
                 result = await handleEvidence(body, true);
+                break;
+            case "customerIntelligence":
+                result = await handleCustomerIntelligence(body);
                 break;
             case "releaseAAudit":
                 result = await handleReleaseAAudit(request);

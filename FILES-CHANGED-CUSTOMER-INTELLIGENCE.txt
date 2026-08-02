@@ -1,0 +1,15 @@
+ADDED
+lib/mlb/customer-intelligence.js
+scripts/validate-customer-intelligence.mjs
+README-CUSTOMER-INTELLIGENCE-FIRST.txt
+CHANGELOG-CUSTOMER-INTELLIGENCE.md
+docs/CUSTOMER-INTELLIGENCE-AUDIT.md
+
+MODIFIED
+api/mlb.js
+sports/mlb/core/mlb-intelligence-client.js
+sports/mlb/mlb-app.js
+package.json
+
+DATABASE MIGRATIONS
+None
