@@ -16,6 +16,7 @@
     "validate:daily-picks-f5": "node scripts/validate-daily-picks-f5.mjs",
     "validate:customer-experience-v1": "node scripts/validate-customer-experience-v1.mjs",
     "validate:evidence-v2": "node scripts/validate-evidence-engine-v2.mjs",
-    "validate:decision-engine-v1": "node scripts/validate-decision-engine-v1.mjs"
+    "validate:decision-engine-v1": "node scripts/validate-decision-engine-v1.mjs",
+    "validate:legacy-purge": "node scripts/validate-legacy-purge-decision-engine.mjs"
   }
 }

@@ -1,0 +1,12 @@
+UPDATED
+lib/mlb/customer-intelligence.js
+sports/mlb/mlb-app.js
+sports/mlb/mlb.css
+package.json
+
+ADDED
+supabase/migrations/008_legacy_purge_decision_engine_audit.sql
+scripts/validate-legacy-purge-decision-engine.mjs
+README-LEGACY-PURGE-FIRST.txt
+CHANGELOG-LEGACY-PURGE.md
+FILES-CHANGED-LEGACY-PURGE.txt

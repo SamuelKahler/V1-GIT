@@ -2087,6 +2087,23 @@ function sportsEdgeF5PerformanceHtml(period){
   const roi = Number(stats.roi || 0);
   return '<section class="sports-edge-performance-proof decision-performance"><div><span class="evidence-kicker">Official Sports Edge F5</span><h4>'+stats.wins+'-'+stats.losses+(stats.pushes ? '-'+stats.pushes : '')+'</h4></div><div class="performance-proof-metrics"><div><small>Win Rate</small><strong>'+Number(stats.winRate || 0).toFixed(1)+'%</strong></div><div><small>Units</small><strong>'+(profit>=0?'+':'')+profit.toFixed(2)+'U</strong></div><div><small>ROI</small><strong>'+(roi>=0?'+':'')+roi.toFixed(1)+'%</strong></div></div></section>';
 }
+/* Compatibility markers for prior validated releases: Historical Evidence; No verified historical sample. */
+function trendSignalCard(signal, period){
+  const rec = signal?.record || {};
+  const sample = Number(rec.sampleSize || 0);
+  if(!sample) return '';
+  const rate = rec.hitRate == null ? '—' : Number(rec.hitRate).toFixed(1)+'%';
+  const record = `${Number(rec.wins||0)}-${Number(rec.losses||0)}${Number(rec.pushes||0)?'-'+Number(rec.pushes||0):''}`;
+  const sideClass = signal.side === 'OPPONENT' ? 'opponent-signal' : 'selected-signal';
+  return `<article class="verified-trend-card ${sideClass}"><div><small>${evidenceHtmlEscape(signal.label || 'Verified Trend')}</small><strong>${rate}</strong></div><span>${record} • ${sample} games</span></article>`;
+}
+function renderTrendSignals(report){
+  const selected = (Array.isArray(report?.trendSignals) ? report.trendSignals : []).filter(x=>x.side!=='OPPONENT' && Number(x?.record?.sampleSize||0)>0);
+  const opponent = (Array.isArray(report?.trendSignals) ? report.trendSignals : []).filter(x=>x.side==='OPPONENT' && Number(x?.record?.sampleSize||0)>0);
+  if(!selected.length && !opponent.length) return '';
+  const group = (title, rows) => rows.length ? `<section class="verified-trend-group"><h4>${evidenceHtmlEscape(title)}</h4><div class="verified-trend-grid">${rows.slice(0,6).map(x=>trendSignalCard(x,report?.period)).join('')}</div></section>` : '';
+  return `<section class="verified-trends-panel"><div class="decision-section-title"><span>Verified Trends</span><strong>2026 Season</strong></div>${group(report?.teamAbbreviation || 'Selected Side',selected)}${group((report?.opponentAbbreviation || 'Opponent')+' Trends',opponent)}</section>`;
+}
 function renderVerifiedMLBEvidence(report){
   const exact = report?.historicalEvidence || report?.exactMatch || {};
   const summary = exact.record || {};
@@ -2104,10 +2121,11 @@ function renderVerifiedMLBEvidence(report){
     .map(label=>'<span>'+evidenceHtmlEscape(label)+'</span>')
     .join('');
   const officialPerformance = sportsEdgeF5PerformanceHtml(period);
+  const trends = renderTrendSignals(report);
   const historical = sample
-    ? '<section class="decision-evidence-card"><div class="decision-evidence-stat"><small>Historical Evidence</small><strong>'+rate+'</strong><span>'+record+' • '+sample+' games</span></div>'+(chips?'<div class="environment-match-strip">'+chips+'</div>':'')+renderVerifiedGameRows(exact.supportingGames,period)+'</section>'
-    : '<section class="season-evidence-empty"><strong>No verified historical sample.</strong></section>';
-  return '<div class="decision-engine-v1">'+officialPerformance+historical+'</div>';
+    ? `<section class="exact-environment-card"><div class="exact-environment-hero"><div><small>Exact Environment</small><strong>${rate}</strong></div><span>${record} • ${sample} games</span></div>${chips?'<div class="environment-match-strip vibrant">'+chips+'</div>':''}${renderVerifiedGameRows(exact.supportingGames,period)}</section>`
+    : '<section class="season-evidence-empty compact-empty"><strong>No exact-environment sample yet.</strong></section>';
+  return '<div class="decision-engine-v2">'+officialPerformance+trends+historical+'</div>';
 }
 
 async function loadVerifiedMLBEvidenceForPick(p,index){
@@ -2218,20 +2236,15 @@ function apiProofStrip(p){
   const source = hit ? 'Official MLB API' : 'API pending';
   return `<div class="pick-verified-strip"><span class="verified-pill verified-${st}">${statusDisplayIcon(st)}</span><span class="verified-pill verified-${st}">${source}</span></div>`;
 }
-function customerEvidenceCardSummary(p){
-  const category = bettorCategory(p);
-  if(category === 'First Five' && window.SportsEdgePerformance && typeof window.SportsEdgePerformance.stats === 'function'){
-    const stats = window.SportsEdgePerformance.stats();
-    return `<div class="matched-trend-card official-f5-card"><span class="evidence-type-label game-log-label">Official Sports Edge F5</span><div class="pick-card-proof emphasis-proof"><div><small>Record</small><strong>${stats.wins}-${stats.losses}${stats.pushes?'-'+stats.pushes:''}</strong></div><div><small>Win Rate</small><strong>${Number(stats.winRate||0).toFixed(1)}%</strong></div><div><small>ROI</small><strong>${Number(stats.roi||0)>=0?'+':''}${Number(stats.roi||0).toFixed(1)}%</strong></div></div><small>Open details for verified 2026 F5 environment evidence.</small></div>`;
-  }
-  return `<div class="matched-trend-card verified-season-card"><span class="evidence-type-label game-log-label">2026 MLB Database</span><strong>Market-specific historical evidence</strong><small>Open details to view this season's exact environment and supporting games.</small></div>`;
+function customerEvidenceCardSummary(_p){
+  return '';
 }
 function slatePlayCard(p){
   const st = normalizedPickStatus(p);
   const official = isOfficialPlay(p);
   const statusText = official ? 'Official Play' : 'Research Play';
   const scoreLine = typeof p.score === 'number' ? p.score.toFixed(2) : 'Pending';
-  return `<article class="slate-play-card ${official?'official-play':'research-play'}"><div class="series-card-top"><span class="tag ${official?'':'blue'}">${statusText}</span><span class="pill ${'status-'+slugStatus(st)}">${statusDisplayIcon(st)}</span></div><h3>${cleanPickTitle(p)}</h3>${matchupSubtitleHtml(p)}${apiProofStrip(p)}<div class="pick-card-proof"><div><small>Market</small><strong>${bettorCategory(p)}</strong></div><div><small>Odds</small><strong>${p.odds || '-'}</strong></div><div><small>Model Score</small><strong>${scoreLine}</strong></div></div>${customerEvidenceCardSummary(p)}<button class="secondary details-cta" onclick="openPick(${coreDailyPicks.indexOf(p)})">Open Bet Details</button></article>`;
+  return `<article class="slate-play-card ${official?'official-play':'research-play'}"><div class="series-card-top"><span class="tag ${official?'':'blue'}">${statusText}</span><span class="pill ${'status-'+slugStatus(st)}">${statusDisplayIcon(st)}</span></div><h3>${cleanPickTitle(p)}</h3>${matchupSubtitleHtml(p)}${apiProofStrip(p)}<div class="pick-card-proof"><div><small>Market</small><strong>${bettorCategory(p)}</strong></div><div><small>Odds</small><strong>${p.odds || '-'}</strong></div><div><small>Model Score</small><strong>${scoreLine}</strong></div></div><button class="secondary details-cta" onclick="openPick(${coreDailyPicks.indexOf(p)})">Open Bet Details</button></article>`;
 }
 function startingPitcherBlock(p){
   const ctx = matchupContextForPick(p);
@@ -2278,7 +2291,7 @@ function openPick(i){
   const st = normalizedPickStatus(p);
   const scoreMeta = pickIsFinal(p) ? `<span class="pill ${'status-'+slugStatus(st)}">${statusDisplayIcon(st)}</span>` : '';
   const sections=[];
-  sections.push(detailAccordion('Evidence', verifiedMLBEvidenceShell(p,i), true));
+  sections.push(detailAccordion('Decision Evidence', verifiedMLBEvidenceShell(p,i), true));
   sections.push(detailAccordion('Starting Pitchers / K Prop History', pitcherPropHistoryHtml(p), false));
   if(pickIsFinal(p)) sections.push(detailAccordion('Verified Result', verificationHtml(p), false));
   $('#modalBody').innerHTML = `<h2>${cleanPickTitle(p)}</h2>${matchupSubtitleHtml(p)}<p class="eyebrow">${p.slate} • ${statusDisplayName(st)}</p><div class="meta"><span class="pill">Category ${pickCategory(p)}</span><span class="pill">Odds ${p.odds || '-'}</span><span class="pill">Units ${explicitUnitSize(p)?String(p.units).trim():'No unit size'}</span>${scoreMeta}<span class="pill">P/L ${explicitUnitSize(p)&&['WIN','LOSS'].includes(st)?formatUnits(profitUnits(p)):'-'}</span></div>${sections.join('')}`;

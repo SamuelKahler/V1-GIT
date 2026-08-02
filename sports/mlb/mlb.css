@@ -218,3 +218,32 @@
 .decision-engine-v1 .environment-match-strip{padding:0;border:0;background:transparent}
 .decision-engine-v1 .season-evidence-empty{padding:18px}
 .compact-dropdown-pick .card-summary{display:none!important}
+
+/* ============================================================
+   Legacy Purge + Decision Engine
+   Customer-facing evidence: concise, market-specific, verified.
+============================================================ */
+.decision-engine-v2{display:grid;gap:22px}
+.verified-trends-panel,.exact-environment-card,.decision-performance{background:#fff;border:1px solid #d9e4ef;border-radius:24px;box-shadow:0 12px 32px rgba(16,50,78,.07);padding:24px}
+.decision-section-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;text-transform:uppercase;letter-spacing:.11em;font-weight:900;color:#123b5d}
+.decision-section-title strong{color:#f58220;font-size:.8rem;background:#fff3e6;border-radius:999px;padding:8px 12px}
+.verified-trend-group+ .verified-trend-group{margin-top:22px;padding-top:22px;border-top:1px solid #e4ebf2}
+.verified-trend-group h4{margin:0 0 12px;color:#17283a;font-size:1rem}
+.verified-trend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.verified-trend-card{border-radius:18px;padding:16px 18px;background:#f4f8fc;border-left:5px solid #1673c9;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.verified-trend-card.opponent-signal{border-left-color:#f58220;background:#fff7ef}
+.verified-trend-card small{display:block;color:#63768a;font-weight:800;margin-bottom:6px}
+.verified-trend-card strong{font-size:1.8rem;color:#0f3657;line-height:1}
+.verified-trend-card>span{color:#4f6276;font-weight:800;white-space:nowrap}
+.exact-environment-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;border-bottom:1px solid #e1e9f0;padding-bottom:18px}
+.exact-environment-hero small{display:block;text-transform:uppercase;letter-spacing:.12em;font-weight:900;color:#697d91;margin-bottom:6px}
+.exact-environment-hero strong{font-size:3.2rem;line-height:1;color:#0f578e}
+.exact-environment-hero>span{font-size:1.1rem;font-weight:900;color:#344a5f}
+.environment-match-strip.vibrant{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0}
+.environment-match-strip.vibrant span{background:#e7f6ef;color:#137a4a;border:1px solid #a7dfc4;border-radius:999px;padding:8px 12px;font-weight:900}
+.compact-empty{padding:20px;border:1px dashed #c9d6e1;border-radius:18px;background:#f8fafc;color:#53677a}
+.slate-play-card .matched-trend-card{display:none!important}
+.slate-play-card .details-cta{margin-top:14px;width:100%}
+@media(max-width:700px){.exact-environment-hero{align-items:flex-start;flex-direction:column}.verified-trend-card{align-items:flex-start;flex-direction:column}.verified-trend-card>span{white-space:normal}.verified-trend-grid{grid-template-columns:1fr}}
+
+/* Decision Engine V1: facts only */
