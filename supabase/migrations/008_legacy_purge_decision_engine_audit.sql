@@ -1,5 +1,6 @@
 -- Sports Edge MLB Legacy Purge + Decision Engine acceptance audit.
 -- Read-only reporting function. No game, odds, environment, or pick rows are changed.
+-- Schema compatibility: mlb.games uses is_final, f5_home_score, and f5_away_score.
 
 create or replace function public.sports_edge_mlb_decision_engine_audit()
 returns jsonb
@@ -10,17 +11,30 @@ as $$
   with game_counts as (
     select
       count(*)::integer as games,
-      count(*) filter (where status_abstract_state = 'Final')::integer as final_games,
-      count(*) filter (where status_abstract_state = 'Final' and home_score is not null and away_score is not null)::integer as final_scores,
-      count(*) filter (where status_abstract_state = 'Final' and home_f5_score is not null and away_f5_score is not null)::integer as f5_scores
+      count(*) filter (where is_final is true)::integer as final_games,
+      count(*) filter (
+        where is_final is true
+          and home_score is not null
+          and away_score is not null
+      )::integer as final_scores,
+      count(*) filter (
+        where is_final is true
+          and f5_available is true
+          and f5_home_score is not null
+          and f5_away_score is not null
+      )::integer as f5_scores
     from mlb.games
   ), duplicate_counts as (
     select count(*)::integer as duplicate_game_pks
     from (
-      select game_pk from mlb.games group by game_pk having count(*) > 1
+      select game_pk
+      from mlb.games
+      group by game_pk
+      having count(*) > 1
     ) duplicates
   ), environment_counts as (
-    select count(*)::integer as environments from mlb.environments
+    select count(*)::integer as environments
+    from mlb.environments
   )
   select jsonb_build_object(
     'release', 'LEGACY_PURGE_DECISION_ENGINE_V1',
@@ -32,6 +46,8 @@ as $$
     'duplicateGamePks', duplicate_counts.duplicate_game_pks,
     'passed', duplicate_counts.duplicate_game_pks = 0
       and game_counts.games > 0
+      and game_counts.final_games > 0
+      and game_counts.final_scores = game_counts.final_games
       and environment_counts.environments > 0
   )
   from game_counts, duplicate_counts, environment_counts;
