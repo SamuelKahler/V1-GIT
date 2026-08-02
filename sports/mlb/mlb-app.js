@@ -2270,7 +2270,7 @@ function openPick(i){
   };
 
   function dailyF5Rows(){
-    return unifiedGradedRows().filter(p=>bettorCategory(p)==='First Five').map(p=>{
+    return unifiedGradedRows().filter(p=>bettorCategory(p)==='First Five' && explicitUnitSize(p)).map(p=>{
       const st=normalizedPickStatus(p);
       const title=cleanPickTitle(p);
       const team=(title.match(/^F5\s+([A-Z]{2,3}|A'S)\b/i)||[])[1] || teamAbbr(title.replace(/^F5\s+/i,'').split(/\s+/)[0]);
@@ -2279,9 +2279,10 @@ function openPick(i){
   }
   const originalF5AllBets = window.f5AllBets || f5AllBets;
   window.f5AllBets = function f5AllBetsV57(){
-    if(window.SportsEdgeDatabase && Array.isArray(window.SportsEdgeDatabase.f5Bets)){
-      return window.SportsEdgeDatabase.f5Bets.slice();
+    if(window.SportsEdgePerformance && typeof window.SportsEdgePerformance.allF5 === 'function'){
+      return window.SportsEdgePerformance.allF5();
     }
+    if(Array.isArray(window.SportsEdgeStableF5Bets)) return window.SportsEdgeStableF5Bets.slice();
     const base = originalF5AllBets();
     const map = new Map();
     [...base,...dailyF5Rows()].forEach(r=>{

@@ -1,6 +1,6 @@
 {
   "name": "sports-edge",
-  "version": "17.0.0",
+  "version": "16.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,6 +12,7 @@
     "validate:release-a": "node scripts/validate-release-a.mjs",
     "validate:api-consolidation": "node scripts/validate-api-consolidation.mjs",
     "validate:developer-console": "node scripts/validate-developer-console.mjs",
-    "validate:customer-intelligence": "node scripts/validate-customer-intelligence.mjs"
+    "validate:customer-intelligence": "node scripts/validate-customer-intelligence.mjs",
+    "validate:daily-picks-f5": "node scripts/validate-daily-picks-f5.mjs"
   }
 }

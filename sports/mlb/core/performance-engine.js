@@ -1,7 +1,7 @@
 (function(){
   'use strict';
 
-  const VERSION='13.0.0';
+  const VERSION='14.0.0';
   const LOCKED_BASELINE_END='2026-07-22';
   const number=value=>{
     if(value===null||value===undefined||value==='') return 0;
@@ -43,7 +43,7 @@
     const additions=canonicalRows()
       .filter(row=>{
         const date=isoDate(row.isoDate||row.date);
-        return date&&date>LOCKED_BASELINE_END&&['win','loss','push'].includes(outcome(row));
+        return date&&date>LOCKED_BASELINE_END&&row.hasExplicitUnits===true&&['win','loss','push'].includes(outcome(row));
       })
       .filter(row=>{
         const key=rowKey(row);
@@ -81,7 +81,7 @@
     const rows=stableRows();
     return{
       version:VERSION,
-      policy:'LOCKED_LEGACY_BASELINE_PLUS_NEW_OFFICIAL_GRADES',
+      policy:'AUTHORITATIVE_F5_SHEET_PLUS_EXPLICIT_UNIT_OFFICIAL_GRADES',
       baselineEnd:LOCKED_BASELINE_END,
       baselineRows:baseline.length,
       canonicalF5Rows:canonical.length,
