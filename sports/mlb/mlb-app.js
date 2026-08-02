@@ -2015,6 +2015,7 @@ function mlbEvidenceCriteriaForPick(p){
     dateFrom: season.dateFrom,
     dateTo: season.dateTo,
     minimumSample: 3,
+    minimumHitRate: 52.5,
     limit: 200
   };
   if(market.period === 'F5'){
@@ -2118,49 +2119,84 @@ function sportsEdgeF5PerformanceHtml(period){
   return '<section class="sports-edge-performance-proof decision-performance"><div><span class="evidence-kicker">Official Sports Edge F5</span><h4>'+stats.wins+'-'+stats.losses+(stats.pushes ? '-'+stats.pushes : '')+'</h4></div><div class="performance-proof-metrics"><div><small>Win Rate</small><strong>'+Number(stats.winRate || 0).toFixed(1)+'%</strong></div><div><small>Units</small><strong>'+(profit>=0?'+':'')+profit.toFixed(2)+'U</strong></div><div><small>ROI</small><strong>'+(roi>=0?'+':'')+roi.toFixed(1)+'%</strong></div></div></section>';
 }
 /* Compatibility markers for prior validated releases: Historical Evidence; No verified historical sample. */
+function signalEvidenceLabel(value){
+  const raw = String(value || '').trim().toUpperCase();
+  const labels = {
+    '1-DAY REST':'1-Day Rest',
+    'AFTER A LOSS':'After a Loss',
+    'AFTER A WIN':'After a Win',
+    'AWAY':'Away',
+    'AWAY FAVORITE':'Away Favorite',
+    'AWAY UNDERDOG':'Away Underdog',
+    'DIVISION':'Division Game',
+    'HOME FAVORITE':'Home Favorite',
+    'HOME UNDERDOG':'Home Underdog',
+    'PREV_ALLOWED 0':'Allowed 0 Runs Last Game',
+    'PREV_ALLOWED 10+':'Allowed 10+ Runs Last Game',
+    'PREV_SCRD 0':'Scored 0 Runs Last Game',
+    'PREV_SCRD 10+':'Scored 10+ Runs Last Game',
+    '10+':'10+ Combined Runs Last Game',
+    'SWEEP':'Sweep Opportunity',
+    'ATS':'Avoiding a Sweep'
+  };
+  return labels[raw] || String(value || '').trim();
+}
 function trendSignalCard(signal){
   const rec = signal?.record || {};
   const sample = Number(rec.sampleSize || 0);
-  if(!sample) return '';
-  const rate = rec.hitRate == null ? '—' : Number(rec.hitRate).toFixed(1)+'%';
+  const hitRate = Number(rec.hitRate);
+  if(!sample || !Number.isFinite(hitRate) || hitRate < 52.5) return '';
+  const rate = hitRate.toFixed(1)+'%';
   const record = `${Number(rec.wins||0)}–${Number(rec.losses||0)}${Number(rec.pushes||0)?'–'+Number(rec.pushes||0):''}`;
   const sideClass = signal.side === 'OPPONENT' ? 'opponent-signal' : 'selected-signal';
-  const matchType = String(signal.matchType || 'EXACT').toUpperCase();
-  const typeLabel = matchType === 'EXACT' ? 'Exact Match' : matchType === 'TREND' ? 'Trend Match' : 'Environment Match';
-  const category = signal.category || '';
-  const environment = signal.environment || '';
+  const category = signalEvidenceLabel(signal.category || '');
+  const environment = signalEvidenceLabel(signal.environment || '');
   const title = [category, environment].filter(Boolean).join(' · ');
-  const titleMarkup = [
-    category ? `<span class="trend-category">${evidenceHtmlEscape(category)}</span>` : '',
-    environment ? `<span class="trend-environment">${evidenceHtmlEscape(environment)}</span>` : ''
-  ].filter(Boolean).join('<span class="trend-title-divider">·</span>');
-  return `<article class="verified-trend-card ${sideClass} match-${matchType.toLowerCase()}">
-    <div class="trend-card-head"><span class="trend-match-type">${evidenceHtmlEscape(typeLabel)}</span><span class="trend-card-title">${titleMarkup || evidenceHtmlEscape(title)}</span></div>
+  return `<article class="verified-trend-card ${sideClass}">
+    <div class="trend-card-head"><span class="trend-card-title">${evidenceHtmlEscape(title)}</span></div>
     <div class="trend-card-primary"><strong class="trend-card-rate">${rate}</strong><span>${sample} game${sample===1?'':'s'}</span></div>
     <div class="trend-card-record"><span><small>Record</small><b>${record}</b></span><span><small>Sample</small><b>${sample}</b></span></div>
   </article>`;
 }
 function renderTrendSignals(report){
-  const clean = (Array.isArray(report?.trendSignals) ? report.trendSignals : []).filter(x=>{
-    if(Number(x?.record?.sampleSize||0)<3) return false;
-    const environment=String(x?.environment||'').toUpperCase();
-    if(/^F5\s*[+-]/.test(environment)) return false;
+  const raw = Array.isArray(report?.trendSignals) ? report.trendSignals : [];
+  const forbidden = new Set(['ML','OVER','UNDER']);
+  const eligible = raw.filter(signal=>{
+    const sample=Number(signal?.record?.sampleSize||0);
+    const rate=Number(signal?.record?.hitRate);
+    const environment=String(signal?.environment||'').toUpperCase();
+    if(sample<3 || !Number.isFinite(rate) || rate<52.5) return false;
+    if(forbidden.has(environment) || /^F5\s*[+-]/.test(environment)) return false;
     return true;
   });
-  const rank = rows => [...rows].sort((a,b)=>{
+  const dedupe = rows => {
+    const exactCategories = new Set(rows.filter(x=>String(x.matchType).toUpperCase()==='EXACT' && x.category).map(x=>String(x.category).toUpperCase()));
+    const exactEnvironments = new Set(rows.filter(x=>String(x.matchType).toUpperCase()==='EXACT' && x.environment).map(x=>String(x.environment).toUpperCase()));
+    const seen = new Set();
+    return rows.filter(x=>{
+      const type=String(x.matchType||'').toUpperCase();
+      const category=String(x.category||'').toUpperCase();
+      const environment=String(x.environment||'').toUpperCase();
+      if(type==='TREND' && exactCategories.has(category)) return false;
+      if(type==='ENVIRONMENT' && exactEnvironments.has(environment)) return false;
+      const key=`${category}|${environment}`;
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+  const rank = rows => dedupe([...rows].sort((a,b)=>{
     const at=Number(a?.matchTier||0), bt=Number(b?.matchTier||0);
     if(at!==bt) return bt-at;
-    const ar=Number(a?.relevanceScore||0), br=Number(b?.relevanceScore||0);
-    if(ar!==br) return br-ar;
     const ah=Number(a?.record?.hitRate||0), bh=Number(b?.record?.hitRate||0);
     if(ah!==bh) return bh-ah;
     return Number(b?.record?.sampleSize||0)-Number(a?.record?.sampleSize||0);
-  });
-  const selected = rank(clean.filter(x=>x.side!=='OPPONENT'));
-  const opponent = rank(clean.filter(x=>x.side==='OPPONENT'));
+  }));
+  const selected = rank(eligible.filter(x=>x.side!=='OPPONENT')).slice(0,6);
+  const opponent = rank(eligible.filter(x=>x.side==='OPPONENT')).slice(0,4);
   if(!selected.length && !opponent.length) return '';
-  const group = (title, rows, open, opponentGroup=false) => rows.length ? `<details class="verified-trend-group trend-dropdown ${opponentGroup?'opponent-group':''}" ${open?'open':''}><summary><span>${evidenceHtmlEscape(title)}</span><strong>${rows.length} evidence signal${rows.length===1?'':'s'}</strong></summary><div class="verified-trend-grid">${rows.slice(0,12).map(x=>trendSignalCard(x)).join('')}</div></details>` : '';
-  return `<section class="verified-trends-panel"><div class="decision-section-title"><span>Verified Evidence</span><strong>2026 Season</strong></div>${group(report?.teamAbbreviation || 'Selected Side',selected,true)}${group((report?.opponentAbbreviation || 'Opponent')+' Perspective',opponent,false,true)}</section>`;
+  const group = (title, rows, open, opponentGroup=false) => rows.length ? `<details class="verified-trend-group trend-dropdown ${opponentGroup?'opponent-group':''}" ${open?'open':''}><summary><span>${evidenceHtmlEscape(title)}</span><strong>${rows.length} verified signal${rows.length===1?'':'s'}</strong></summary><div class="verified-trend-grid">${rows.map(x=>trendSignalCard(x)).join('')}</div></details>` : '';
+  return `<section class="verified-trends-panel"><div class="decision-section-title"><span>Verified Evidence</span><strong>2026 Season</strong></div>${group(report?.teamAbbreviation || 'Selected Side',selected,true)}${group((report?.opponentAbbreviation || 'Opponent')+' Context',opponent,false,true)}</section>`;
 }
 function renderVerifiedMLBEvidence(report){
   const exact = report?.historicalEvidence || report?.exactMatch || {};
@@ -2182,7 +2218,7 @@ function renderVerifiedMLBEvidence(report){
   const trends = renderTrendSignals(report);
   const historical = sample
     ? `<section class="exact-environment-card"><div class="exact-environment-hero"><div><small>Exact Environment</small><strong>${rate}</strong></div><span>${record} • ${sample} games</span></div>${chips?'<div class="environment-match-strip vibrant">'+chips+'</div>':''}${renderVerifiedGameRows(exact.supportingGames,period)}</section>`
-    : (trends ? '<section class="season-evidence-empty compact-empty"><strong>No exact match. Strongest verified evidence is shown above.</strong></section>' : '<section class="season-evidence-empty compact-empty"><strong>No verified historical sample yet.</strong></section>');
+    : (trends ? '' : '<section class="season-evidence-empty compact-empty"><strong>No verified edge signal yet.</strong></section>');
   return '<div class="decision-engine-v2">'+officialPerformance+trends+historical+'</div>';
 }
 
