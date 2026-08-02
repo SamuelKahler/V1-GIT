@@ -2095,14 +2095,21 @@ function trendSignalCard(signal, period){
   const rate = rec.hitRate == null ? '—' : Number(rec.hitRate).toFixed(1)+'%';
   const record = `${Number(rec.wins||0)}-${Number(rec.losses||0)}${Number(rec.pushes||0)?'-'+Number(rec.pushes||0):''}`;
   const sideClass = signal.side === 'OPPONENT' ? 'opponent-signal' : 'selected-signal';
-  return `<article class="verified-trend-card ${sideClass}"><div><small>${evidenceHtmlEscape(signal.label || 'Verified Trend')}</small><strong>${rate}</strong></div><span>${record} • ${sample} games</span></article>`;
+  return `<article class="verified-trend-card ${sideClass}"><div class="trend-card-label">${evidenceHtmlEscape(signal.label || 'Verified Trend')}</div><div class="trend-card-rate">${rate}</div><div class="trend-card-record">${record}<span>${sample} games</span></div></article>`;
 }
 function renderTrendSignals(report){
-  const selected = (Array.isArray(report?.trendSignals) ? report.trendSignals : []).filter(x=>x.side!=='OPPONENT' && Number(x?.record?.sampleSize||0)>0);
-  const opponent = (Array.isArray(report?.trendSignals) ? report.trendSignals : []).filter(x=>x.side==='OPPONENT' && Number(x?.record?.sampleSize||0)>0);
+  const clean = (Array.isArray(report?.trendSignals) ? report.trendSignals : []).filter(x=>{
+    const label=String(x?.label||'');
+    if(Number(x?.record?.sampleSize||0)<3) return false;
+    if(/^Opponent F5\b/i.test(label)) return false;
+    if(/^F5\s*[+-]/i.test(label)) return false;
+    return true;
+  });
+  const selected = clean.filter(x=>x.side!=='OPPONENT');
+  const opponent = clean.filter(x=>x.side==='OPPONENT');
   if(!selected.length && !opponent.length) return '';
-  const group = (title, rows) => rows.length ? `<section class="verified-trend-group"><h4>${evidenceHtmlEscape(title)}</h4><div class="verified-trend-grid">${rows.slice(0,6).map(x=>trendSignalCard(x,report?.period)).join('')}</div></section>` : '';
-  return `<section class="verified-trends-panel"><div class="decision-section-title"><span>Verified Trends</span><strong>2026 Season</strong></div>${group(report?.teamAbbreviation || 'Selected Side',selected)}${group((report?.opponentAbbreviation || 'Opponent')+' Trends',opponent)}</section>`;
+  const group = (title, rows, open, opponentGroup=false) => rows.length ? `<details class="verified-trend-group trend-dropdown ${opponentGroup?'opponent-group':''}" ${open?'open':''}><summary><span>${evidenceHtmlEscape(title)}</span><strong>${rows.length} verified trend${rows.length===1?'':'s'}</strong></summary><div class="verified-trend-grid">${rows.slice(0,8).map(x=>trendSignalCard(x,report?.period)).join('')}</div></details>` : '';
+  return `<section class="verified-trends-panel"><div class="decision-section-title"><span>Verified Trends</span><strong>2026 Season</strong></div>${group(report?.teamAbbreviation || 'Selected Side',selected,true)}${group((report?.opponentAbbreviation || 'Opponent')+' Trends',opponent,false,true)}</section>`;
 }
 function renderVerifiedMLBEvidence(report){
   const exact = report?.historicalEvidence || report?.exactMatch || {};

@@ -27,182 +27,74 @@
 
   <main>
     <section id="home" class="page active">
-      <div class="hero sports-landing-hero">
-        <div>
-          <p class="eyebrow">Sports Edge Intelligence</p>
-          <h1>Pick a sport. See the proof.</h1>
-
-          <p class="sub">
-            A cleaner Sports Edge home base built for daily bettors:
-            choose the sport first, then see that sport’s card,
-            research, trends, grading and performance.
-          </p>
-
-          <div class="hero-actions">
-            <button class="primary jump" data-page="sport-mlb">
-              Enter MLB
-            </button>
-
-            <button class="secondary jump" data-page="performance">
-              Performance Lab
-            </button>
-
-            <button class="secondary jump" data-page="journal">
-              Research Journal
-            </button>
-          </div>
+      <div class="hero sports-landing-hero home-hero-v2">
+        <div class="home-hero-copy">
+          <p class="eyebrow">Sports Edge</p>
+          <h1>Choose your sport. Find your edge.</h1>
+          <p class="sub">Official plays, verified trends and performance—organized by league.</p>
         </div>
 
-        <div class="score-card glass official-summary-card">
-          <span class="tag">Daily Bettor Flow</span>
-
-          <h3>Sport → Plays → Proof</h3>
-
-          <p>
-            Sports Edge starts with the league the customer cares about
-            and guides them to actionable picks, verified results and
-            supporting evidence.
-          </p>
-
+        <div class="score-card glass official-summary-card home-summary-v2">
+          <div class="home-summary-heading">
+            <span class="tag">Today</span>
+            <strong>Sports Edge Card</strong>
+          </div>
           <div class="mini-grid">
-            <div>
-              <strong id="homeOfficialCount">0</strong>
-              <small>Official Plays</small>
-            </div>
-
-            <div>
-              <strong id="homeResearchCount">0</strong>
-              <small>Research Edges</small>
-            </div>
-
-            <div>
-              <strong id="homeUnitsRisked">0U</strong>
-              <small>Units Risked</small>
-            </div>
+            <div><strong id="homeOfficialCount">0</strong><small>Official Plays</small></div>
+            <div><strong id="homeResearchCount">0</strong><small>Research Edges</small></div>
+            <div><strong id="homeUnitsRisked">0U</strong><small>Units Risked</small></div>
           </div>
         </div>
       </div>
 
-      <section class="sport-hub-section">
+      <section class="sport-hub-section home-sport-directory">
         <div class="section-head compact-head">
           <div>
-            <p class="eyebrow">Choose A Sport</p>
-            <h2>Your betting dashboard starts here</h2>
-
-            <p>
-              Each sport gets its own space, color system and workflow.
-              MLB is active now, while the remaining sports are staged
-              for clean expansion.
-            </p>
+            <p class="eyebrow">Sports</p>
+            <h2>Explore every league</h2>
           </div>
         </div>
 
-        <div class="sport-grid">
-          <article
-            class="sport-card sport-mlb jump"
-            data-page="sport-mlb"
-          >
-            <span>MLB</span>
-
-            <div>
-              <h3>MLB</h3>
-              <p>
-                Today’s card, F5, moneyline, totals, trends,
-                series board and performance.
-              </p>
-            </div>
-
-            <strong>Active</strong>
+        <div class="sport-grid sport-directory-grid">
+          <article class="sport-card sport-mlb jump sport-directory-card is-live" data-page="sport-mlb">
+            <span class="sport-icon sport-icon-mlb">MLB</span>
+            <div><h3>Major League Baseball</h3><p>Today’s picks, F5, moneylines, totals, series and verified evidence.</p></div>
+            <strong>Open MLB</strong>
           </article>
 
-          <article
-            class="sport-card sport-nhl jump"
-            data-page="sport-nhl"
-          >
-            <span>🏒</span>
+          <article class="sport-card sport-nfl jump sport-directory-card is-live" data-page="sport-nfl">
+            <span class="sport-icon">🏈</span>
+            <div><h3>NFL</h3><p>Spreads, totals, props and the active football database.</p></div>
+            <strong>Open NFL</strong>
+          </article>
 
-            <div>
-              <h3>NHL</h3>
-              <p>
-                Puck lines, moneylines, totals, goalie edges,
-                rest spots and series angles.
-              </p>
-            </div>
+          <article class="sport-card sport-cfb jump sport-directory-card is-live" data-page="sport-cfb">
+            <span class="sport-icon">🏈</span>
+            <div><h3>College Football</h3><p>Team, conference and player-prop research.</p></div>
+            <strong>Open CFB</strong>
+          </article>
 
+          <article class="sport-card sport-nhl jump sport-directory-card" data-page="sport-nhl">
+            <span class="sport-icon">🏒</span>
+            <div><h3>NHL</h3><p>Puck lines, totals, goalie edges and rest spots.</p></div>
             <strong>Coming Soon</strong>
           </article>
 
-          <article
-            class="sport-card sport-nfl jump"
-            data-page="sport-nfl"
-          >
-            <span>🏈</span>
-
-            <div>
-              <h3>NFL</h3>
-              <p>
-                Spreads, totals, props, injuries, weather,
-                travel and market intelligence.
-              </p>
-            </div>
-
-            <strong>Active Database</strong>
-          </article>
-
-          <article
-            class="sport-card sport-cfb jump"
-            data-page="sport-cfb"
-          >
-            <span>🏈</span>
-
-            <div>
-              <h3>College Football</h3>
-              <p>
-                Player prop history by team, position,
-                current line and historical result.
-              </p>
-            </div>
-
-            <strong>Database</strong>
-          </article>
-
-          <article
-            class="sport-card sport-nba jump"
-            data-page="sport-nba"
-          >
-            <span>🏀</span>
-
-            <div>
-              <h3>NBA</h3>
-              <p>
-                Spread edges, totals, props, lineups,
-                rest disadvantage and pace.
-              </p>
-            </div>
-
+          <article class="sport-card sport-nba jump sport-directory-card" data-page="sport-nba">
+            <span class="sport-icon">🏀</span>
+            <div><h3>NBA</h3><p>Spreads, totals, props, pace and lineup intelligence.</p></div>
             <strong>Coming Soon</strong>
           </article>
 
-          <article
-            class="sport-card sport-ncaab jump"
-            data-page="sport-ncaab"
-          >
-            <span>🏀</span>
-
-            <div>
-              <h3>NCAAB</h3>
-              <p>
-                Conference trends, tempo, home-court edge
-                and tournament profiles.
-              </p>
-            </div>
-
+          <article class="sport-card sport-ncaab jump sport-directory-card" data-page="sport-ncaab">
+            <span class="sport-icon">🏀</span>
+            <div><h3>College Basketball</h3><p>Conference trends, tempo and tournament profiles.</p></div>
             <strong>Coming Soon</strong>
           </article>
         </div>
       </section>
 
-      <section class="daily-command-center home-preview-board">
+      <section class="daily-command-center home-preview-board home-preview-hidden" aria-hidden="true">
         <div class="section-head compact-head">
           <div>
             <p class="eyebrow">MLB Preview</p>

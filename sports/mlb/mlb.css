@@ -298,3 +298,40 @@
 .mlb-theme [style*="color: white"],.mlb-theme [style*="color:#fff"],.mlb-theme [style*="color: #fff"]{text-shadow:0 1px 2px rgba(0,0,0,.18)}
 .mlb-theme .model-panel,.mlb-theme .trend-proof-card,.mlb-theme .matched-trend-card{color:var(--mlb-ink)!important}
 @media(max-width:700px){.slate-play-card{padding:19px!important}.decision-performance,.verified-trends-panel,.exact-environment-card{padding:18px!important}.verified-trend-card strong{font-size:1.65rem!important}.decision-section-title{align-items:flex-start!important;flex-direction:column!important}}
+
+/* =========================================================
+   VISUAL HIERARCHY REFINEMENT
+   Distinct trends, strong contrast, no generic F5 trend noise
+   ========================================================= */
+.mlb-theme,.modal-card{--trend-blue:#1169aa;--trend-blue-soft:#eaf5ff;--trend-orange:#e97216;--trend-orange-soft:#fff2e6;--trend-green:#168a55;--trend-ink:#102a43;--trend-muted:#45647c}
+.mlb-theme h1,.mlb-theme h2,.mlb-theme h3,.mlb-theme h4,.mlb-theme h5,.modal-card h1,.modal-card h2,.modal-card h3,.modal-card h4,.modal-card h5{color:var(--trend-ink)!important;text-shadow:none!important}
+.mlb-theme p,.mlb-theme li,.mlb-theme small,.modal-card p,.modal-card li,.modal-card small{color:var(--trend-muted)!important}
+.historical-prop-evidence>h4,.current-k-line>h4,.prop-history-bucket h4,.prop-history-grid h4,.pitcher-card strong{color:var(--trend-ink)!important;opacity:1!important}
+.prop-history-bucket{padding:20px;border:1px solid #c8deec;border-radius:20px;background:#f7fbff;box-shadow:0 8px 22px rgba(16,66,102,.06)}
+.prop-history-bucket:nth-child(2){background:#fff7ef;border-color:#f1c89f}
+.prop-history-bucket h4{margin:0 0 10px;font-size:1.15rem}
+.prop-history-bucket .subtle{margin:0 0 16px;line-height:1.5}
+.verified-trends-panel{padding:26px!important}
+.trend-dropdown{border:1px solid #cbdfea;border-radius:20px;background:#fff;overflow:hidden;box-shadow:0 8px 24px rgba(17,70,106,.07)}
+.trend-dropdown+.trend-dropdown{margin-top:16px!important;padding-top:0!important;border-top:1px solid #f0c79f!important}
+.trend-dropdown>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:17px 20px;cursor:pointer;background:linear-gradient(90deg,#edf7ff,#fff);border-left:5px solid var(--trend-blue);font-weight:950;color:var(--trend-ink)!important}
+.trend-dropdown.opponent-group>summary,.trend-dropdown:nth-of-type(3)>summary{background:linear-gradient(90deg,#fff2e7,#fff);border-left-color:var(--trend-orange)}
+.trend-dropdown>summary::-webkit-details-marker{display:none}
+.trend-dropdown>summary span{color:var(--trend-ink)!important;font-size:1.08rem}
+.trend-dropdown>summary strong{color:var(--trend-blue)!important;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
+.trend-dropdown[open]>summary{border-bottom:1px solid #d6e5ef}
+.trend-dropdown .verified-trend-grid{padding:16px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.verified-trend-card{display:grid!important;grid-template-columns:1fr auto!important;grid-template-areas:"label rate" "record record";align-items:center!important;gap:10px 16px!important;min-height:132px;padding:18px!important;border:1px solid #bfdced!important;border-left:6px solid var(--trend-blue)!important;background:linear-gradient(145deg,#f0f8ff,#fff)!important}
+.verified-trend-card.opponent-signal{border-color:#f2c89d!important;border-left-color:var(--trend-orange)!important;background:linear-gradient(145deg,#fff3e8,#fff)!important}
+.trend-card-label{grid-area:label;color:#244b68!important;font-size:.98rem;font-weight:900;line-height:1.25}
+.trend-card-rate{grid-area:rate;color:var(--trend-blue)!important;font-size:2rem;font-weight:950;line-height:1}
+.opponent-signal .trend-card-rate{color:#c95b0d!important}
+.trend-card-record{grid-area:record;color:var(--trend-ink)!important;font-size:1rem;font-weight:900;padding-top:10px;border-top:1px solid rgba(32,89,126,.12)}
+.trend-card-record span{margin-left:8px;color:var(--trend-muted)!important;font-weight:750}
+.environment-match-strip.vibrant span{background:#e6f8ef!important;color:#0f7546!important;border-color:#9ad9ba!important;box-shadow:0 4px 12px rgba(22,138,85,.08)}
+.exact-environment-card{border-top:5px solid var(--trend-green)!important}
+.decision-performance{border-top:5px solid var(--trend-blue)!important}
+.decision-section-title span{color:var(--trend-ink)!important}
+.current-k-line,.historical-prop-evidence{color:var(--trend-ink)!important}
+.k-line-provider-callout,.historical-prop-evidence .subtle{color:var(--trend-muted)!important}
+@media(max-width:700px){.trend-dropdown .verified-trend-grid{grid-template-columns:1fr}.verified-trend-card{grid-template-columns:1fr auto!important}.prop-history-grid{grid-template-columns:1fr!important}}

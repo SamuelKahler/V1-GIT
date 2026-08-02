@@ -594,3 +594,44 @@ select,input{background:#fff!important;color:var(--se-ink)!important;border:1px 
 select:focus,input:focus{outline:3px solid rgba(31,111,178,.15);border-color:var(--se-blue)!important}
 .api-grade-banner.success{background:var(--se-green-soft)!important;color:#126b43!important}.api-grade-banner.warning{background:var(--se-orange-soft)!important;color:#8f4a0b!important}
 @media(max-width:700px){main{padding-left:12px!important;padding-right:12px!important}.modal{padding:8px!important}.modal-card{border-radius:22px!important;padding:18px!important}.detail-accordion summary{padding:16px!important}}
+
+/* =========================================================
+   VISUAL HIERARCHY + HOME DIRECTORY RELEASE
+   Zero white-on-white, clean sport navigation, scan-first cards
+   ========================================================= */
+:root{
+  --se-text-primary:#102a43;
+  --se-text-secondary:#34566f;
+  --se-text-muted:#5b7185;
+  --se-canvas:#f4f9fd;
+  --se-card:#ffffff;
+  --se-border:#c9ddea;
+  --se-orange:#f47b20;
+  --se-green:#158a55;
+  --se-blue:#1167a8;
+}
+body, body *{text-rendering:optimizeLegibility}
+body p,body li,body td,body label,body small,body span{color:var(--se-text-secondary)}
+body h1,body h2,body h3,body h4,body h5,body h6,body strong,body b{color:var(--se-text-primary)}
+.home-hero-v2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr);gap:32px;align-items:stretch;padding:38px 0 24px}
+.home-hero-v2 h1{max-width:760px;margin:.2rem 0 .7rem;font-size:clamp(2.7rem,6vw,5.2rem);line-height:.98;letter-spacing:-.045em}
+.home-hero-v2 .sub{max-width:700px;font-size:1.18rem;line-height:1.55}
+.home-summary-v2{display:flex;flex-direction:column;justify-content:center;padding:26px!important;border-top:5px solid var(--se-green)!important}
+.home-summary-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
+.home-summary-heading>strong{font-size:1.25rem;color:var(--se-navy)!important}
+.home-sport-directory{padding:18px 0 44px}
+.home-sport-directory .compact-head{margin-bottom:18px}
+.home-sport-directory .compact-head h2{font-size:clamp(2rem,4vw,3.2rem);margin:.2rem 0}
+.sport-directory-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:18px!important}
+.sport-directory-card{min-height:250px!important;padding:24px!important;display:grid!important;grid-template-rows:auto 1fr auto!important;gap:22px!important;background:linear-gradient(145deg,#fff,#f7fbff)!important;border:1px solid var(--se-border)!important;border-top:5px solid #b9cada!important;border-radius:25px!important;box-shadow:0 14px 38px rgba(18,63,103,.09)!important;overflow:hidden!important}
+.sport-directory-card.is-live{border-top-color:var(--se-green)!important}
+.sport-directory-card:hover{border-color:#85b7d7!important;transform:translateY(-4px)!important}
+.sport-directory-card .sport-icon{width:70px;height:70px;display:grid;place-items:center;border-radius:20px;background:linear-gradient(145deg,#173c5d,#f28a2a);font-size:2.15rem;color:#fff!important;box-shadow:0 10px 24px rgba(19,58,89,.18)}
+.sport-directory-card .sport-icon-mlb{font-size:1.35rem;font-weight:950;letter-spacing:.03em}
+.sport-directory-card h3{margin:0 0 8px;font-size:1.45rem}
+.sport-directory-card p{margin:0;line-height:1.48;color:var(--se-text-secondary)!important}
+.sport-directory-card>strong{justify-self:start;padding:8px 12px;border-radius:999px;background:#eef5fa;color:var(--se-blue)!important;font-size:.82rem;text-transform:uppercase;letter-spacing:.08em}
+.sport-directory-card.is-live>strong{background:#e8f7ef;color:#147548!important}
+.home-preview-hidden{display:none!important}
+@media(max-width:980px){.sport-directory-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.home-hero-v2{grid-template-columns:1fr}}
+@media(max-width:620px){.sport-directory-grid{grid-template-columns:1fr!important}.sport-directory-card{min-height:210px!important}.home-hero-v2{padding-top:20px}.home-hero-v2 h1{font-size:2.7rem}}
