@@ -335,3 +335,18 @@
 .current-k-line,.historical-prop-evidence{color:var(--trend-ink)!important}
 .k-line-provider-callout,.historical-prop-evidence .subtle{color:var(--trend-muted)!important}
 @media(max-width:700px){.trend-dropdown .verified-trend-grid{grid-template-columns:1fr}.verified-trend-card{grid-template-columns:1fr auto!important}.prop-history-grid{grid-template-columns:1fr!important}}
+
+/* MLB Trend Matrix V1: readable category x environment cards */
+.verified-trend-grid{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))!important;gap:16px!important;padding:18px!important}
+.verified-trend-card{display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:14px!important;min-height:176px!important;padding:20px!important;overflow:hidden!important}
+.trend-card-head{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.trend-category{display:block;color:#0f3657!important;font-size:1rem;font-weight:950;letter-spacing:.055em;line-height:1.25;text-transform:uppercase}
+.trend-environment{display:inline-flex;align-items:center;min-height:30px;padding:6px 11px;border-radius:999px;background:#ddecfa;color:#0d5f9f!important;font-size:.82rem;font-weight:900;letter-spacing:.035em;line-height:1.1}
+.opponent-signal .trend-environment{background:#ffead6;color:#a94708!important}
+.trend-card-rate{display:block!important;color:#0d5f9f!important;font-size:2.35rem!important;font-weight:950!important;line-height:1!important;letter-spacing:-.045em}
+.opponent-signal .trend-card-rate{color:#c6530b!important}
+.trend-card-record{display:grid!important;grid-template-columns:1fr 1fr!important;gap:12px!important;width:100%;padding-top:14px!important;border-top:1px solid #ccdfec!important;color:#35546f!important;font-size:.9rem!important;font-weight:750!important}
+.trend-card-record span{display:flex;flex-direction:column;gap:3px;margin:0!important;color:#5c7185!important}
+.trend-card-record b{color:#102f4b!important;font-size:1.12rem;font-weight:950}
+.opponent-signal .trend-card-record{border-top-color:#efd4b9!important}
+@media(max-width:700px){.verified-trend-grid{padding:13px!important;gap:13px!important}.verified-trend-card{min-height:0!important;padding:17px!important}.trend-card-rate{font-size:2rem!important}}

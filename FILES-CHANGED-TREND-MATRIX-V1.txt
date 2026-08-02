@@ -1,0 +1,13 @@
+ADDED
+supabase/migrations/009_mlb_trend_matrix_engine.sql
+scripts/validate-mlb-trend-matrix-v1.mjs
+README-TREND-MATRIX-FIRST.txt
+CHANGELOG-TREND-MATRIX-V1.md
+FILES-CHANGED-TREND-MATRIX-V1.txt
+
+UPDATED
+lib/mlb/query-engine.js
+lib/mlb/customer-intelligence.js
+sports/mlb/mlb-app.js
+sports/mlb/mlb.css
+package.json

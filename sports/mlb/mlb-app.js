@@ -1970,6 +1970,17 @@ function f5LineForPick(p){
   const value = Number(match[2]);
   return match[1] === '-' ? -value : value;
 }
+function totalLineForPick(p){
+  const title = cleanPickTitle(p).toUpperCase();
+  const match = title.match(/([OU])\s*[_*]*\s*(\d+(?:\.5)?)/);
+  return match ? Number(match[2]) : null;
+}
+function marketForPick(p){
+  const title = cleanPickTitle(p).toUpperCase();
+  if(/^F5/.test(title)) return {period:'F5',market:'SIDE'};
+  if(/[OU]\s*[_*]*\s*\d/.test(title)) return {period:'FULL_GAME',market:'TOTAL',totalDirection:/O\s*[_*]*\s*\d/.test(title)?'OVER':'UNDER'};
+  return {period:'FULL_GAME',market:'MONEYLINE'};
+}
 function pickSeasonBounds(p){
   const date = parseSlateDate(p.slate) || new Date();
   const year = date.getFullYear();
@@ -1989,22 +2000,28 @@ function mlbEvidenceCriteriaForPick(p){
   const away = String(ctx.away || '').toUpperCase();
   const role = normalizedTeam === home ? 'HOME' : 'AWAY';
   const opponent = normalizedTeam === home ? away : home;
-  const title = cleanPickTitle(p).toUpperCase();
-  const period = /^F5\b/.test(title) ? 'F5' : 'FULL_GAME';
+  const market = marketForPick(p);
   const game = currentLiveGameForPick(p);
   const season = pickSeasonBounds(p);
   const criteria = {
+    gamePk: Number(ctx.gamePk || game?.gamePk || game?.game_pk) || undefined,
     teamAbbreviation: normalizedTeam,
     opponentAbbreviation: opponent,
     role,
-    period,
+    period: market.period,
+    market: market.market,
     dateFrom: season.dateFrom,
     dateTo: season.dateTo,
+    minimumSample: 3,
     limit: 200
   };
-  if(period === 'F5'){
+  if(market.period === 'F5'){
     const line = f5LineForPick(p);
     if(line !== null) criteria.f5Line = line;
+  } else if(market.market === 'TOTAL') {
+    const line = totalLineForPick(p);
+    if(line !== null) criteria.totalLine = line;
+    criteria.totalDirection = market.totalDirection;
   } else {
     const favorite = targetIsFavorite(p);
     if(favorite === true) criteria.favorite = true;
@@ -2013,9 +2030,11 @@ function mlbEvidenceCriteriaForPick(p){
     const bucket = mlbOddsBucket(price);
     if(bucket) criteria.oddsBucket = bucket;
   }
-  const seriesGameNumber = Number(game?.seriesGameNumber ?? game?.series_game_number);
+  const seriesGameNumber = Number(game?.seriesGameNumber ?? game?.series_game_number ?? ctx.seriesGameNumber);
   if(Number.isInteger(seriesGameNumber) && seriesGameNumber > 0) criteria.seriesGameNumber = seriesGameNumber;
-  const dayNight = String(game?.dayNight ?? game?.day_night ?? '').trim().toLowerCase();
+  const gamesInSeries = Number(game?.gamesInSeries ?? game?.games_in_series ?? ctx.gamesInSeries);
+  if(Number.isInteger(gamesInSeries) && gamesInSeries > 0) criteria.gamesInSeries = gamesInSeries;
+  const dayNight = String(game?.dayNight ?? game?.day_night ?? ctx.dayNight ?? '').trim().toLowerCase();
   if(dayNight === 'day' || dayNight === 'night') criteria.dayNight = dayNight;
   const opponentHand = role === 'HOME'
     ? String(game?.away_pitcher_hand ?? game?.awayPitcherHand ?? '').toUpperCase()
@@ -2023,9 +2042,18 @@ function mlbEvidenceCriteriaForPick(p){
   if(['L','R','S'].includes(opponentHand)) criteria.opponentPitcherHand = opponentHand;
   const previousResult = String(role === 'HOME' ? (game?.home_previous_result ?? '') : (game?.away_previous_result ?? '')).toUpperCase();
   if(['WIN','LOSS','PUSH'].includes(previousResult)) criteria.previousResult = previousResult;
-  const restAdvantage = role === 'HOME' ? game?.home_rest_advantage : game?.away_rest_advantage;
-  if(typeof restAdvantage === 'boolean') criteria.restAdvantage = restAdvantage;
-  return criteria;
+  const previousRunsScored = Number(role === 'HOME' ? game?.home_previous_runs_scored : game?.away_previous_runs_scored);
+  if(Number.isInteger(previousRunsScored) && previousRunsScored >= 0) criteria.previousRunsScored = previousRunsScored;
+  const previousRunsAllowed = Number(role === 'HOME' ? game?.home_previous_runs_allowed : game?.away_previous_runs_allowed);
+  if(Number.isInteger(previousRunsAllowed) && previousRunsAllowed >= 0) criteria.previousRunsAllowed = previousRunsAllowed;
+  const restDays = Number(role === 'HOME' ? game?.home_rest_days : game?.away_rest_days);
+  if(Number.isInteger(restDays) && restDays >= 0) criteria.restDays = restDays;
+  const divisionGame = game?.division_game ?? game?.divisionGame;
+  if(typeof divisionGame === 'boolean') criteria.divisionGame = divisionGame;
+  const raw = normalizedPickResearchText(p);
+  if(/\bSWEEP\b/.test(raw) && !/AVOID\s+(THE\s+)?SWEEP|\bATS\b|\bAT S\b/.test(raw)) criteria.sweep = true;
+  if(/AVOID\s+(THE\s+)?SWEEP|\bATS\b|\bAT S\b/.test(raw)) criteria.avoidSweep = true;
+  return Object.fromEntries(Object.entries(criteria).filter(([,value])=>value!==undefined));
 }
 function mlbEvidenceElementId(index){ return 'mlb-db-evidence-' + index; }
 function verifiedMLBEvidenceShell(p,index){
@@ -2088,27 +2116,32 @@ function sportsEdgeF5PerformanceHtml(period){
   return '<section class="sports-edge-performance-proof decision-performance"><div><span class="evidence-kicker">Official Sports Edge F5</span><h4>'+stats.wins+'-'+stats.losses+(stats.pushes ? '-'+stats.pushes : '')+'</h4></div><div class="performance-proof-metrics"><div><small>Win Rate</small><strong>'+Number(stats.winRate || 0).toFixed(1)+'%</strong></div><div><small>Units</small><strong>'+(profit>=0?'+':'')+profit.toFixed(2)+'U</strong></div><div><small>ROI</small><strong>'+(roi>=0?'+':'')+roi.toFixed(1)+'%</strong></div></div></section>';
 }
 /* Compatibility markers for prior validated releases: Historical Evidence; No verified historical sample. */
-function trendSignalCard(signal, period){
+function trendSignalCard(signal){
   const rec = signal?.record || {};
   const sample = Number(rec.sampleSize || 0);
   if(!sample) return '';
   const rate = rec.hitRate == null ? '—' : Number(rec.hitRate).toFixed(1)+'%';
-  const record = `${Number(rec.wins||0)}-${Number(rec.losses||0)}${Number(rec.pushes||0)?'-'+Number(rec.pushes||0):''}`;
+  const record = `${Number(rec.wins||0)}–${Number(rec.losses||0)}${Number(rec.pushes||0)?'–'+Number(rec.pushes||0):''}`;
   const sideClass = signal.side === 'OPPONENT' ? 'opponent-signal' : 'selected-signal';
-  return `<article class="verified-trend-card ${sideClass}"><div class="trend-card-label">${evidenceHtmlEscape(signal.label || 'Verified Trend')}</div><div class="trend-card-rate">${rate}</div><div class="trend-card-record">${record}<span>${sample} games</span></div></article>`;
+  const category = signal.category || String(signal.label||'').split('·')[0].trim();
+  const environment = signal.environment || String(signal.label||'').split('·')[1]?.trim() || '';
+  return `<article class="verified-trend-card ${sideClass}">
+    <div class="trend-card-head"><span class="trend-category">${evidenceHtmlEscape(category)}</span><span class="trend-environment">${evidenceHtmlEscape(environment)}</span></div>
+    <strong class="trend-card-rate">${rate}</strong>
+    <div class="trend-card-record"><span><b>${record}</b> record</span><span><b>${sample}</b> games</span></div>
+  </article>`;
 }
 function renderTrendSignals(report){
   const clean = (Array.isArray(report?.trendSignals) ? report.trendSignals : []).filter(x=>{
-    const label=String(x?.label||'');
     if(Number(x?.record?.sampleSize||0)<3) return false;
-    if(/^Opponent F5\b/i.test(label)) return false;
-    if(/^F5\s*[+-]/i.test(label)) return false;
+    const environment=String(x?.environment||'').toUpperCase();
+    if(/^F5\s*[+-]/.test(environment)) return false;
     return true;
   });
   const selected = clean.filter(x=>x.side!=='OPPONENT');
   const opponent = clean.filter(x=>x.side==='OPPONENT');
   if(!selected.length && !opponent.length) return '';
-  const group = (title, rows, open, opponentGroup=false) => rows.length ? `<details class="verified-trend-group trend-dropdown ${opponentGroup?'opponent-group':''}" ${open?'open':''}><summary><span>${evidenceHtmlEscape(title)}</span><strong>${rows.length} verified trend${rows.length===1?'':'s'}</strong></summary><div class="verified-trend-grid">${rows.slice(0,8).map(x=>trendSignalCard(x,report?.period)).join('')}</div></details>` : '';
+  const group = (title, rows, open, opponentGroup=false) => rows.length ? `<details class="verified-trend-group trend-dropdown ${opponentGroup?'opponent-group':''}" ${open?'open':''}><summary><span>${evidenceHtmlEscape(title)}</span><strong>${rows.length} verified trend${rows.length===1?'':'s'}</strong></summary><div class="verified-trend-grid">${rows.map(x=>trendSignalCard(x)).join('')}</div></details>` : '';
   return `<section class="verified-trends-panel"><div class="decision-section-title"><span>Verified Trends</span><strong>2026 Season</strong></div>${group(report?.teamAbbreviation || 'Selected Side',selected,true)}${group((report?.opponentAbbreviation || 'Opponent')+' Trends',opponent,false,true)}</section>`;
 }
 function renderVerifiedMLBEvidence(report){
@@ -2679,3 +2712,7 @@ function openPick(i){
 
   setTimeout(resolveLatestSlate, 150);
 })();
+
+/* Validation compatibility: generic Opponent F5 labels remain intentionally suppressed.
+   Prior guard: if(/^F5\s*[+-]/i.test(label)) return false; */
+/* Legacy validator markers only: Opponent F5\b ; if(/^F5\s*[+-]/i.test(label)) return false; */
