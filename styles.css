@@ -542,3 +542,55 @@ body.theme-nfl{background:radial-gradient(circle at top left,#53200b 0,#111827 3
 .evidence-error{border-color:rgba(204,71,71,.22)!important;background:#fff7f7!important}
 @media (max-width:900px){.verified-evidence-metrics{grid-template-columns:1fr 1fr}.verified-evidence-columns{grid-template-columns:1fr}}
 @media (max-width:650px){.verified-evidence-hero{align-items:flex-start;flex-direction:column}.verified-hit-rate{text-align:left;min-width:0}.verified-hit-rate strong{font-size:2.3rem}.verified-evidence-metrics{grid-template-columns:1fr}}
+
+/* =========================================================
+   PREMIUM DESIGN SYSTEM V1
+   Warm, high-contrast, scan-first visual language
+   ========================================================= */
+:root{
+  --se-ink:#10263b;
+  --se-navy:#123f67;
+  --se-blue:#1f6fb2;
+  --se-sky:#eaf5ff;
+  --se-orange:#f58220;
+  --se-orange-soft:#fff1e3;
+  --se-green:#198754;
+  --se-green-soft:#e7f7ef;
+  --se-red:#b83a3a;
+  --se-red-soft:#fff0ef;
+  --se-gold:#b87908;
+  --se-gold-soft:#fff8df;
+  --se-cream:#fffaf3;
+  --se-paper:#ffffff;
+  --se-page:#f7fbff;
+  --se-line:#cfe0ec;
+  --se-muted:#49657d;
+  --se-shadow:0 14px 38px rgba(20,65,100,.11);
+  --se-shadow-hover:0 20px 52px rgba(20,65,100,.16);
+}
+html,body{background:linear-gradient(180deg,#fffaf3 0%,#f5faff 42%,#eef7fb 100%)!important;color:var(--se-ink)!important}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.01em}
+body,p,li,td,label,small,span{color:var(--se-muted)}
+h1,h2,h3,h4,h5,h6,strong,b{color:var(--se-ink)}
+.topbar{background:rgba(255,250,243,.96)!important;border-bottom:1px solid #d8e6ef!important;box-shadow:0 8px 28px rgba(20,65,100,.09)!important}
+.logo{background:linear-gradient(135deg,var(--se-navy),var(--se-blue))!important;color:#fff!important;box-shadow:0 10px 24px rgba(18,63,103,.23)!important}
+.nav,.primary,.secondary{font-weight:850;transition:all .16s ease;background:#fff!important;color:var(--se-navy)!important;border:1px solid #c9dce8!important;box-shadow:0 5px 16px rgba(20,65,100,.07)!important}
+.nav:hover,.secondary:hover{transform:translateY(-2px);border-color:var(--se-orange)!important;box-shadow:var(--se-shadow)!important}
+.nav.active,.primary{background:linear-gradient(135deg,var(--se-navy),var(--se-blue))!important;color:#fff!important;border-color:transparent!important}
+main{max-width:1360px}
+.glass,.gateway,.filters,.model-panel,.modal-card,.pick-card,.route-card,.sport-action-card,.score-card,.date-group,.pick-section-card,.daily-pick-section,.monthly-archive-card,.today-command-card,.perf-card,.category-card,.summary-row>div,.mini-grid>div{background:linear-gradient(180deg,#fff 0%,#fbfdff 100%)!important;border:1px solid var(--se-line)!important;box-shadow:var(--se-shadow)!important;color:var(--se-ink)!important}
+.gateway:hover,.route-card:hover,.pick-card:hover,.slate-play-card:hover{transform:translateY(-3px);box-shadow:var(--se-shadow-hover)!important;border-color:#f2bc86!important}
+.section-head h2,.section-head h3{color:var(--se-navy)!important}.section-head p,.sub,.subtle,.count{color:var(--se-muted)!important}
+.eyebrow{color:var(--se-orange)!important;font-weight:950!important}
+.tag{background:var(--se-green-soft)!important;color:#126b43!important;border:1px solid #a8ddc4!important}.tag.blue{background:var(--se-sky)!important;color:#155b91!important;border-color:#b9d9f0!important}.tag.gray{background:#f1f7fb!important;color:#3f617b!important;border-color:#cee0eb!important}.gold-tag{background:var(--se-gold-soft)!important;color:#986300!important;border-color:#efd789!important}
+.pill{background:#f2f8fc!important;color:#355a75!important;border:1px solid #d3e3ed!important;font-weight:750!important}.pill strong{color:var(--se-ink)!important}
+.status-WIN,.status-SUCCESS,.positive-metric{color:var(--se-green)!important}.status-LOSS,.negative-metric{color:var(--se-red)!important}.status-LIVE,.status-ACTIVE{color:var(--se-blue)!important}.status-PENDING,.status-UNGRADED,.status-UNVERIFIED{color:var(--se-orange)!important}
+.primary,.details-cta{background:linear-gradient(135deg,#168b58,#49d892)!important;color:#071f16!important;border:0!important;font-weight:950!important;box-shadow:0 10px 24px rgba(22,139,88,.2)!important}
+.details-cta:hover,.primary:hover{filter:saturate(1.08);transform:translateY(-2px)}
+.modal{background:rgba(11,34,53,.58)!important;backdrop-filter:blur(12px)}.modal-card{background:linear-gradient(180deg,#fffdf9,#f8fcff)!important;border:1px solid #c8dce9!important;box-shadow:0 28px 80px rgba(7,35,57,.3)!important}.close{color:var(--se-navy)!important}
+.detail-accordion{background:#fff!important;border:1px solid #cbdfea!important;border-radius:22px!important;box-shadow:0 10px 28px rgba(20,65,100,.07)!important;overflow:hidden}.detail-accordion summary{padding:18px 22px!important;color:var(--se-ink)!important;background:linear-gradient(90deg,#fff,#f0f8ff)!important;border-left:5px solid var(--se-blue);font-size:1.08rem}.detail-accordion[open] summary{border-bottom:1px solid #d7e6ef}.detail-accordion-body{padding:20px 22px 24px!important}
+table{background:#fff!important;border:1px solid var(--se-line)!important;box-shadow:var(--se-shadow)!important}th{background:#eaf4fb!important;color:#214d6d!important;font-weight:900!important}td{color:#29495f!important;border-color:#e3edf3!important}tr:hover td{background:#fbf6ee!important}
+select,input{background:#fff!important;color:var(--se-ink)!important;border:1px solid #c9dce8!important;box-shadow:inset 0 1px 2px rgba(20,65,100,.04)}
+select:focus,input:focus{outline:3px solid rgba(31,111,178,.15);border-color:var(--se-blue)!important}
+.api-grade-banner.success{background:var(--se-green-soft)!important;color:#126b43!important}.api-grade-banner.warning{background:var(--se-orange-soft)!important;color:#8f4a0b!important}
+@media(max-width:700px){main{padding-left:12px!important;padding-right:12px!important}.modal{padding:8px!important}.modal-card{border-radius:22px!important;padding:18px!important}.detail-accordion summary{padding:16px!important}}

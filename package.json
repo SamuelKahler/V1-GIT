@@ -17,6 +17,7 @@
     "validate:customer-experience-v1": "node scripts/validate-customer-experience-v1.mjs",
     "validate:evidence-v2": "node scripts/validate-evidence-engine-v2.mjs",
     "validate:decision-engine-v1": "node scripts/validate-decision-engine-v1.mjs",
-    "validate:legacy-purge": "node scripts/validate-legacy-purge-decision-engine.mjs"
+    "validate:legacy-purge": "node scripts/validate-legacy-purge-decision-engine.mjs",
+    "validate:premium-design-v1": "node scripts/validate-premium-design-v1.mjs"
   }
 }
