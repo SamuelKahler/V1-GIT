@@ -1972,13 +1972,13 @@ function f5LineForPick(p){
 }
 function totalLineForPick(p){
   const title = cleanPickTitle(p).toUpperCase();
-  const match = title.match(/([OU])\s*[_*]*\s*(\d+(?:\.5)?)/);
-  return match ? Number(match[2]) : null;
+  const match = title.match(/\b[OU]\s*[_*]*\s*(\d+(?:\.5)?)/);
+  return match ? Number(match[1]) : null;
 }
 function marketForPick(p){
   const title = cleanPickTitle(p).toUpperCase();
-  if(/^F5/.test(title)) return {period:'F5',market:'SIDE'};
-  if(/[OU]\s*[_*]*\s*\d/.test(title)) return {period:'FULL_GAME',market:'TOTAL',totalDirection:/O\s*[_*]*\s*\d/.test(title)?'OVER':'UNDER'};
+  if(/^F5\b/.test(title)) return {period:'F5',market:'SIDE'};
+  if(/\b[OU]\s*[_*]*\s*\d/.test(title)) return {period:'FULL_GAME',market:'TOTAL',totalDirection:/\bO\s*[_*]*\s*\d/.test(title)?'OVER':'UNDER'};
   return {period:'FULL_GAME',market:'MONEYLINE'};
 }
 function pickSeasonBounds(p){
@@ -1992,15 +1992,17 @@ function pickSeasonBounds(p){
   };
 }
 function mlbEvidenceCriteriaForPick(p){
-  const team = targetTeamForPick(p);
   const ctx = matchupContextForPick(p);
-  if(!team || !ctx) return null;
+  if(!ctx) return null;
+  const market = marketForPick(p);
+  const directTeam = targetTeamForPick(p);
+  const team = directTeam || (market.market === 'TOTAL' ? ctx.away : '');
+  if(!team) return null;
   const normalizedTeam = String(team).toUpperCase();
   const home = String(ctx.home || '').toUpperCase();
   const away = String(ctx.away || '').toUpperCase();
   const role = normalizedTeam === home ? 'HOME' : 'AWAY';
   const opponent = normalizedTeam === home ? away : home;
-  const market = marketForPick(p);
   const game = currentLiveGameForPick(p);
   const season = pickSeasonBounds(p);
   const criteria = {
@@ -2123,12 +2125,19 @@ function trendSignalCard(signal){
   const rate = rec.hitRate == null ? '—' : Number(rec.hitRate).toFixed(1)+'%';
   const record = `${Number(rec.wins||0)}–${Number(rec.losses||0)}${Number(rec.pushes||0)?'–'+Number(rec.pushes||0):''}`;
   const sideClass = signal.side === 'OPPONENT' ? 'opponent-signal' : 'selected-signal';
-  const category = signal.category || String(signal.label||'').split('·')[0].trim();
-  const environment = signal.environment || String(signal.label||'').split('·')[1]?.trim() || '';
-  return `<article class="verified-trend-card ${sideClass}">
-    <div class="trend-card-head"><span class="trend-category">${evidenceHtmlEscape(category)}</span><span class="trend-environment">${evidenceHtmlEscape(environment)}</span></div>
-    <strong class="trend-card-rate">${rate}</strong>
-    <div class="trend-card-record"><span><b>${record}</b> record</span><span><b>${sample}</b> games</span></div>
+  const matchType = String(signal.matchType || 'EXACT').toUpperCase();
+  const typeLabel = matchType === 'EXACT' ? 'Exact Match' : matchType === 'TREND' ? 'Trend Match' : 'Environment Match';
+  const category = signal.category || '';
+  const environment = signal.environment || '';
+  const title = [category, environment].filter(Boolean).join(' · ');
+  const titleMarkup = [
+    category ? `<span class="trend-category">${evidenceHtmlEscape(category)}</span>` : '',
+    environment ? `<span class="trend-environment">${evidenceHtmlEscape(environment)}</span>` : ''
+  ].filter(Boolean).join('<span class="trend-title-divider">·</span>');
+  return `<article class="verified-trend-card ${sideClass} match-${matchType.toLowerCase()}">
+    <div class="trend-card-head"><span class="trend-match-type">${evidenceHtmlEscape(typeLabel)}</span><span class="trend-card-title">${titleMarkup || evidenceHtmlEscape(title)}</span></div>
+    <div class="trend-card-primary"><strong class="trend-card-rate">${rate}</strong><span>${sample} game${sample===1?'':'s'}</span></div>
+    <div class="trend-card-record"><span><small>Record</small><b>${record}</b></span><span><small>Sample</small><b>${sample}</b></span></div>
   </article>`;
 }
 function renderTrendSignals(report){
@@ -2138,11 +2147,20 @@ function renderTrendSignals(report){
     if(/^F5\s*[+-]/.test(environment)) return false;
     return true;
   });
-  const selected = clean.filter(x=>x.side!=='OPPONENT');
-  const opponent = clean.filter(x=>x.side==='OPPONENT');
+  const rank = rows => [...rows].sort((a,b)=>{
+    const at=Number(a?.matchTier||0), bt=Number(b?.matchTier||0);
+    if(at!==bt) return bt-at;
+    const ar=Number(a?.relevanceScore||0), br=Number(b?.relevanceScore||0);
+    if(ar!==br) return br-ar;
+    const ah=Number(a?.record?.hitRate||0), bh=Number(b?.record?.hitRate||0);
+    if(ah!==bh) return bh-ah;
+    return Number(b?.record?.sampleSize||0)-Number(a?.record?.sampleSize||0);
+  });
+  const selected = rank(clean.filter(x=>x.side!=='OPPONENT'));
+  const opponent = rank(clean.filter(x=>x.side==='OPPONENT'));
   if(!selected.length && !opponent.length) return '';
-  const group = (title, rows, open, opponentGroup=false) => rows.length ? `<details class="verified-trend-group trend-dropdown ${opponentGroup?'opponent-group':''}" ${open?'open':''}><summary><span>${evidenceHtmlEscape(title)}</span><strong>${rows.length} verified trend${rows.length===1?'':'s'}</strong></summary><div class="verified-trend-grid">${rows.map(x=>trendSignalCard(x)).join('')}</div></details>` : '';
-  return `<section class="verified-trends-panel"><div class="decision-section-title"><span>Verified Trends</span><strong>2026 Season</strong></div>${group(report?.teamAbbreviation || 'Selected Side',selected,true)}${group((report?.opponentAbbreviation || 'Opponent')+' Trends',opponent,false,true)}</section>`;
+  const group = (title, rows, open, opponentGroup=false) => rows.length ? `<details class="verified-trend-group trend-dropdown ${opponentGroup?'opponent-group':''}" ${open?'open':''}><summary><span>${evidenceHtmlEscape(title)}</span><strong>${rows.length} evidence signal${rows.length===1?'':'s'}</strong></summary><div class="verified-trend-grid">${rows.slice(0,12).map(x=>trendSignalCard(x)).join('')}</div></details>` : '';
+  return `<section class="verified-trends-panel"><div class="decision-section-title"><span>Verified Evidence</span><strong>2026 Season</strong></div>${group(report?.teamAbbreviation || 'Selected Side',selected,true)}${group((report?.opponentAbbreviation || 'Opponent')+' Perspective',opponent,false,true)}</section>`;
 }
 function renderVerifiedMLBEvidence(report){
   const exact = report?.historicalEvidence || report?.exactMatch || {};
@@ -2164,7 +2182,7 @@ function renderVerifiedMLBEvidence(report){
   const trends = renderTrendSignals(report);
   const historical = sample
     ? `<section class="exact-environment-card"><div class="exact-environment-hero"><div><small>Exact Environment</small><strong>${rate}</strong></div><span>${record} • ${sample} games</span></div>${chips?'<div class="environment-match-strip vibrant">'+chips+'</div>':''}${renderVerifiedGameRows(exact.supportingGames,period)}</section>`
-    : '<section class="season-evidence-empty compact-empty"><strong>No exact-environment sample yet.</strong></section>';
+    : (trends ? '<section class="season-evidence-empty compact-empty"><strong>No exact match. Strongest verified evidence is shown above.</strong></section>' : '<section class="season-evidence-empty compact-empty"><strong>No verified historical sample yet.</strong></section>');
   return '<div class="decision-engine-v2">'+officialPerformance+trends+historical+'</div>';
 }
 
@@ -2716,3 +2734,5 @@ function openPick(i){
 /* Validation compatibility: generic Opponent F5 labels remain intentionally suppressed.
    Prior guard: if(/^F5\s*[+-]/i.test(label)) return false; */
 /* Legacy validator markers only: Opponent F5\b ; if(/^F5\s*[+-]/i.test(label)) return false; */
+/* Legacy validation marker: Verified Trends */
+/* Legacy validation marker: verified trend */

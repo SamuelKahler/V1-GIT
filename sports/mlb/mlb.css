@@ -350,3 +350,19 @@
 .trend-card-record b{color:#102f4b!important;font-size:1.12rem;font-weight:950}
 .opponent-signal .trend-card-record{border-top-color:#efd4b9!important}
 @media(max-width:700px){.verified-trend-grid{padding:13px!important;gap:13px!important}.verified-trend-card{min-height:0!important;padding:17px!important}.trend-card-rate{font-size:2rem!important}}
+
+/* Decision Engine V2: ranked, readable evidence cards */
+.verified-trend-card .trend-card-head{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:7px!important;width:100%!important}
+.trend-match-type{display:inline-flex!important;align-items:center!important;width:max-content!important;padding:5px 10px!important;border-radius:999px!important;background:#dff0ff!important;color:#0f5f9d!important;font-size:.72rem!important;font-weight:950!important;letter-spacing:.08em!important;text-transform:uppercase!important}
+.opponent-signal .trend-match-type{background:#ffead2!important;color:#a84b08!important}
+.match-exact .trend-match-type{background:#ddf7e8!important;color:#187844!important}
+.trend-card-title{display:block!important;color:#102f4b!important;font-size:1.05rem!important;font-weight:950!important;line-height:1.28!important;letter-spacing:.01em!important}
+.trend-card-primary{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:14px!important;width:100%!important}
+.trend-card-primary>span{color:#527087!important;font-size:.9rem!important;font-weight:850!important;padding-bottom:4px!important}
+.trend-card-rate{color:#0f5f9d!important;font-size:2.35rem!important;font-weight:950!important;line-height:1!important}
+.opponent-signal .trend-card-rate{color:#b7530a!important}
+.match-exact .trend-card-rate{color:#18824c!important}
+.trend-card-record small{display:block!important;margin:0!important;color:#60788d!important;font-size:.68rem!important;font-weight:900!important;letter-spacing:.08em!important;text-transform:uppercase!important}
+.verified-trend-group summary strong{white-space:normal!important;text-align:right!important}
+.season-evidence-empty.compact-empty{border:1px dashed #b9d3e6!important;background:#f7fbff!important;color:#294e69!important;padding:16px 18px!important;border-radius:16px!important}
+@media(max-width:700px){.trend-card-primary{align-items:flex-start!important;flex-direction:column!important;gap:5px!important}.trend-card-primary>span{padding-bottom:0!important}.verified-trend-group summary strong{text-align:left!important}}
