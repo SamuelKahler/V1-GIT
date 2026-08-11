@@ -2772,3 +2772,14 @@ function openPick(i){
 /* Legacy validator markers only: Opponent F5\b ; if(/^F5\s*[+-]/i.test(label)) return false; */
 /* Legacy validation marker: Verified Trends */
 /* Legacy validation marker: verified trend */
+
+/* V58 Daily grading bootstrap: grade every imported pick automatically using official MLB results. */
+(function sportsEdgeAutoGradeBootstrap(){
+  const run = () => {
+    if (typeof window.fetchVerifiedGrades === 'function') {
+      window.setTimeout(() => window.fetchVerifiedGrades(), 900);
+    }
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run, { once:true });
+  else run();
+})();

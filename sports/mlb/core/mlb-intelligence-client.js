@@ -35,16 +35,33 @@
   }
 
   async function publicRequest(path, payload) {
-    const response = await fetch(path, {
-      method: 'POST',
-      cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload || {})
-    });
-
-    return parseResponse(response);
+    let lastError = null;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      try {
+        const response = await fetch(path, {
+          method: 'POST',
+          cache: 'no-store',
+          signal: controller.signal,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {})
+        });
+        if ([502,503,504].includes(response.status) && attempt < 3) {
+          lastError = apiError(`Evidence service temporarily unavailable (${response.status}).`, response.status);
+          await new Promise(resolve => setTimeout(resolve, 350 * attempt));
+          continue;
+        }
+        return await parseResponse(response);
+      } catch (error) {
+        lastError = error;
+        if (attempt >= 3) break;
+        await new Promise(resolve => setTimeout(resolve, 350 * attempt));
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+    throw apiError(lastError?.message || 'Evidence service network request failed after retries.', lastError?.status || 503);
   }
 
   const client = Object.freeze({

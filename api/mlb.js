@@ -34,11 +34,66 @@ const ACTIONS = Object.freeze({
     import: { method: "POST", admin: true },
     publicEvidence: { method: "POST", admin: false },
     customerIntelligence: { method: "POST", admin: false },
+    syncRange: { method: "POST", admin: true },
+    cronSync: { method: "GET", admin: false },
     query: { method: "POST", admin: true },
     releaseAAudit: { method: "GET", admin: true },
     releaseATest: { method: "POST", admin: true },
     status: { method: "GET", admin: true }
 });
+
+
+function isoDateOffset(days) {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + days);
+    return d.toISOString().slice(0, 10);
+}
+
+function requireCronSecret(request) {
+    const configured = String(process.env.CRON_SECRET || '').trim();
+    const authorization = String(request?.headers?.authorization || request?.headers?.Authorization || '').trim();
+    if (!configured) throw createHttpError('CRON_SECRET must be configured in Vercel before cron sync can run.', 503);
+    if (authorization !== `Bearer ${configured}`) throw createHttpError('Cron authorization failed.', 401);
+}
+
+function dateChunks(startDate, endDate, chunkDays = 7) {
+    const chunks = [];
+    let cursor = new Date(`${startDate}T00:00:00.000Z`);
+    const end = new Date(`${endDate}T00:00:00.000Z`);
+    while (cursor <= end) {
+        const chunkStart = cursor.toISOString().slice(0,10);
+        const chunkEndDate = new Date(cursor);
+        chunkEndDate.setUTCDate(chunkEndDate.getUTCDate() + chunkDays - 1);
+        if (chunkEndDate > end) chunkEndDate.setTime(end.getTime());
+        chunks.push([chunkStart, chunkEndDate.toISOString().slice(0,10)]);
+        cursor = new Date(chunkEndDate);
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+    return chunks;
+}
+
+async function syncRange(startDate, endDate) {
+    const chunks = dateChunks(requireIsoDate(startDate, 'startDate'), requireIsoDate(endDate, 'endDate'));
+    const imports = [];
+    for (const [start, end] of chunks) {
+        imports.push(await importDateRange({ startDate:start, endDate:end, dryRun:false, concurrency:3 }));
+    }
+    const environments = await rebuildEnvironments({ startDate, endDate });
+    return { startDate, endDate, chunks: chunks.length, imports, environments };
+}
+
+async function handleSyncRange(body) {
+    const startDate = String(body.startDate || '').trim();
+    const endDate = String(body.endDate || body.startDate || '').trim();
+    return { sync: await syncRange(startDate, endDate) };
+}
+
+async function handleCronSync(request) {
+    requireCronSecret(request);
+    const startDate = isoDateOffset(-3);
+    const endDate = isoDateOffset(-1);
+    return { cron: true, sync: await syncRange(startDate, endDate) };
+}
 
 function getAction(request, body = {}) {
     const raw = body.action || getQueryValue(request, "action") || "";
@@ -292,6 +347,12 @@ export default async function handler(request, response) {
                 break;
             case "customerIntelligence":
                 result = await handleCustomerIntelligence(body);
+                break;
+            case "syncRange":
+                result = await handleSyncRange(body);
+                break;
+            case "cronSync":
+                result = await handleCronSync(request);
                 break;
             case "releaseAAudit":
                 result = await handleReleaseAAudit(request);

@@ -1,6 +1,6 @@
 {
   "name": "sports-edge",
-  "version": "23.0.0",
+  "version": "24.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -22,6 +22,7 @@
     "validate:visual-hierarchy": "node scripts/validate-visual-hierarchy-home-v2.mjs",
     "validate:trend-matrix-v1": "node scripts/validate-mlb-trend-matrix-v1.mjs",
     "validate:decision-engine-v2": "node scripts/validate-decision-engine-v2.mjs",
-    "validate:decision-engine-v3": "node scripts/validate-decision-engine-v3.mjs"
+    "validate:decision-engine-v3": "node scripts/validate-decision-engine-v3.mjs",
+    "validate:daily-sync-v1": "node scripts/validate-daily-sync-v1.mjs"
   }
 }
