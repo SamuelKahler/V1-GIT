@@ -14006,17 +14006,30 @@ function sportsEdgeTitleCaseDate(mmdd){
   return d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
 }
 function sportsEdgeNormalizeImportedPickTitle(line){
-  let t = String(line||'').trim().replace(/[’]/g,"'").replace(/\*/g,'').replace(/_/g,' ');
-  t = t.replace(/\bNOW\b.*?(?=,|;|$)/i,'').replace(/\s+/g,' ').trim();
+  let original = String(line||'').trim().replace(/[’]/g,"'").replace(/\*/g,'').replace(/_/g,' ').replace(/\s+/g,' ');
+  let t = original;
+  const nowMatch = original.match(/^(.*?)\s+NOW\s+([^,;]+)(.*)$/i);
+  if(nowMatch){
+    const beforeNow = nowMatch[1].trim();
+    const update = nowMatch[2].trim();
+    const totalUpdate = update.match(/^(O|U|OVER|UNDER)\s*([0-9]+(?:\.5)?)\s*([+-]\d{3,4})?$/i);
+    if(totalUpdate){
+      const side = totalUpdate[1].toUpperCase().startsWith('O') ? 'O' : 'U';
+      const lineValue = totalUpdate[2];
+      const base = beforeNow.replace(/\s+(O|U|OVER|UNDER)\s*[0-9]+(?:\.5)?\s*[+-]\d{3,4}\s*$/i,'').trim();
+      t = `${base} ${side}${lineValue}${totalUpdate[3] ? ' '+totalUpdate[3] : ''}`;
+    }else if(/^[+-]\d{3,4}$/.test(update)){
+      t = beforeNow.replace(/\s+[+-]\d{3,4}\s*$/,'').trim() + ' ' + update;
+    }else{
+      t = beforeNow;
+    }
+  }
   t = t.replace(/\bml\b/i,'ML').replace(/^f5\b/i,'F5');
   t = t.replace(/\s([ou])\s*([0-9])/i, (_,s,n)=>` ${s.toUpperCase()}${n}`);
-  t = t.replace(/\+\.5/g,'+0.5').replace(/-\.5/g,'-0.5').replace(/\+\.5/g,'+0.5');
-  const oddsMatches = [...t.matchAll(/([+-]\d{3,4})/g)].map(m=>m[1]);
+  t = t.replace(/\+\.5/g,'+0.5').replace(/-\.5/g,'-0.5');
+  const oddsMatches = [...original.matchAll(/([+-]\d{3,4})/g)].map(m=>m[1]);
   const odds = oddsMatches.length ? oddsMatches[oddsMatches.length - 1] : '';
-  const before = t.split(/[;,]/)[0]
-    .replace(/\bNOW\b.*$/i,'')
-    .replace(/\s+[+-]\d{3,4}\b.*$/,'')
-    .trim();
+  const before = t.split(/[;,]/)[0].replace(/\s+[+-]\d{3,4}\b.*$/,'').trim();
   return {pick: before || t, odds};
 }
 function sportsEdgeParseDailyImportText(raw){

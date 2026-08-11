@@ -1,0 +1,388 @@
+
+/* ============================================================
+   Customer Experience Rewrite V1
+   Bettor-first evidence hierarchy
+============================================================ */
+.customer-trend-primary .evidence-report-header,
+.historical-evidence-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+.customer-trend-primary .evidence-report-header {
+  background: linear-gradient(135deg, #fff8ef 0%, #ffffff 100%);
+  border: 1px solid #f2d2ad;
+}
+.customer-trend-primary .evidence-report-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.historical-evidence-v1 {
+  display: grid;
+  gap: 22px;
+}
+.historical-evidence-header {
+  padding: 28px;
+  border: 1px solid #cfddea;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #f7fbff 0%, #ffffff 100%);
+}
+.historical-evidence-header h3,
+.customer-trend-primary h3 {
+  margin: 6px 0 8px;
+  color: #102b44;
+}
+.historical-evidence-header p,
+.customer-trend-primary p {
+  margin: 0;
+  color: #66778b;
+  max-width: 680px;
+}
+.historical-headline {
+  min-width: 180px;
+  text-align: right;
+}
+.historical-headline strong {
+  display: block;
+  font-size: clamp(2.8rem, 7vw, 4.8rem);
+  line-height: .95;
+  color: #0c568f;
+}
+.historical-headline span {
+  display: block;
+  margin-top: 10px;
+  color: #627287;
+  font-weight: 700;
+}
+.environment-match-strip,
+.environment-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.environment-match-strip {
+  padding: 18px;
+  border-radius: 18px;
+  background: #f3f7fb;
+  border: 1px solid #d9e3ed;
+}
+.environment-match-strip span,
+.environment-tag-row span {
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #cad8e5;
+  color: #29445d;
+  font-size: .83rem;
+  font-weight: 800;
+}
+.historical-proof-grid,
+.performance-proof-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.historical-proof-grid > div,
+.performance-proof-metrics > div {
+  padding: 18px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid #d7e0e8;
+}
+.historical-proof-grid small,
+.performance-proof-metrics small {
+  display: block;
+  color: #718194;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 800;
+}
+.historical-proof-grid strong,
+.performance-proof-metrics strong {
+  display: block;
+  margin-top: 7px;
+  color: #123550;
+  font-size: 1.65rem;
+}
+.exact-game-list {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+}
+.exact-game-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid #d9e3eb;
+  border-radius: 16px;
+  background: #fff;
+}
+.exact-game-row small,
+.exact-game-row strong {
+  display: block;
+}
+.exact-game-row small { color: #758397; }
+.exact-game-row strong { margin: 3px 0 9px; color: #132a40; }
+.exact-game-result {
+  min-width: 82px;
+  text-align: center;
+  padding: 10px;
+  border-radius: 14px;
+  background: #f4f7fa;
+}
+.exact-game-result b,
+.exact-game-result span { display: block; }
+.exact-game-result.history-WIN { background: #e9f8ef; color: #19884e; }
+.exact-game-result.history-LOSS { background: #fff0eb; color: #a33d1f; }
+.sports-edge-performance-proof {
+  display: grid;
+  grid-template-columns: minmax(220px, .8fr) minmax(360px, 1.2fr);
+  gap: 20px;
+  padding: 22px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #0d3555 0%, #115d93 100%);
+  color: #fff;
+}
+.sports-edge-performance-proof h4 {
+  margin: 6px 0;
+  font-size: 2rem;
+  color: #fff;
+}
+.sports-edge-performance-proof p { margin: 0; opacity: .82; }
+.sports-edge-performance-proof .evidence-kicker { color: #ffbd72; }
+.sports-edge-performance-proof .performance-proof-metrics > div {
+  background: rgba(255,255,255,.1);
+  border-color: rgba(255,255,255,.18);
+}
+.sports-edge-performance-proof .performance-proof-metrics small,
+.sports-edge-performance-proof .performance-proof-metrics strong { color: #fff; }
+.k-line-provider-callout {
+  padding: 18px;
+  border-radius: 16px;
+  background: #fff8ed;
+  border: 1px solid #f1d1a3;
+}
+.k-line-provider-callout strong { color: #8d4b10; }
+.k-line-provider-callout p { margin: 7px 0 0; color: #6d6258; }
+.current-prop-lines { margin-bottom: 18px; }
+.verified-source-note {
+  margin: 0;
+  color: #758397;
+  font-size: .86rem;
+}
+@media (max-width: 760px) {
+  .customer-trend-primary .evidence-report-header,
+  .historical-evidence-header,
+  .sports-edge-performance-proof {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+  .historical-headline { text-align: left; }
+  .historical-proof-grid,
+  .performance-proof-metrics { grid-template-columns: 1fr; }
+  .exact-game-row { align-items: flex-start; }
+}
+
+/* ============================================================
+   Evidence Engine V2
+   One MLB source of truth, strict market isolation
+============================================================ */
+.historical-evidence-v2{display:grid;gap:18px}
+.season-evidence-primary,.season-baseline-card,.season-evidence-empty{border-radius:20px;padding:22px;border:1px solid #d7e2eb;background:#fff}
+.season-evidence-primary{background:linear-gradient(135deg,#eef9f5 0%,#fff 100%);border-color:#bfe3d6}
+.season-evidence-primary small,.season-baseline-card small{display:block;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#64768a}
+.season-evidence-primary strong,.season-baseline-card strong{display:block;margin:6px 0 4px;font-size:clamp(2.6rem,7vw,4.4rem);line-height:1;color:#0d4e7d}
+.season-evidence-primary span,.season-baseline-card span{font-weight:800;color:#596b7d}
+.season-baseline-card{background:#f7faff}
+.season-baseline-card p,.season-evidence-empty p{margin:8px 0 0;color:#68798c}
+.season-evidence-empty{background:#fff9f1;border-color:#f0d5b2}
+.season-evidence-empty strong{color:#8b4a13}
+.official-f5-card,.verified-season-card{display:grid;gap:10px}
+.verified-season-card>strong{font-size:1.15rem;color:#123550}
+.trend-backbone-intro{margin:22px 0;padding:24px;border:1px solid #cfddea;border-radius:22px;background:linear-gradient(135deg,#f4f9ff,#fff)}
+.trend-backbone-intro h3{margin:5px 0 8px;color:#102b44}
+.trend-backbone-intro p:last-child{margin:0;color:#65778b;max-width:850px}
+.trend-backbone-results{width:100%}
+.trend-backbone-grid{margin-top:16px}
+
+
+/* Decision Engine V1: facts only */
+.decision-engine-v1{display:grid;gap:16px}
+.decision-evidence-card{display:grid;gap:16px;padding:20px;border:1px solid #cfdde8;border-radius:20px;background:#fff}
+.decision-evidence-stat small{display:block;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#68798b}
+.decision-evidence-stat strong{display:block;margin:5px 0 3px;font-size:clamp(2.7rem,8vw,4.5rem);line-height:1;color:#0d4e7d}
+.decision-evidence-stat span{font-weight:850;color:#4e6275}
+.decision-performance p,.decision-engine-v1 .verified-source-note,.decision-engine-v1 .historical-evidence-header,.decision-engine-v1 .season-baseline-card{display:none!important}
+.decision-engine-v1 .environment-match-strip{padding:0;border:0;background:transparent}
+.decision-engine-v1 .season-evidence-empty{padding:18px}
+.compact-dropdown-pick .card-summary{display:none!important}
+
+/* ============================================================
+   Legacy Purge + Decision Engine
+   Customer-facing evidence: concise, market-specific, verified.
+============================================================ */
+.decision-engine-v2{display:grid;gap:22px}
+.verified-trends-panel,.exact-environment-card,.decision-performance{background:#fff;border:1px solid #d9e4ef;border-radius:24px;box-shadow:0 12px 32px rgba(16,50,78,.07);padding:24px}
+.decision-section-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;text-transform:uppercase;letter-spacing:.11em;font-weight:900;color:#123b5d}
+.decision-section-title strong{color:#f58220;font-size:.8rem;background:#fff3e6;border-radius:999px;padding:8px 12px}
+.verified-trend-group+ .verified-trend-group{margin-top:22px;padding-top:22px;border-top:1px solid #e4ebf2}
+.verified-trend-group h4{margin:0 0 12px;color:#17283a;font-size:1rem}
+.verified-trend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.verified-trend-card{border-radius:18px;padding:16px 18px;background:#f4f8fc;border-left:5px solid #1673c9;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.verified-trend-card.opponent-signal{border-left-color:#f58220;background:#fff7ef}
+.verified-trend-card small{display:block;color:#63768a;font-weight:800;margin-bottom:6px}
+.verified-trend-card strong{font-size:1.8rem;color:#0f3657;line-height:1}
+.verified-trend-card>span{color:#4f6276;font-weight:800;white-space:nowrap}
+.exact-environment-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;border-bottom:1px solid #e1e9f0;padding-bottom:18px}
+.exact-environment-hero small{display:block;text-transform:uppercase;letter-spacing:.12em;font-weight:900;color:#697d91;margin-bottom:6px}
+.exact-environment-hero strong{font-size:3.2rem;line-height:1;color:#0f578e}
+.exact-environment-hero>span{font-size:1.1rem;font-weight:900;color:#344a5f}
+.environment-match-strip.vibrant{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0}
+.environment-match-strip.vibrant span{background:#e7f6ef;color:#137a4a;border:1px solid #a7dfc4;border-radius:999px;padding:8px 12px;font-weight:900}
+.compact-empty{padding:20px;border:1px dashed #c9d6e1;border-radius:18px;background:#f8fafc;color:#53677a}
+.slate-play-card .matched-trend-card{display:none!important}
+.slate-play-card .details-cta{margin-top:14px;width:100%}
+@media(max-width:700px){.exact-environment-hero{align-items:flex-start;flex-direction:column}.verified-trend-card{align-items:flex-start;flex-direction:column}.verified-trend-card>span{white-space:normal}.verified-trend-grid{grid-template-columns:1fr}}
+
+/* Decision Engine V1: facts only */
+
+/* ============================================================
+   PREMIUM DESIGN SYSTEM V1 — MLB CUSTOMER EXPERIENCE
+   High contrast, warm surfaces, vibrant evidence hierarchy
+============================================================ */
+:root{
+  --mlb-navy:#0d3555;
+  --mlb-blue:#176ea8;
+  --mlb-orange:#f58220;
+  --mlb-green:#1d8f58;
+  --mlb-ink:#112a40;
+  --mlb-muted:#4d687e;
+  --mlb-line:#cfe0eb;
+  --mlb-surface:#ffffff;
+  --mlb-surface-alt:#f4faff;
+  --mlb-warm:#fff6ec;
+  --mlb-shadow:0 14px 36px rgba(15,58,88,.1);
+}
+.mlb-theme{color:var(--mlb-ink)}
+.mlb-theme p,.mlb-theme li,.mlb-theme small,.mlb-theme span{color:var(--mlb-muted)}
+.mlb-theme h1,.mlb-theme h2,.mlb-theme h3,.mlb-theme h4,.mlb-theme strong,.mlb-theme b{color:var(--mlb-ink)}
+.slate-play-card{background:linear-gradient(180deg,#fff 0%,#fbfdff 100%)!important;border:1px solid var(--mlb-line)!important;border-radius:26px!important;box-shadow:var(--mlb-shadow)!important;padding:24px!important;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.slate-play-card.official-play{border-color:#addbc7!important;background:linear-gradient(145deg,#fff 0%,#f1fcf7 100%)!important}
+.slate-play-card.research-play{border-color:#cfddea!important}
+.slate-play-card h3{color:var(--mlb-ink)!important;font-size:clamp(1.65rem,4vw,2.2rem)!important;letter-spacing:-.035em}
+.slate-play-card .tag{font-size:.78rem!important}.slate-play-card .pill{font-size:.86rem!important}
+.details-cta{border-radius:999px!important;padding:12px 20px!important;min-width:170px!important;color:#08251a!important}
+.decision-engine-v2{gap:18px!important}
+.decision-performance,.verified-trends-panel,.exact-environment-card{background:linear-gradient(180deg,#fff,#fbfdff)!important;border:1px solid var(--mlb-line)!important;border-radius:24px!important;box-shadow:var(--mlb-shadow)!important;padding:24px!important}
+.decision-performance{background:linear-gradient(135deg,var(--mlb-navy),#176ea8)!important;border:0!important;color:#fff!important}
+.decision-performance *{color:#fff!important}.decision-performance .decision-section-title{color:#fff!important}.decision-performance .decision-section-title strong{background:rgba(255,255,255,.14)!important;color:#ffd19e!important}
+.decision-section-title{color:var(--mlb-navy)!important;font-size:.82rem!important;letter-spacing:.14em!important;border-bottom:1px solid #e0ebf2;padding-bottom:13px;margin-bottom:18px!important}.decision-section-title strong{background:var(--mlb-warm)!important;color:#a7530a!important;border:1px solid #f3d0aa}
+.performance-proof-metrics,.historical-proof-grid{gap:12px!important}.performance-proof-metrics>div,.historical-proof-grid>div{border-radius:17px!important}
+.decision-performance .performance-proof-metrics>div{background:rgba(255,255,255,.13)!important;border:1px solid rgba(255,255,255,.2)!important}.decision-performance .performance-proof-metrics small{color:#cfe8f8!important}.decision-performance .performance-proof-metrics strong{color:#fff!important;font-size:1.55rem!important}
+.verified-trend-grid{gap:12px!important}.verified-trend-card{background:linear-gradient(135deg,#eef7ff,#fff)!important;border:1px solid #c9dfef!important;border-left:6px solid var(--mlb-blue)!important;border-radius:18px!important;box-shadow:0 7px 18px rgba(15,58,88,.06)!important;padding:17px 18px!important}.verified-trend-card.opponent-signal{background:linear-gradient(135deg,#fff3e6,#fff)!important;border-color:#f2d0aa!important;border-left-color:var(--mlb-orange)!important}
+.verified-trend-card small{color:#3d617c!important;font-weight:900!important}.verified-trend-card strong{color:var(--mlb-navy)!important;font-size:1.95rem!important}.verified-trend-card>span{color:#405d72!important}
+.exact-environment-card{border-top:6px solid var(--mlb-green)!important}.exact-environment-hero strong{color:var(--mlb-green)!important;font-size:clamp(3rem,8vw,4.6rem)!important}.exact-environment-hero small{color:#315e78!important}.exact-environment-hero>span{color:var(--mlb-navy)!important}
+.environment-match-strip.vibrant{gap:10px!important}.environment-match-strip.vibrant span{background:linear-gradient(135deg,#e3f8ee,#f5fff9)!important;color:#0e7445!important;border:1px solid #95d9ba!important;box-shadow:0 4px 10px rgba(29,143,88,.08);font-size:.86rem!important;padding:9px 13px!important}
+.exact-game-row{border:1px solid #cee0ea!important;border-radius:17px!important;background:#fff!important;box-shadow:0 7px 20px rgba(15,58,88,.06)!important}.exact-game-row strong{color:var(--mlb-ink)!important}.exact-game-row small{color:#496a81!important}.exact-game-result{background:#eef6fb!important;color:var(--mlb-navy)!important}.exact-game-result.history-WIN{background:#e2f7ec!important;color:#117346!important}.exact-game-result.history-LOSS{background:#fff0ec!important;color:#a03920!important}
+.current-k-line,.historical-prop-evidence{background:linear-gradient(180deg,#fff,#f7fbff)!important;border:1px solid var(--mlb-line)!important;border-radius:21px!important;padding:20px!important;box-shadow:var(--mlb-shadow)!important;margin-bottom:16px!important}.current-k-line h4,.historical-prop-evidence h4{color:var(--mlb-navy)!important;font-size:1.12rem!important;border-bottom:2px solid #dbe9f2;padding-bottom:10px;margin-top:0!important}
+.current-k-line .detail-list>div,.historical-prop-evidence .detail-list>div{background:#eef7fd!important;border:1px solid #c7dfed!important}.current-k-line .detail-list strong,.historical-prop-evidence .detail-list strong{color:var(--mlb-navy)!important}.current-k-line .detail-list small,.historical-prop-evidence .detail-list small{color:#42647d!important}
+.k-line-provider-callout{background:linear-gradient(135deg,#fff3e3,#fffaf3)!important;border:1px solid #efc28f!important}.k-line-provider-callout strong{color:#964b08!important}.k-line-provider-callout p{color:#694d34!important}
+.pick-dropdown-section{background:#fff!important;border:1px solid var(--mlb-line)!important;box-shadow:var(--mlb-shadow)!important}.pick-dropdown-section summary{color:var(--mlb-navy)!important;background:linear-gradient(90deg,#fff,#edf7ff)!important}.pick-dropdown-section summary span:last-child{background:var(--mlb-warm)!important;color:#9e520e!important}
+.pick-section h2,.pick-section h3{color:var(--mlb-navy)!important}.pick-section>p{color:#42657e!important}
+.compact-empty{background:#fff8e9!important;border:1px dashed #dfb36e!important;color:#754d16!important}
+.mlb-theme .detail-accordion summary{color:var(--mlb-navy)!important;background:linear-gradient(90deg,#fff,#ecf7ff)!important;border-left-color:var(--mlb-orange)!important}
+.mlb-theme .detail-accordion[open] summary{background:linear-gradient(90deg,#fff8ef,#edf8ff)!important}
+/* eliminate low-contrast accidental text */
+.mlb-theme [style*="color: white"],.mlb-theme [style*="color:#fff"],.mlb-theme [style*="color: #fff"]{text-shadow:0 1px 2px rgba(0,0,0,.18)}
+.mlb-theme .model-panel,.mlb-theme .trend-proof-card,.mlb-theme .matched-trend-card{color:var(--mlb-ink)!important}
+@media(max-width:700px){.slate-play-card{padding:19px!important}.decision-performance,.verified-trends-panel,.exact-environment-card{padding:18px!important}.verified-trend-card strong{font-size:1.65rem!important}.decision-section-title{align-items:flex-start!important;flex-direction:column!important}}
+
+/* =========================================================
+   VISUAL HIERARCHY REFINEMENT
+   Distinct trends, strong contrast, no generic F5 trend noise
+   ========================================================= */
+.mlb-theme,.modal-card{--trend-blue:#1169aa;--trend-blue-soft:#eaf5ff;--trend-orange:#e97216;--trend-orange-soft:#fff2e6;--trend-green:#168a55;--trend-ink:#102a43;--trend-muted:#45647c}
+.mlb-theme h1,.mlb-theme h2,.mlb-theme h3,.mlb-theme h4,.mlb-theme h5,.modal-card h1,.modal-card h2,.modal-card h3,.modal-card h4,.modal-card h5{color:var(--trend-ink)!important;text-shadow:none!important}
+.mlb-theme p,.mlb-theme li,.mlb-theme small,.modal-card p,.modal-card li,.modal-card small{color:var(--trend-muted)!important}
+.historical-prop-evidence>h4,.current-k-line>h4,.prop-history-bucket h4,.prop-history-grid h4,.pitcher-card strong{color:var(--trend-ink)!important;opacity:1!important}
+.prop-history-bucket{padding:20px;border:1px solid #c8deec;border-radius:20px;background:#f7fbff;box-shadow:0 8px 22px rgba(16,66,102,.06)}
+.prop-history-bucket:nth-child(2){background:#fff7ef;border-color:#f1c89f}
+.prop-history-bucket h4{margin:0 0 10px;font-size:1.15rem}
+.prop-history-bucket .subtle{margin:0 0 16px;line-height:1.5}
+.verified-trends-panel{padding:26px!important}
+.trend-dropdown{border:1px solid #cbdfea;border-radius:20px;background:#fff;overflow:hidden;box-shadow:0 8px 24px rgba(17,70,106,.07)}
+.trend-dropdown+.trend-dropdown{margin-top:16px!important;padding-top:0!important;border-top:1px solid #f0c79f!important}
+.trend-dropdown>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:17px 20px;cursor:pointer;background:linear-gradient(90deg,#edf7ff,#fff);border-left:5px solid var(--trend-blue);font-weight:950;color:var(--trend-ink)!important}
+.trend-dropdown.opponent-group>summary,.trend-dropdown:nth-of-type(3)>summary{background:linear-gradient(90deg,#fff2e7,#fff);border-left-color:var(--trend-orange)}
+.trend-dropdown>summary::-webkit-details-marker{display:none}
+.trend-dropdown>summary span{color:var(--trend-ink)!important;font-size:1.08rem}
+.trend-dropdown>summary strong{color:var(--trend-blue)!important;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
+.trend-dropdown[open]>summary{border-bottom:1px solid #d6e5ef}
+.trend-dropdown .verified-trend-grid{padding:16px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.verified-trend-card{display:grid!important;grid-template-columns:1fr auto!important;grid-template-areas:"label rate" "record record";align-items:center!important;gap:10px 16px!important;min-height:132px;padding:18px!important;border:1px solid #bfdced!important;border-left:6px solid var(--trend-blue)!important;background:linear-gradient(145deg,#f0f8ff,#fff)!important}
+.verified-trend-card.opponent-signal{border-color:#f2c89d!important;border-left-color:var(--trend-orange)!important;background:linear-gradient(145deg,#fff3e8,#fff)!important}
+.trend-card-label{grid-area:label;color:#244b68!important;font-size:.98rem;font-weight:900;line-height:1.25}
+.trend-card-rate{grid-area:rate;color:var(--trend-blue)!important;font-size:2rem;font-weight:950;line-height:1}
+.opponent-signal .trend-card-rate{color:#c95b0d!important}
+.trend-card-record{grid-area:record;color:var(--trend-ink)!important;font-size:1rem;font-weight:900;padding-top:10px;border-top:1px solid rgba(32,89,126,.12)}
+.trend-card-record span{margin-left:8px;color:var(--trend-muted)!important;font-weight:750}
+.environment-match-strip.vibrant span{background:#e6f8ef!important;color:#0f7546!important;border-color:#9ad9ba!important;box-shadow:0 4px 12px rgba(22,138,85,.08)}
+.exact-environment-card{border-top:5px solid var(--trend-green)!important}
+.decision-performance{border-top:5px solid var(--trend-blue)!important}
+.decision-section-title span{color:var(--trend-ink)!important}
+.current-k-line,.historical-prop-evidence{color:var(--trend-ink)!important}
+.k-line-provider-callout,.historical-prop-evidence .subtle{color:var(--trend-muted)!important}
+@media(max-width:700px){.trend-dropdown .verified-trend-grid{grid-template-columns:1fr}.verified-trend-card{grid-template-columns:1fr auto!important}.prop-history-grid{grid-template-columns:1fr!important}}
+
+/* MLB Trend Matrix V1: readable category x environment cards */
+.verified-trend-grid{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))!important;gap:16px!important;padding:18px!important}
+.verified-trend-card{display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:14px!important;min-height:176px!important;padding:20px!important;overflow:hidden!important}
+.trend-card-head{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.trend-category{display:block;color:#0f3657!important;font-size:1rem;font-weight:950;letter-spacing:.055em;line-height:1.25;text-transform:uppercase}
+.trend-environment{display:inline-flex;align-items:center;min-height:30px;padding:6px 11px;border-radius:999px;background:#ddecfa;color:#0d5f9f!important;font-size:.82rem;font-weight:900;letter-spacing:.035em;line-height:1.1}
+.opponent-signal .trend-environment{background:#ffead6;color:#a94708!important}
+.trend-card-rate{display:block!important;color:#0d5f9f!important;font-size:2.35rem!important;font-weight:950!important;line-height:1!important;letter-spacing:-.045em}
+.opponent-signal .trend-card-rate{color:#c6530b!important}
+.trend-card-record{display:grid!important;grid-template-columns:1fr 1fr!important;gap:12px!important;width:100%;padding-top:14px!important;border-top:1px solid #ccdfec!important;color:#35546f!important;font-size:.9rem!important;font-weight:750!important}
+.trend-card-record span{display:flex;flex-direction:column;gap:3px;margin:0!important;color:#5c7185!important}
+.trend-card-record b{color:#102f4b!important;font-size:1.12rem;font-weight:950}
+.opponent-signal .trend-card-record{border-top-color:#efd4b9!important}
+@media(max-width:700px){.verified-trend-grid{padding:13px!important;gap:13px!important}.verified-trend-card{min-height:0!important;padding:17px!important}.trend-card-rate{font-size:2rem!important}}
+
+/* Decision Engine V2: ranked, readable evidence cards */
+.verified-trend-card .trend-card-head{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:7px!important;width:100%!important}
+.trend-match-type{display:inline-flex!important;align-items:center!important;width:max-content!important;padding:5px 10px!important;border-radius:999px!important;background:#dff0ff!important;color:#0f5f9d!important;font-size:.72rem!important;font-weight:950!important;letter-spacing:.08em!important;text-transform:uppercase!important}
+.opponent-signal .trend-match-type{background:#ffead2!important;color:#a84b08!important}
+.match-exact .trend-match-type{background:#ddf7e8!important;color:#187844!important}
+.trend-card-title{display:block!important;color:#102f4b!important;font-size:1.05rem!important;font-weight:950!important;line-height:1.28!important;letter-spacing:.01em!important}
+.trend-card-primary{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:14px!important;width:100%!important}
+.trend-card-primary>span{color:#527087!important;font-size:.9rem!important;font-weight:850!important;padding-bottom:4px!important}
+.trend-card-rate{color:#0f5f9d!important;font-size:2.35rem!important;font-weight:950!important;line-height:1!important}
+.opponent-signal .trend-card-rate{color:#b7530a!important}
+.match-exact .trend-card-rate{color:#18824c!important}
+.trend-card-record small{display:block!important;margin:0!important;color:#60788d!important;font-size:.68rem!important;font-weight:900!important;letter-spacing:.08em!important;text-transform:uppercase!important}
+.verified-trend-group summary strong{white-space:normal!important;text-align:right!important}
+.season-evidence-empty.compact-empty{border:1px dashed #b9d3e6!important;background:#f7fbff!important;color:#294e69!important;padding:16px 18px!important;border-radius:16px!important}
+@media(max-width:700px){.trend-card-primary{align-items:flex-start!important;flex-direction:column!important;gap:5px!important}.trend-card-primary>span{padding-bottom:0!important}.verified-trend-group summary strong{text-align:left!important}}
+
+/* Decision Engine V3 — actionable evidence presentation */
+.decision-engine-v2 .verified-trends-panel{overflow:hidden}
+.decision-engine-v2 .verified-trend-group{border:1px solid #c9dfef;border-radius:18px;background:#f8fbfe;margin-top:14px;overflow:hidden}
+.decision-engine-v2 .verified-trend-group.opponent-group{border-color:#efd0ad;background:#fffaf5}
+.decision-engine-v2 .verified-trend-group>summary{padding:17px 19px;background:#eef7fd;color:#0f3657}
+.decision-engine-v2 .verified-trend-group.opponent-group>summary{background:#fff2e5;color:#7e3c08}
+.decision-engine-v2 .verified-trend-grid{padding:16px!important}
+.decision-engine-v2 .verified-trend-card{min-height:168px!important;border-radius:18px!important}
+.decision-engine-v2 .trend-card-title{display:block;color:#123b5d!important;font-size:1rem!important;font-weight:950!important;line-height:1.35!important;letter-spacing:.01em!important}
+.decision-engine-v2 .opponent-signal .trend-card-title{color:#8a4308!important}
+.decision-engine-v2 .trend-card-rate{font-size:2.25rem!important;line-height:1!important;color:#0f5d91!important}
+.decision-engine-v2 .opponent-signal .trend-card-rate{color:#b4540b!important}
+.decision-engine-v2 .trend-card-primary>span{font-size:.82rem!important;text-transform:uppercase;letter-spacing:.07em}
+.decision-engine-v2 .trend-card-record{margin-top:auto}
+.decision-engine-v2 .season-evidence-empty.compact-empty{border:1px solid #d6e4ee;background:#f7fbfe;color:#35546f;border-radius:16px;padding:16px 18px}
+@media(max-width:700px){
+  .decision-engine-v2 .verified-trend-card{min-height:0!important}
+  .decision-engine-v2 .trend-card-rate{font-size:2rem!important}
+}

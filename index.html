@@ -27,182 +27,74 @@
 
   <main>
     <section id="home" class="page active">
-      <div class="hero sports-landing-hero">
-        <div>
-          <p class="eyebrow">Sports Edge Intelligence</p>
-          <h1>Pick a sport. See the proof.</h1>
-
-          <p class="sub">
-            A cleaner Sports Edge home base built for daily bettors:
-            choose the sport first, then see that sport’s card,
-            research, trends, grading and performance.
-          </p>
-
-          <div class="hero-actions">
-            <button class="primary jump" data-page="sport-mlb">
-              Enter MLB
-            </button>
-
-            <button class="secondary jump" data-page="performance">
-              Performance Lab
-            </button>
-
-            <button class="secondary jump" data-page="journal">
-              Research Journal
-            </button>
-          </div>
+      <div class="hero sports-landing-hero home-hero-v2">
+        <div class="home-hero-copy">
+          <p class="eyebrow">Sports Edge</p>
+          <h1>Choose your sport. Find your edge.</h1>
+          <p class="sub">Official plays, verified trends and performance—organized by league.</p>
         </div>
 
-        <div class="score-card glass official-summary-card">
-          <span class="tag">Daily Bettor Flow</span>
-
-          <h3>Sport → Plays → Proof</h3>
-
-          <p>
-            Sports Edge starts with the league the customer cares about
-            and guides them to actionable picks, verified results and
-            supporting evidence.
-          </p>
-
+        <div class="score-card glass official-summary-card home-summary-v2">
+          <div class="home-summary-heading">
+            <span class="tag">Today</span>
+            <strong>Sports Edge Card</strong>
+          </div>
           <div class="mini-grid">
-            <div>
-              <strong id="homeOfficialCount">0</strong>
-              <small>Official Plays</small>
-            </div>
-
-            <div>
-              <strong id="homeResearchCount">0</strong>
-              <small>Research Edges</small>
-            </div>
-
-            <div>
-              <strong id="homeUnitsRisked">0U</strong>
-              <small>Units Risked</small>
-            </div>
+            <div><strong id="homeOfficialCount">0</strong><small>Official Plays</small></div>
+            <div><strong id="homeResearchCount">0</strong><small>Research Edges</small></div>
+            <div><strong id="homeUnitsRisked">0U</strong><small>Units Risked</small></div>
           </div>
         </div>
       </div>
 
-      <section class="sport-hub-section">
+      <section class="sport-hub-section home-sport-directory">
         <div class="section-head compact-head">
           <div>
-            <p class="eyebrow">Choose A Sport</p>
-            <h2>Your betting dashboard starts here</h2>
-
-            <p>
-              Each sport gets its own space, color system and workflow.
-              MLB is active now, while the remaining sports are staged
-              for clean expansion.
-            </p>
+            <p class="eyebrow">Sports</p>
+            <h2>Explore every league</h2>
           </div>
         </div>
 
-        <div class="sport-grid">
-          <article
-            class="sport-card sport-mlb jump"
-            data-page="sport-mlb"
-          >
-            <span>MLB</span>
-
-            <div>
-              <h3>MLB</h3>
-              <p>
-                Today’s card, F5, moneyline, totals, trends,
-                series board and performance.
-              </p>
-            </div>
-
-            <strong>Active</strong>
+        <div class="sport-grid sport-directory-grid">
+          <article class="sport-card sport-mlb jump sport-directory-card is-live" data-page="sport-mlb">
+            <span class="sport-icon sport-icon-mlb">MLB</span>
+            <div><h3>Major League Baseball</h3><p>Today’s picks, F5, moneylines, totals, series and verified evidence.</p></div>
+            <strong>Open MLB</strong>
           </article>
 
-          <article
-            class="sport-card sport-nhl jump"
-            data-page="sport-nhl"
-          >
-            <span>🏒</span>
+          <article class="sport-card sport-nfl jump sport-directory-card is-live" data-page="sport-nfl">
+            <span class="sport-icon">🏈</span>
+            <div><h3>NFL</h3><p>Spreads, totals, props and the active football database.</p></div>
+            <strong>Open NFL</strong>
+          </article>
 
-            <div>
-              <h3>NHL</h3>
-              <p>
-                Puck lines, moneylines, totals, goalie edges,
-                rest spots and series angles.
-              </p>
-            </div>
+          <article class="sport-card sport-cfb jump sport-directory-card is-live" data-page="sport-cfb">
+            <span class="sport-icon">🏈</span>
+            <div><h3>College Football</h3><p>Team, conference and player-prop research.</p></div>
+            <strong>Open CFB</strong>
+          </article>
 
+          <article class="sport-card sport-nhl jump sport-directory-card" data-page="sport-nhl">
+            <span class="sport-icon">🏒</span>
+            <div><h3>NHL</h3><p>Puck lines, totals, goalie edges and rest spots.</p></div>
             <strong>Coming Soon</strong>
           </article>
 
-          <article
-            class="sport-card sport-nfl jump"
-            data-page="sport-nfl"
-          >
-            <span>🏈</span>
-
-            <div>
-              <h3>NFL</h3>
-              <p>
-                Spreads, totals, props, injuries, weather,
-                travel and market intelligence.
-              </p>
-            </div>
-
-            <strong>Active Database</strong>
-          </article>
-
-          <article
-            class="sport-card sport-cfb jump"
-            data-page="sport-cfb"
-          >
-            <span>🏈</span>
-
-            <div>
-              <h3>College Football</h3>
-              <p>
-                Player prop history by team, position,
-                current line and historical result.
-              </p>
-            </div>
-
-            <strong>Database</strong>
-          </article>
-
-          <article
-            class="sport-card sport-nba jump"
-            data-page="sport-nba"
-          >
-            <span>🏀</span>
-
-            <div>
-              <h3>NBA</h3>
-              <p>
-                Spread edges, totals, props, lineups,
-                rest disadvantage and pace.
-              </p>
-            </div>
-
+          <article class="sport-card sport-nba jump sport-directory-card" data-page="sport-nba">
+            <span class="sport-icon">🏀</span>
+            <div><h3>NBA</h3><p>Spreads, totals, props, pace and lineup intelligence.</p></div>
             <strong>Coming Soon</strong>
           </article>
 
-          <article
-            class="sport-card sport-ncaab jump"
-            data-page="sport-ncaab"
-          >
-            <span>🏀</span>
-
-            <div>
-              <h3>NCAAB</h3>
-              <p>
-                Conference trends, tempo, home-court edge
-                and tournament profiles.
-              </p>
-            </div>
-
+          <article class="sport-card sport-ncaab jump sport-directory-card" data-page="sport-ncaab">
+            <span class="sport-icon">🏀</span>
+            <div><h3>College Basketball</h3><p>Conference trends, tempo and tournament profiles.</p></div>
             <strong>Coming Soon</strong>
           </article>
         </div>
       </section>
 
-      <section class="daily-command-center home-preview-board">
+      <section class="daily-command-center home-preview-board home-preview-hidden" aria-hidden="true">
         <div class="section-head compact-head">
           <div>
             <p class="eyebrow">MLB Preview</p>
@@ -719,193 +611,17 @@
         </div>
       </div>
 
-      <div class="layout">
-        <aside class="filters">
-          <h3>Filters</h3>
-
-          <details class="filter-group" open>
-            <summary>1. Sport</summary>
-
-            <label>
-              Sport
-
-              <select id="sportFilter">
-                <option value="MLB">MLB</option>
-              </select>
-            </label>
-          </details>
-
-          <details class="filter-group" open>
-            <summary>2. Bet Category</summary>
-
-            <label>
-              Category
-
-              <select id="betCategoryFilter">
-                <option value="Win Trend">Win Trend</option>
-                <option value="Win Trend Hit Rate">
-                  Win Trend Hit Rate
-                </option>
-                <option value="Prop">Prop</option>
-                <option value="Game Log Trend">
-                  Game Log Trend
-                </option>
-              </select>
-            </label>
-          </details>
-
-          <div
-            id="winTrendBlock"
-            class="category-filter-block"
-          >
-            <details class="filter-group" open>
-              <summary>Win Trend Style</summary>
-
-              <label>
-                Style
-
-                <select id="winStyleFilter">
-                  <option value="all">
-                    All Win Trend Styles
-                  </option>
-                </select>
-              </label>
-
-              <small class="subtle">
-                Previous scoring, previous runs allowed,
-                sweep situations, totals and related environments.
-              </small>
-            </details>
-          </div>
-
-          <div
-            id="gameLogTrendBlock"
-            class="category-filter-block hidden"
-          >
-            <details class="filter-group" open>
-              <summary>Game Log Description</summary>
-
-              <label>
-                Game Environment
-
-                <select id="gameLogEnvironmentFilter">
-                  <option value="all">
-                    All Game Environments
-                  </option>
-                </select>
-              </label>
-
-              <small class="subtle">
-                Filter historical rows by game role and
-                matched environment.
-              </small>
-            </details>
-          </div>
-
-          <div
-            id="mlTrendBlock"
-            class="category-filter-block hidden"
-          >
-            <details class="filter-group" open>
-              <summary>Win Trend Hit Rate Environment</summary>
-
-              <label>
-                Environment
-
-                <select id="mlEnvironmentFilter">
-                  <option value="all">
-                    All ML Environments
-                  </option>
-                </select>
-              </label>
-
-              <small class="subtle">
-                Rest, previous result, opponent,
-                game role and division context.
-              </small>
-            </details>
-          </div>
-
-          <div
-            id="propTrendBlock"
-            class="category-filter-block hidden"
-          >
-            <details class="filter-group" open>
-              <summary>Prop Team Search</summary>
-
-              <label>
-                Search Team
-
-                <input
-                  id="propTeamSearch"
-                  list="propTeamSuggestions"
-                  placeholder="Type team or abbreviation"
-                />
-              </label>
-
-              <datalist id="propTeamSuggestions"></datalist>
-
-              <small
-                id="propDetectedEnvironment"
-                class="subtle"
-              >
-                Enter a team to view matching prop history.
-              </small>
-            </details>
-
-            <details class="filter-group" open>
-              <summary>Detected Prop Environment</summary>
-
-              <label>
-                Environment
-
-                <select id="propEnvironmentFilter">
-                  <option value="all">
-                    Auto / All Matching Environments
-                  </option>
-                </select>
-              </label>
-            </details>
-          </div>
-
-          <details class="filter-group" open>
-            <summary>Performance</summary>
-
-            <label>
-              Minimum Hit Rate
-
-              <select id="hitFilter">
-                <option value="all">Any</option>
-                <option value="55">55%+</option>
-                <option value="60">60%+</option>
-                <option value="65">65%+</option>
-                <option value="70">70%+</option>
-              </select>
-            </label>
-          </details>
-
-          <details class="filter-group" open>
-            <summary>Search</summary>
-
-            <label>
-              Keyword Search
-
-              <input
-                id="trendSearch"
-                placeholder="Team, pitcher, note, description..."
-              />
-            </label>
-          </details>
-
-          <button id="clearFilters" class="secondary full">
-            Clear Filters
-          </button>
-        </aside>
-
-        <div class="results">
-          <div id="trendCount" class="count"></div>
-          <div id="trendTable"></div>
+      <div class="trend-backbone-intro">
+        <div>
+          <p class="eyebrow">Single Source of Truth</p>
+          <h3>2026 MLB evidence, calculated on demand</h3>
+          <p>Legacy spreadsheet trend cards have been retired. Open any current pick below to see market-specific results from the imported MLB season, exact environment matches, supporting games, and Sports Edge official performance where applicable.</p>
         </div>
+      </div>
+
+      <div class="results trend-backbone-results">
+        <div id="trendCount" class="count"></div>
+        <div id="trendTable"></div>
       </div>
     </section>
 
@@ -1188,6 +904,7 @@
   <script src="sports/mlb/core/intelligence-engine.js"></script>
   <script src="sports/mlb/core/intelligence-pipeline.js"></script>
   <script src="sports/mlb/core/recent-results.js"></script>
+  <script src="sports/mlb/core/mlb-intelligence-client.js"></script>
 
   <script src="sports/mlb/mlb-app.js"></script>
 

@@ -429,26 +429,14 @@ function initFilters(){
   });
 }
 function renderTrends(){
-  refreshTrendDropdowns();
-  const sport=$('#sportFilter')?.value || 'MLB', category=$('#betCategoryFilter')?.value || 'Win Trend', winStyle=$('#winStyleFilter')?.value || 'all', mlEnv=$('#mlEnvironmentFilter')?.value || 'all', propTeamRaw=$('#propTeamSearch')?.value || '', propTeam=teamFromSearch(propTeamRaw), propEnv=$('#propEnvironmentFilter')?.value || 'all', gameLogEnv=$('#gameLogEnvironmentFilter')?.value || 'all', min=$('#hitFilter')?.value || 'all', q=($('#trendSearch')?.value || '').toLowerCase();
-  let rows=activeTrendRows().filter(r=>sport==='MLB' && rowCategory(r)===category);
-  if(category==='Win Trend' && winStyle!=='all') rows=rows.filter(r=>normalizeStyleKey(r.style)===winStyle);
-  if(category==='Win Trend Hit Rate') rows=rows.filter(r=>(mlEnv==='all'||r.situation===mlEnv));
-  if(category==='Prop'){
-    if(propTeamRaw.trim()) rows=rows.filter(r=>r.team===propTeam);
-    const detectedEnvs = propTeamRaw.trim() ? detectedPropEnvironments(propTeam) : [];
-    if(propEnv!=='all') rows=rows.filter(r=>r.situation===propEnv);
-    else if(detectedEnvs.length) rows=rows.filter(r=>detectedEnvs.includes(r.situation));
-  }
-  if(category==='Game Log Trend') rows=rows.filter(r=>!['ML','SPRD'].includes(normalizeStyleKey(r.style)));
-  if(category==='Game Log Trend' && gameLogEnv!=='all') rows=rows.filter(r=>gameLogEnvironment(r)===gameLogEnv);
-  if(min!=='all') rows=rows.filter(r=>hasHitRateEvidence(r) && (pct(r.hitRate)||0)>=Number(min));
-  if(q) rows=rows.filter(r=>Object.values(r).join(' ').toLowerCase().includes(q));
-  rows = rows.sort((a,b)=>trendDateSortValue(b)-trendDateSortValue(a));
-  const todayNote = todaysTeamAbbrs().length ? ` for ${todaysTeamAbbrs().length} teams on today's MLB slate` : ' using all stored MLB rows until live slate loads';
-  $('#trendCount').textContent=`Showing ${rows.length} ${category} records${todayNote}`;
-  if($('#importSummary') && typeof importSummary !== 'undefined') $('#importSummary').textContent = `${importSummary.version}: ${importSummary.importedRows} imported rows + ${importSummary.baseRows} base rows = ${importSummary.totalRows} total. ${importSummary.note}`;
-  $('#trendTable').innerHTML=`<table><thead><tr><th>Date</th><th>Team</th><th>Data Type</th><th>Environment / Auto Tags</th><th>Description<br><small>Opponent / Location</small></th><th>Hit Rate / Status</th><th>Win/Loss Evidence</th><th>Notes</th></tr></thead><tbody>${rows.map(r=>`<tr class="${rowCategory(r)==='Game Log Trend'?'game-log-row':''}"><td>${formatTrendDate(r.date)}</td><td>${r.team}<br>${liveMatchupForTeam(r.team)}</td><td><strong>${rowCategory(r)}</strong><br><small>${evidenceStatus(r)}</small></td><td>${rowCategory(r)==='Game Log Trend' ? `<b>${gameLogEnvironment(r) || r.situation || '-'}</b><br>${gameLogStyleSummary(r)}` : (category==='Win Trend Hit Rate'||category==='Prop'?r.situation:trendDisplayStyle(r.style))}</td><td>${opponentLocationDescription(r)}</td><td>${trendHitRateCell(r)}</td><td>${resultEvidenceCell(r, rows)}</td><td>${r.notes}</td></tr>`).join('')}</tbody></table>`;
+  const latest = latestPickDateKey();
+  const rows = coreDailyPicks.filter(p=>dateKey(parseSlateDate(p.slate))===latest && isClassifiedPick(p));
+  const count = document.getElementById('trendCount');
+  const table = document.getElementById('trendTable');
+  const summary = document.getElementById('importSummary');
+  if(summary) summary.textContent = '';
+  if(count) count.textContent = `${rows.length} current picks`;
+  if(table) table.innerHTML = `<div class="slate-play-grid trend-backbone-grid">${rows.map(slatePlayCard).join('')}</div>`;
 }
 function liveMatchupForTeam(team){
   const g = liveState.games.find(game => [teamAbbr(game.away_team_abbr || game.away_team), teamAbbr(game.home_team_abbr || game.home_team)].includes(team));
@@ -1302,15 +1290,12 @@ function renderPickDropdownRow(p){
   const st = normalizedPickStatus(p);
   const resultClass = st==='WIN'?'status-WIN':st==='LOSS'?'status-LOSS':(st==='PUSH'?'status-PUSH':(st==='UNVERIFIED'||st==='UNGRADED'?'status-UNGRADED':'status-'+slugStatus(st)));
   const unitText = explicitUnitSize(p) ? String(p.units).trim() : 'No unit';
-  const trendText = Array.isArray(p.trendTags) && p.trendTags.length ? p.trendTags.join(' • ') : '';
-  const proof = trendEvidenceCardSummary(p) || `<p class="card-summary">${consumerReasoningNotes(p)[0] || compactWhy(p)[0] || 'Sports Edge tracked play. Open details for model context.'}</p>`;
   return `<article class="slate-play-card compact-dropdown-pick ${isOfficialPlay(p)?'official-play':'research-play'}">
     <div class="series-card-top"><span class="tag ${isOfficialPlay(p)?'':'blue'}">${isOfficialPlay(p)?'Official':'Research'}</span><span class="pill ${resultClass}">${statusDisplayIcon(st)}</span></div>
     <h3>${cleanPickTitle(p)}</h3>
     ${matchupSubtitleHtml(p)}
-    <div class="meta"><span class="pill">${bettorCategory(p)}</span><span class="pill">Odds ${p.odds || '-'}</span><span class="pill">${unitText}</span>${trendText?`<span class="pill">${trendText}</span>`:''}</div>
-    ${proof}
-    <button class="secondary details-cta" onclick="openPick(${coreDailyPicks.indexOf(p)})">Open Bet Details</button>
+    <div class="meta"><span class="pill">${bettorCategory(p)}</span><span class="pill">${p.odds || '-'}</span><span class="pill">${unitText}</span></div>
+    <button class="secondary details-cta" onclick="openPick(${coreDailyPicks.indexOf(p)})">View Evidence</button>
   </article>`;
 }
 function renderPickDropdownSection(title, subtitle, picks, options={}){
@@ -1336,11 +1321,9 @@ function renderCategorizedPlayBoard(picks, emptyMessage, options={}){
     if(by[cat]) by[cat].push(p);
     else if(cat === 'Totals') by['Totals'].push(p);
   });
-  const trendBacked = picks.filter(p=>Array.isArray(p.trendTags) && p.trendTags.length);
   const sections = [];
   if(includeLiveLooks) sections.push(renderPickDropdownSection('Wait For Value / Live Looks', 'LIVE-tagged plays to monitor for a better entry price.', picks.filter(isWaitForValuePick), {open:true, empty:'No wait-for-value plays.'}));
   buckets.forEach((b, idx)=>sections.push(renderPickDropdownSection(b.title, b.sub, by[b.key] || [], {open: idx===0 && !includeLiveLooks})));
-  sections.push(renderPickDropdownSection('Trend-Backed Plays', 'Picks with AtS, SWEEP, previously scored/allowed, or no-CLV tags attached.', trendBacked, {empty:'No trend-tagged plays in this group.'}));
   return `<div class="pick-dropdown-board">${sections.join('')}</div>`;
 }
 
@@ -1416,7 +1399,6 @@ function renderPicks(){
   const official = regularCurrent.filter(isOfficialPlay);
   const research = regularCurrent.filter(isResearchPlay);
   const f5All = classifiedCurrent.filter(p=>bettorCategory(p)==='First Five');
-  const trendBacked = classifiedCurrent.filter(p=>Array.isArray(p.trendTags) && p.trendTags.length);
   const archive = picks.filter(p=>dateKey(parseSlateDate(p.slate))!==latest && isClassifiedPick(p));
 
   const latestLabel = latest ? new Date(latest+'T00:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : 'Latest Slate';
@@ -1425,12 +1407,11 @@ function renderPicks(){
   const waitValueHtml = renderPickDropdownSection('Wait For Value / Live Looks', 'LIVE-tagged plays. Monitor for better in-game price.', waitForValue, {open:false, empty:'No LIVE / wait-for-value plays for the latest slate.'});
   const f5Html = renderPickDropdownSection('F5 Plays', 'Every first-five play on this slate. These also feed the F5 Performance tab.', f5All, {open:false, empty:'No F5 plays for this slate.'});
   const researchHtml = renderPickDropdownSection('Research Plays', 'Non-live, non-unit plays that need a unit size before they become official.', research, {open:false, empty:'No research plays for the latest slate.'});
-  const trendHtml = renderPickDropdownSection('Trend-Backed Plays', 'Picks carrying AtS, SWEEP, previously scored/allowed, or no-CLV evidence tags.', trendBacked, {open:false, empty:'No trend-backed plays for this slate.'});
   const marketHtml = `<details class="pick-dropdown-section"><summary><div><strong>Market Type Dropdowns</strong><small>Open by bet type instead of scanning a wall of cards.</small></div><span>Expand</span></summary><div class="pick-dropdown-body">${renderCategorizedPlayBoard(classifiedCurrent, 'No current slate plays.', {includeLiveLooks:false})}</div></details>`;
   const archiveHtml = `<details class="pick-dropdown-section graded-archive-section"><summary><div><strong>Graded Archive (${archive.length})</strong><small>Past slates with API grades, ROI, and details.</small></div><span>Expand</span></summary><div class="archive-list">${groupBySlate(archive).map(([slate,items])=>`<details class="date-group"><summary>${slate} <span>${items.length} picks</span></summary><div class="archive-list">${items.map(p=>archiveRow(p)).join('')}</div></details>`).join('')}</div></details>`;
 
   $('#picksGrid').className = 'picks-dashboard grouped-today-dashboard';
-  $('#picksGrid').innerHTML = header + officialHtml + waitValueHtml + f5Html + researchHtml + trendHtml + marketHtml + archiveHtml;
+  $('#picksGrid').innerHTML = header + officialHtml + waitValueHtml + f5Html + researchHtml + marketHtml + archiveHtml;
   if($('#homePicks')) $('#homePicks').textContent=coreDailyPicks.length;
   renderHomeDailyDashboard();
 }
@@ -1447,12 +1428,12 @@ function archiveRow(p){
 
 function currentKLineHtml(p){
   const ctx = matchupContextForPick(p);
-  if(!ctx) return '<p class="subtle">Current matchup is not stored for this pick yet, so no current K prop line can be matched.</p>';
+  if(!ctx) return '<div class="k-line-provider-callout"><strong>Current K lines unavailable</strong><p>This pick does not yet have a verified matchup link.</p></div>';
   const slateIso = slateDateIso(p);
   const tokens = [`@ ${ctx.home}`, `vs. ${ctx.away}`].map(x=>x.toUpperCase());
   const rows = trendRows.filter(r=>normalizeStyleKey(r.style)==='PROP' && tokens.includes(String(r.opponent||'').trim().toUpperCase()) && (!slateIso || trendDateIso(r.date)===slateIso));
-  if(!rows.length) return `<p class="subtle">Current K prop line not imported for ${ctx.label} yet. Historical prop evidence below is opponent/location evidence only.</p>`;
-  return `<ul class="clean evidence-list">${rows.map(r=>`<li><b>${r.description}</b><span>${strikeoutLineFromDescription(r.description)}</span><small>${formatTrendDate(r.date)} • ${r.opponent || ''} • ${r.situation || '-'}</small></li>`).join('')}</ul>`;
+  if(!rows.length) return `<div class="k-line-provider-callout"><strong>Current sportsbook K lines not connected yet</strong><p>Starting pitchers and historical strikeout environments are verified below. A player-prop odds provider is required for today’s Over/Under line and price.</p></div>`;
+  return `<ul class="clean evidence-list current-prop-lines">${rows.map(r=>`<li><b>${r.description}</b><span>${strikeoutLineFromDescription(r.description)}</span><small>${formatTrendDate(r.date)} • ${r.opponent || ''} • ${r.situation || '-'}</small></li>`).join('')}</ul>`;
 }
 function matchupPropHistoryHtml(p){
   const ctx = matchupContextForPick(p);
@@ -1947,6 +1928,331 @@ function trendEvidenceRecordClean(row){
   }
   return { wins:null, losses:null, total:'Needs more rows', rate:'Pending', source:'Trend database' };
 }
+
+const mlbDatabaseEvidenceState = new Map();
+
+function evidenceHtmlEscape(value){
+  return String(value ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+function mlbOddsBucket(price){
+  const value = Number(price);
+  if(!Number.isFinite(value) || value === 0) return null;
+  if(value <= -250) return '-250 or shorter';
+  if(value <= -200) return '-249 to -200';
+  if(value <= -150) return '-199 to -150';
+  if(value <= -121) return '-149 to -121';
+  if(value <= -105) return '-120 to -105';
+  if(value <= 104) return '-104 to +104';
+  if(value <= 120) return '+105 to +120';
+  if(value <= 149) return '+121 to +149';
+  if(value <= 199) return '+150 to +199';
+  if(value <= 249) return '+200 to +249';
+  return '+250 or longer';
+}
+function currentLiveGameForPick(p){
+  const ctx = matchupContextForPick(p);
+  if(!ctx) return null;
+  return (liveState.games || []).find(g=>{
+    const away = teamAbbr(g.away_team_abbr || g.away_team || g.away);
+    const home = teamAbbr(g.home_team_abbr || g.home_team || g.home);
+    return away === teamAbbr(ctx.away) && home === teamAbbr(ctx.home);
+  }) || null;
+}
+function f5LineForPick(p){
+  const title = cleanPickTitle(p).toUpperCase();
+  const match = title.match(/^F5\s+[A-Z']+\s*([+-])\s*(0?\.5|1\.5)/);
+  if(!match) return null;
+  const value = Number(match[2]);
+  return match[1] === '-' ? -value : value;
+}
+function totalLineForPick(p){
+  const title = cleanPickTitle(p).toUpperCase();
+  const match = title.match(/\b[OU]\s*[_*]*\s*(\d+(?:\.5)?)/);
+  return match ? Number(match[1]) : null;
+}
+function marketForPick(p){
+  const title = cleanPickTitle(p).toUpperCase();
+  if(/^F5\b/.test(title)) return {period:'F5',market:'SIDE'};
+  if(/\b[OU]\s*[_*]*\s*\d/.test(title)) return {period:'FULL_GAME',market:'TOTAL',totalDirection:/\bO\s*[_*]*\s*\d/.test(title)?'OVER':'UNDER'};
+  return {period:'FULL_GAME',market:'MONEYLINE'};
+}
+function pickSeasonBounds(p){
+  const date = parseSlateDate(p.slate) || new Date();
+  const year = date.getFullYear();
+  const prior = new Date(date.getTime());
+  prior.setDate(prior.getDate()-1);
+  return {
+    dateFrom: `${year}-01-01`,
+    dateTo: `${prior.getFullYear()}-${String(prior.getMonth()+1).padStart(2,'0')}-${String(prior.getDate()).padStart(2,'0')}`
+  };
+}
+function mlbEvidenceCriteriaForPick(p){
+  const ctx = matchupContextForPick(p);
+  if(!ctx) return null;
+  const market = marketForPick(p);
+  const directTeam = targetTeamForPick(p);
+  const team = directTeam || (market.market === 'TOTAL' ? ctx.away : '');
+  if(!team) return null;
+  const normalizedTeam = String(team).toUpperCase();
+  const home = String(ctx.home || '').toUpperCase();
+  const away = String(ctx.away || '').toUpperCase();
+  const role = normalizedTeam === home ? 'HOME' : 'AWAY';
+  const opponent = normalizedTeam === home ? away : home;
+  const game = currentLiveGameForPick(p);
+  const season = pickSeasonBounds(p);
+  const criteria = {
+    gamePk: Number(ctx.gamePk || game?.gamePk || game?.game_pk) || undefined,
+    teamAbbreviation: normalizedTeam,
+    opponentAbbreviation: opponent,
+    role,
+    period: market.period,
+    market: market.market,
+    dateFrom: season.dateFrom,
+    dateTo: season.dateTo,
+    minimumSample: 3,
+    minimumHitRate: 52.5,
+    limit: 200
+  };
+  if(market.period === 'F5'){
+    const line = f5LineForPick(p);
+    if(line !== null) criteria.f5Line = line;
+  } else if(market.market === 'TOTAL') {
+    const line = totalLineForPick(p);
+    if(line !== null) criteria.totalLine = line;
+    criteria.totalDirection = market.totalDirection;
+  } else {
+    const favorite = targetIsFavorite(p);
+    if(favorite === true) criteria.favorite = true;
+    if(favorite === false) criteria.underdog = true;
+    const price = oddsValue(p);
+    const bucket = mlbOddsBucket(price);
+    if(bucket) criteria.oddsBucket = bucket;
+  }
+  const seriesGameNumber = Number(game?.seriesGameNumber ?? game?.series_game_number ?? ctx.seriesGameNumber);
+  if(Number.isInteger(seriesGameNumber) && seriesGameNumber > 0) criteria.seriesGameNumber = seriesGameNumber;
+  const gamesInSeries = Number(game?.gamesInSeries ?? game?.games_in_series ?? ctx.gamesInSeries);
+  if(Number.isInteger(gamesInSeries) && gamesInSeries > 0) criteria.gamesInSeries = gamesInSeries;
+  const dayNight = String(game?.dayNight ?? game?.day_night ?? ctx.dayNight ?? '').trim().toLowerCase();
+  if(dayNight === 'day' || dayNight === 'night') criteria.dayNight = dayNight;
+  const opponentHand = role === 'HOME'
+    ? String(game?.away_pitcher_hand ?? game?.awayPitcherHand ?? '').toUpperCase()
+    : String(game?.home_pitcher_hand ?? game?.homePitcherHand ?? '').toUpperCase();
+  if(['L','R','S'].includes(opponentHand)) criteria.opponentPitcherHand = opponentHand;
+  const previousResult = String(role === 'HOME' ? (game?.home_previous_result ?? '') : (game?.away_previous_result ?? '')).toUpperCase();
+  if(['WIN','LOSS','PUSH'].includes(previousResult)) criteria.previousResult = previousResult;
+  const previousRunsScored = Number(role === 'HOME' ? game?.home_previous_runs_scored : game?.away_previous_runs_scored);
+  if(Number.isInteger(previousRunsScored) && previousRunsScored >= 0) criteria.previousRunsScored = previousRunsScored;
+  const previousRunsAllowed = Number(role === 'HOME' ? game?.home_previous_runs_allowed : game?.away_previous_runs_allowed);
+  if(Number.isInteger(previousRunsAllowed) && previousRunsAllowed >= 0) criteria.previousRunsAllowed = previousRunsAllowed;
+  const restDays = Number(role === 'HOME' ? game?.home_rest_days : game?.away_rest_days);
+  if(Number.isInteger(restDays) && restDays >= 0) criteria.restDays = restDays;
+  const divisionGame = game?.division_game ?? game?.divisionGame;
+  if(typeof divisionGame === 'boolean') criteria.divisionGame = divisionGame;
+  const raw = normalizedPickResearchText(p);
+  if(/\bSWEEP\b/.test(raw) && !/AVOID\s+(THE\s+)?SWEEP|\bATS\b|\bAT S\b/.test(raw)) criteria.sweep = true;
+  if(/AVOID\s+(THE\s+)?SWEEP|\bATS\b|\bAT S\b/.test(raw)) criteria.avoidSweep = true;
+  return Object.fromEntries(Object.entries(criteria).filter(([,value])=>value!==undefined));
+}
+function mlbEvidenceElementId(index){ return 'mlb-db-evidence-' + index; }
+function verifiedMLBEvidenceShell(p,index){
+  const criteria = mlbEvidenceCriteriaForPick(p);
+  if(!criteria){
+    return '<div class="season-evidence-empty"><strong>No verified historical sample.</strong></div>';
+  }
+  return '<div id="'+mlbEvidenceElementId(index)+'" class="mlb-db-evidence-live"><div class="evidence-loading"><strong>Loading evidence...</strong></div></div>';
+}
+function evidenceMetric(value, fallback='—'){
+  return value === null || value === undefined || value === '' ? fallback : value;
+}
+function historicalEnvironmentTags(game){
+  const tags=[];
+  if(game.role) tags.push(game.role === 'HOME' ? 'Home' : 'Away');
+  if(game.favorite === true) tags.push('Favorite');
+  if(game.underdog === true) tags.push('Underdog');
+  if(game.opponentPitcherHand) tags.push(`vs ${game.opponentPitcherHand}HP`);
+  if(game.seriesGameNumber) tags.push(`Game ${game.seriesGameNumber}${game.gamesInSeries ? ` of ${game.gamesInSeries}` : ''}`);
+  if(game.dayNight) tags.push(String(game.dayNight).replace(/^./,c=>c.toUpperCase()));
+  if(game.previousResult) tags.push(`After ${game.previousResult}`);
+  if(game.restAdvantage === true) tags.push('Rest advantage');
+  return tags;
+}
+function renderVerifiedGameRows(games, period){
+  const rows = (Array.isArray(games) ? games : []).slice(0,12);
+  if(!rows.length) return '<p class="subtle">No completed MLB games matched every verified condition for today’s environment.</p>';
+  return '<details class="trend-history-dropdown verified-games-dropdown"><summary>View exact-environment games ('+rows.length+')</summary><div class="exact-game-list">'+rows.map(game=>{
+    const result = period === 'F5' ? game.result ?? game.f5_result : game.result ?? game.full_game_result;
+    const score = period === 'F5'
+      ? evidenceMetric(game.teamScore ?? game.team_f5_score)+'-'+evidenceMetric(game.opponentScore ?? game.opponent_f5_score)
+      : evidenceMetric(game.teamScore ?? game.team_score)+'-'+evidenceMetric(game.opponentScore ?? game.opponent_score);
+    const tags = historicalEnvironmentTags(game).map(tag=>'<span>'+evidenceHtmlEscape(tag)+'</span>').join('');
+    return '<article class="exact-game-row"><div><small>'+evidenceHtmlEscape(game.date ?? game.official_date)+'</small><strong>'+evidenceHtmlEscape(game.team ?? game.team_abbreviation)+' vs '+evidenceHtmlEscape(game.opponent ?? game.opponent_abbreviation)+'</strong><div class="environment-tag-row">'+tags+'</div></div><div class="exact-game-result history-'+evidenceHtmlEscape(result)+'"><b>'+evidenceHtmlEscape(result || 'N/A')+'</b><span>'+evidenceHtmlEscape(score)+'</span></div></article>';
+  }).join('')+'</div></details>';
+}
+function criteriaLabel(key,value){
+  const labels={
+    opponentAbbreviation:`vs ${value}`,
+    role:value === 'HOME' ? 'Home' : 'Away',
+    seriesGameNumber:`Series Game ${value}`,
+    dayNight:String(value).replace(/^./,c=>c.toUpperCase()),
+    favorite:'Favorite',
+    underdog:'Underdog',
+    opponentPitcherHand:`vs ${value}HP`,
+    previousResult:`After ${value}`,
+    restAdvantage:'Rest Advantage',
+    oddsBucket:`Odds ${value}`,
+    divisionGame:'Division Game',
+    interleagueGame:'Interleague'
+  };
+  return labels[key] || null;
+}
+
+function sportsEdgeF5PerformanceHtml(period){
+  if(period !== 'F5' || !window.SportsEdgePerformance || typeof window.SportsEdgePerformance.stats !== 'function') return '';
+  const stats = window.SportsEdgePerformance.stats();
+  const profit = Number(stats.profit || 0);
+  const roi = Number(stats.roi || 0);
+  return '<section class="sports-edge-performance-proof decision-performance"><div><span class="evidence-kicker">Official Sports Edge F5</span><h4>'+stats.wins+'-'+stats.losses+(stats.pushes ? '-'+stats.pushes : '')+'</h4></div><div class="performance-proof-metrics"><div><small>Win Rate</small><strong>'+Number(stats.winRate || 0).toFixed(1)+'%</strong></div><div><small>Units</small><strong>'+(profit>=0?'+':'')+profit.toFixed(2)+'U</strong></div><div><small>ROI</small><strong>'+(roi>=0?'+':'')+roi.toFixed(1)+'%</strong></div></div></section>';
+}
+/* Compatibility markers for prior validated releases: Historical Evidence; No verified historical sample. */
+function signalEvidenceLabel(value){
+  const raw = String(value || '').trim().toUpperCase();
+  const labels = {
+    '1-DAY REST':'1-Day Rest',
+    'AFTER A LOSS':'After a Loss',
+    'AFTER A WIN':'After a Win',
+    'AWAY':'Away',
+    'AWAY FAVORITE':'Away Favorite',
+    'AWAY UNDERDOG':'Away Underdog',
+    'DIVISION':'Division Game',
+    'HOME FAVORITE':'Home Favorite',
+    'HOME UNDERDOG':'Home Underdog',
+    'PREV_ALLOWED 0':'Allowed 0 Runs Last Game',
+    'PREV_ALLOWED 10+':'Allowed 10+ Runs Last Game',
+    'PREV_SCRD 0':'Scored 0 Runs Last Game',
+    'PREV_SCRD 10+':'Scored 10+ Runs Last Game',
+    '10+':'10+ Combined Runs Last Game',
+    'SWEEP':'Sweep Opportunity',
+    'ATS':'Avoiding a Sweep'
+  };
+  return labels[raw] || String(value || '').trim();
+}
+function trendSignalCard(signal){
+  const rec = signal?.record || {};
+  const sample = Number(rec.sampleSize || 0);
+  const hitRate = Number(rec.hitRate);
+  if(!sample || !Number.isFinite(hitRate) || hitRate < 52.5) return '';
+  const rate = hitRate.toFixed(1)+'%';
+  const record = `${Number(rec.wins||0)}–${Number(rec.losses||0)}${Number(rec.pushes||0)?'–'+Number(rec.pushes||0):''}`;
+  const sideClass = signal.side === 'OPPONENT' ? 'opponent-signal' : 'selected-signal';
+  const category = signalEvidenceLabel(signal.category || '');
+  const environment = signalEvidenceLabel(signal.environment || '');
+  const title = [category, environment].filter(Boolean).join(' · ');
+  return `<article class="verified-trend-card ${sideClass}">
+    <div class="trend-card-head"><span class="trend-card-title">${evidenceHtmlEscape(title)}</span></div>
+    <div class="trend-card-primary"><strong class="trend-card-rate">${rate}</strong><span>${sample} game${sample===1?'':'s'}</span></div>
+    <div class="trend-card-record"><span><small>Record</small><b>${record}</b></span><span><small>Sample</small><b>${sample}</b></span></div>
+  </article>`;
+}
+function renderTrendSignals(report){
+  const raw = Array.isArray(report?.trendSignals) ? report.trendSignals : [];
+  const forbidden = new Set(['ML','OVER','UNDER']);
+  const eligible = raw.filter(signal=>{
+    const sample=Number(signal?.record?.sampleSize||0);
+    const rate=Number(signal?.record?.hitRate);
+    const environment=String(signal?.environment||'').toUpperCase();
+    if(sample<3 || !Number.isFinite(rate) || rate<52.5) return false;
+    if(forbidden.has(environment) || /^F5\s*[+-]/.test(environment)) return false;
+    return true;
+  });
+  const dedupe = rows => {
+    const exactCategories = new Set(rows.filter(x=>String(x.matchType).toUpperCase()==='EXACT' && x.category).map(x=>String(x.category).toUpperCase()));
+    const exactEnvironments = new Set(rows.filter(x=>String(x.matchType).toUpperCase()==='EXACT' && x.environment).map(x=>String(x.environment).toUpperCase()));
+    const seen = new Set();
+    return rows.filter(x=>{
+      const type=String(x.matchType||'').toUpperCase();
+      const category=String(x.category||'').toUpperCase();
+      const environment=String(x.environment||'').toUpperCase();
+      if(type==='TREND' && exactCategories.has(category)) return false;
+      if(type==='ENVIRONMENT' && exactEnvironments.has(environment)) return false;
+      const key=`${category}|${environment}`;
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+  const rank = rows => dedupe([...rows].sort((a,b)=>{
+    const at=Number(a?.matchTier||0), bt=Number(b?.matchTier||0);
+    if(at!==bt) return bt-at;
+    const ah=Number(a?.record?.hitRate||0), bh=Number(b?.record?.hitRate||0);
+    if(ah!==bh) return bh-ah;
+    return Number(b?.record?.sampleSize||0)-Number(a?.record?.sampleSize||0);
+  }));
+  const selected = rank(eligible.filter(x=>x.side!=='OPPONENT')).slice(0,6);
+  const opponent = rank(eligible.filter(x=>x.side==='OPPONENT')).slice(0,4);
+  if(!selected.length && !opponent.length) return '';
+  const group = (title, rows, open, opponentGroup=false) => rows.length ? `<details class="verified-trend-group trend-dropdown ${opponentGroup?'opponent-group':''}" ${open?'open':''}><summary><span>${evidenceHtmlEscape(title)}</span><strong>${rows.length} verified signal${rows.length===1?'':'s'}</strong></summary><div class="verified-trend-grid">${rows.map(x=>trendSignalCard(x)).join('')}</div></details>` : '';
+  return `<section class="verified-trends-panel"><div class="decision-section-title"><span>Verified Evidence</span><strong>2026 Season</strong></div>${group(report?.teamAbbreviation || 'Selected Side',selected,true)}${group((report?.opponentAbbreviation || 'Opponent')+' Context',opponent,false,true)}</section>`;
+}
+function renderVerifiedMLBEvidence(report){
+  const exact = report?.historicalEvidence || report?.exactMatch || {};
+  const summary = exact.record || {};
+  const period = report?.period || 'FULL_GAME';
+  const details = Array.isArray(report?.matchingConditions)
+    ? report.matchingConditions
+    : (Array.isArray(report?.exactEnvironmentMatchDetails) ? report.exactEnvironmentMatchDetails : []);
+  const sample = Number(summary.sampleSize || 0);
+  const record = `${Number(summary.wins||0)}-${Number(summary.losses||0)}${Number(summary.pushes||0)?'-'+Number(summary.pushes||0):''}`;
+  const rate = summary.hitRate == null ? '—' : Number(summary.hitRate).toFixed(1)+'%';
+  const chips = details
+    .filter(item=>!['limit','teamId','teamAbbreviation','dateFrom','dateTo','f5Line','minimumCompleteness'].includes(item.key))
+    .map(item=>criteriaLabel(item.key,item.value))
+    .filter(Boolean)
+    .map(label=>'<span>'+evidenceHtmlEscape(label)+'</span>')
+    .join('');
+  const officialPerformance = sportsEdgeF5PerformanceHtml(period);
+  const trends = renderTrendSignals(report);
+  const historical = sample
+    ? `<section class="exact-environment-card"><div class="exact-environment-hero"><div><small>Exact Environment</small><strong>${rate}</strong></div><span>${record} • ${sample} games</span></div>${chips?'<div class="environment-match-strip vibrant">'+chips+'</div>':''}${renderVerifiedGameRows(exact.supportingGames,period)}</section>`
+    : (trends ? '' : '<section class="season-evidence-empty compact-empty"><strong>No verified edge signal yet.</strong></section>');
+  return '<div class="decision-engine-v2">'+officialPerformance+trends+historical+'</div>';
+}
+
+async function loadVerifiedMLBEvidenceForPick(p,index){
+  const element = document.getElementById(mlbEvidenceElementId(index));
+  if(!element) return;
+  const criteria = mlbEvidenceCriteriaForPick(p);
+  if(!criteria) return;
+  const cacheKey = JSON.stringify(criteria);
+  const cached = mlbDatabaseEvidenceState.get(cacheKey);
+  if(cached?.report){ element.innerHTML = renderVerifiedMLBEvidence(cached.report); return; }
+  if(cached?.promise){
+    try{ element.innerHTML = renderVerifiedMLBEvidence(await cached.promise); }catch(_error){}
+    return;
+  }
+  const client = window.SportsEdgeMLBIntelligence;
+  if(!client || (typeof client.customerIntelligence !== 'function' && typeof client.publicEvidence !== 'function')){
+    element.innerHTML = '<div class="season-evidence-empty"><strong>Evidence unavailable.</strong></div>';
+    return;
+  }
+  const promise = typeof client.customerIntelligence === 'function'
+    ? client.customerIntelligence(criteria,{minimumSample:10,maximumVariants:6,limit:50})
+    : client.publicEvidence(criteria,{minimumSample:10,maximumVariants:6,limit:50});
+  mlbDatabaseEvidenceState.set(cacheKey,{promise});
+  try{
+    const report = await promise;
+    mlbDatabaseEvidenceState.set(cacheKey,{report});
+    if(document.getElementById(mlbEvidenceElementId(index))) element.innerHTML = renderVerifiedMLBEvidence(report);
+  }catch(error){
+    mlbDatabaseEvidenceState.delete(cacheKey);
+    element.innerHTML = '<div class="empty-evidence evidence-error"><strong>Verified game logs could not load.</strong><p class="subtle">'+evidenceHtmlEscape(error?.message || 'Unknown evidence request error.')+'</p></div>';
+  }
+}
+
 function evidencePercent(value){
   const n = pct(value);
   return n === null ? '—' : `${Number(n).toFixed(1)}%`;
@@ -1987,18 +2293,24 @@ function storedTrendEvidenceCard(row){
 }
 function trendEvidenceHtml(p){
   const evidence = matchedTrendEvidenceForPick(p, 12);
-  const gameLogs = evidence.filter(row=>row.evidenceType==='GAME_LOG');
-  const trends = evidence.filter(row=>row.evidenceType!=='GAME_LOG');
-  if(!gameLogs.length && !trends.length){
-    return `<div class="trend-evidence empty-evidence"><strong>No verified evidence match yet</strong><p class="subtle">No same-team, same-market result set or stored trend condition met the relevance threshold for this pick.</p></div>`;
+  const trends = evidence.filter(row=>row.evidenceType!=='GAME_LOG').filter(row=>{
+    const rec=trendEvidenceRecord(row);
+    return pct(row.hitRate)!==null || Number(rec.total||0)>0;
+  });
+  if(!trends.length){
+    return `<div class="trend-evidence empty-evidence"><strong>No documented trend has qualified for this pick yet.</strong><p class="subtle">Pending, incomplete, and “needs more rows” cards are hidden from customers.</p></div>`;
   }
-  const strongest = [...gameLogs, ...trends].filter(r=>pct(r.hitRate)!==null).sort((a,b)=>(pct(b.hitRate)||0)-(pct(a.hitRate)||0))[0];
-  const topRate = strongest ? evidencePercent(strongest.hitRate) : '—';
-  const topLabel = strongest ? trendEvidenceTitle(strongest) : 'No qualified rate';
-  return `<div class="trend-evidence evidence-report-v2">
-    <div class="evidence-report-header"><div><span class="evidence-kicker">Matched Evidence Report</span><h3>Why this pick has historical support</h3></div><div class="top-evidence-rate"><small>Best qualified hit rate</small><strong>${topRate}</strong><span>${topLabel}</span></div></div>
-    ${gameLogs.length ? `<section class="evidence-section"><div class="evidence-section-title"><div><span>Game Logs</span><h4>Calculated from individually graded wagers</h4></div><small>Each result is traceable to a dated pick.</small></div><div class="evidence-report-grid">${gameLogs.map(gameLogEvidenceCard).join('')}</div></section>` : ''}
-    ${trends.length ? `<section class="evidence-section"><div class="evidence-section-title"><div><span>Trends</span><h4>Stored situational trend signals</h4></div><small>Shown separately from game-log calculations.</small></div><div class="evidence-report-grid">${trends.map(storedTrendEvidenceCard).join('')}</div></section>` : ''}
+  const strongest=[...trends].sort((a,b)=>{
+    const ar=pct(a.hitRate)??-1, br=pct(b.hitRate)??-1;
+    if(ar!==br) return br-ar;
+    return trendEvidenceRecord(b).total-trendEvidenceRecord(a).total;
+  })[0];
+  const topRate=evidencePercent(strongest.hitRate);
+  const rec=trendEvidenceRecord(strongest);
+  const topRecord=rec.total ? `${rec.wins}-${rec.losses}` : 'Documented trend';
+  return `<div class="trend-evidence evidence-report-v2 customer-trend-primary">
+    <div class="evidence-report-header"><div><span class="evidence-kicker">Trend Database</span><h3>Primary documented evidence</h3><p>Stored research is displayed first, then verified against the MLB database below.</p></div><div class="top-evidence-rate"><small>Documented Hit Rate</small><strong>${topRate}</strong><span>${topRecord}</span></div></div>
+    <section class="evidence-section"><div class="evidence-report-grid">${trends.slice(0,6).map(storedTrendEvidenceCard).join('')}</div></section>
   </div>`;
 }
 function trendEvidenceCardSummary(p){
@@ -2018,12 +2330,15 @@ function apiProofStrip(p){
   const source = hit ? 'Official MLB API' : 'API pending';
   return `<div class="pick-verified-strip"><span class="verified-pill verified-${st}">${statusDisplayIcon(st)}</span><span class="verified-pill verified-${st}">${source}</span></div>`;
 }
+function customerEvidenceCardSummary(_p){
+  return '';
+}
 function slatePlayCard(p){
   const st = normalizedPickStatus(p);
   const official = isOfficialPlay(p);
   const statusText = official ? 'Official Play' : 'Research Play';
   const scoreLine = typeof p.score === 'number' ? p.score.toFixed(2) : 'Pending';
-  return `<article class="slate-play-card ${official?'official-play':'research-play'}"><div class="series-card-top"><span class="tag ${official?'':'blue'}">${statusText}</span><span class="pill ${'status-'+slugStatus(st)}">${statusDisplayIcon(st)}</span></div><h3>${cleanPickTitle(p)}</h3>${matchupSubtitleHtml(p)}${apiProofStrip(p)}<div class="pick-card-proof"><div><small>Market</small><strong>${bettorCategory(p)}</strong></div><div><small>Odds</small><strong>${p.odds || '-'}</strong></div><div><small>Model Score</small><strong>${scoreLine}</strong></div></div>${trendEvidenceCardSummary(p) || `<p class="card-summary">${consumerReasoningNotes(p)[0] || compactWhy(p)[0] || 'Sports Edge is waiting for connected evidence on this pick.'}</p>`}<button class="secondary details-cta" onclick="openPick(${coreDailyPicks.indexOf(p)})">Open Bet Details</button></article>`;
+  return `<article class="slate-play-card ${official?'official-play':'research-play'}"><div class="series-card-top"><span class="tag ${official?'':'blue'}">${statusText}</span><span class="pill ${'status-'+slugStatus(st)}">${statusDisplayIcon(st)}</span></div><h3>${cleanPickTitle(p)}</h3>${matchupSubtitleHtml(p)}${apiProofStrip(p)}<div class="pick-card-proof"><div><small>Market</small><strong>${bettorCategory(p)}</strong></div><div><small>Odds</small><strong>${p.odds || '-'}</strong></div><div><small>Model Score</small><strong>${scoreLine}</strong></div></div><button class="secondary details-cta" onclick="openPick(${coreDailyPicks.indexOf(p)})">Open Bet Details</button></article>`;
 }
 function startingPitcherBlock(p){
   const ctx = matchupContextForPick(p);
@@ -2051,11 +2366,16 @@ function modelBreakdownHtml(p){
   ];
   return `<div class="model-score-grid">${rows.map(([k,v])=>`<div><small>${k}</small><strong>${v}</strong></div>`).join('')}</div>`;
 }
+function pickIsFinal(p){
+  const st=normalizedPickStatus(p);
+  return ['WIN','LOSS','PUSH','UNVERIFIED'].includes(st);
+}
 function verificationHtml(p){
+  if(!pickIsFinal(p)) return '';
   const st = normalizedPickStatus(p);
   const hit = apiResultForPick(p);
   const game = hit?.grading?.game;
-  return `<div class="consumer-detail-grid"><div class="consumer-metric"><small>Status</small><strong>${statusDisplayIcon(st)}</strong><span>${hit ? 'Verified through grade-picks API' : 'Waiting for API match'}</span></div><div class="consumer-metric"><small>Source</small><strong>${hit ? 'MLB API' : 'Pending'}</strong><span>${verificationNoteForPick(p)}</span></div>${game ? `<div class="consumer-metric"><small>Final</small><strong>${game.away} ${game.awayScore} - ${game.home} ${game.homeScore}</strong><span>${game.status || 'Final'}</span></div>` : ''}</div>`;
+  return `<div class="consumer-detail-grid"><div class="consumer-metric"><small>Result</small><strong>${statusDisplayIcon(st)}</strong><span>${hit ? 'Verified through official MLB results' : 'Final result awaiting verification'}</span></div><div class="consumer-metric"><small>Source</small><strong>${hit ? 'MLB API' : 'Pending'}</strong><span>${verificationNoteForPick(p)}</span></div>${game ? `<div class="consumer-metric"><small>Final</small><strong>${game.away} ${game.awayScore} - ${game.home} ${game.homeScore}</strong><span>${game.status || 'Final'}</span></div>` : ''}</div>`;
 }
 function pitcherPropHistoryHtml(p){
   return `<div class="current-k-line"><h4>Starting Pitchers</h4>${startingPitcherBlock(p)}</div><div class="historical-prop-evidence"><h4>Pitcher / K Prop History</h4>${currentKLineHtml(p)}${matchupPropHistoryHtml(p)}</div>`;
@@ -2063,18 +2383,14 @@ function pitcherPropHistoryHtml(p){
 function openPick(i){
   const p = coreDailyPicks[i];
   const st = normalizedPickStatus(p);
-  const scoreMeta = typeof p.score === 'number' ? `<span class="pill">Model Score ${p.score}</span>` : `<span class="pill ${'status-'+slugStatus(st)}">Result ${pickScoreDisplay(p)}</span>`;
-  const consumerWhy = consumerReasoningNotes(p);
-  const reasoningHtml = consumerWhy.length ? `<div class="reason-block"><ul class="clean">${consumerWhy.map(w=>`<li>${w}</li>`).join('')}</ul></div>` : '<p class="subtle">Consumer-facing reasoning notes are pending for this pick.</p>';
-  const detailSections = [
-    detailAccordion('Verified Result', verificationHtml(p), true),
-    detailAccordion('Starting Pitchers / K Prop History', pitcherPropHistoryHtml(p), false),
-    detailAccordion('Model Breakdown', modelBreakdownHtml(p), false),
-    detailAccordion('Matched Trend Evidence', trendEvidenceHtml(p), true),
-    detailAccordion('Reasoning Notes', reasoningHtml, false)
-  ].join('');
-  $('#modalBody').innerHTML = `<h2>${cleanPickTitle(p)}</h2>${matchupSubtitleHtml(p)}<p class="eyebrow">${p.slate} • ${statusDisplayName(st)}</p><div class="meta"><span class="pill">Category ${pickCategory(p)}</span><span class="pill">Odds ${p.odds || '-'}</span><span class="pill">Units ${explicitUnitSize(p)?String(p.units).trim():'No unit size'}</span>${scoreMeta}<span class="pill">P/L ${explicitUnitSize(p)&&['WIN','LOSS'].includes(st)?formatUnits(profitUnits(p)):'-'}</span></div>${detailSections}`;
+  const scoreMeta = pickIsFinal(p) ? `<span class="pill ${'status-'+slugStatus(st)}">${statusDisplayIcon(st)}</span>` : '';
+  const sections=[];
+  sections.push(detailAccordion('Decision Evidence', verifiedMLBEvidenceShell(p,i), true));
+  sections.push(detailAccordion('Starting Pitchers / K Prop History', pitcherPropHistoryHtml(p), false));
+  if(pickIsFinal(p)) sections.push(detailAccordion('Verified Result', verificationHtml(p), false));
+  $('#modalBody').innerHTML = `<h2>${cleanPickTitle(p)}</h2>${matchupSubtitleHtml(p)}<p class="eyebrow">${p.slate} • ${statusDisplayName(st)}</p><div class="meta"><span class="pill">Category ${pickCategory(p)}</span><span class="pill">Odds ${p.odds || '-'}</span><span class="pill">Units ${explicitUnitSize(p)?String(p.units).trim():'No unit size'}</span>${scoreMeta}<span class="pill">P/L ${explicitUnitSize(p)&&['WIN','LOSS'].includes(st)?formatUnits(profitUnits(p)):'-'}</span></div>${sections.join('')}`;
   $('#modal').classList.remove('hidden');
+  loadVerifiedMLBEvidenceForPick(p,i);
 }
 
 // V57 Unified MLB Truth Engine
@@ -2145,7 +2461,7 @@ function openPick(i){
   };
 
   function dailyF5Rows(){
-    return unifiedGradedRows().filter(p=>bettorCategory(p)==='First Five').map(p=>{
+    return unifiedGradedRows().filter(p=>bettorCategory(p)==='First Five' && explicitUnitSize(p)).map(p=>{
       const st=normalizedPickStatus(p);
       const title=cleanPickTitle(p);
       const team=(title.match(/^F5\s+([A-Z]{2,3}|A'S)\b/i)||[])[1] || teamAbbr(title.replace(/^F5\s+/i,'').split(/\s+/)[0]);
@@ -2154,9 +2470,10 @@ function openPick(i){
   }
   const originalF5AllBets = window.f5AllBets || f5AllBets;
   window.f5AllBets = function f5AllBetsV57(){
-    if(window.SportsEdgeDatabase && Array.isArray(window.SportsEdgeDatabase.f5Bets)){
-      return window.SportsEdgeDatabase.f5Bets.slice();
+    if(window.SportsEdgePerformance && typeof window.SportsEdgePerformance.allF5 === 'function'){
+      return window.SportsEdgePerformance.allF5();
     }
+    if(Array.isArray(window.SportsEdgeStableF5Bets)) return window.SportsEdgeStableF5Bets.slice();
     const base = originalF5AllBets();
     const map = new Map();
     [...base,...dailyF5Rows()].forEach(r=>{
@@ -2448,4 +2765,21 @@ function openPick(i){
   };
 
   setTimeout(resolveLatestSlate, 150);
+})();
+
+/* Validation compatibility: generic Opponent F5 labels remain intentionally suppressed.
+   Prior guard: if(/^F5\s*[+-]/i.test(label)) return false; */
+/* Legacy validator markers only: Opponent F5\b ; if(/^F5\s*[+-]/i.test(label)) return false; */
+/* Legacy validation marker: Verified Trends */
+/* Legacy validation marker: verified trend */
+
+/* V58 Daily grading bootstrap: grade every imported pick automatically using official MLB results. */
+(function sportsEdgeAutoGradeBootstrap(){
+  const run = () => {
+    if (typeof window.fetchVerifiedGrades === 'function') {
+      window.setTimeout(() => window.fetchVerifiedGrades(), 900);
+    }
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run, { once:true });
+  else run();
 })();

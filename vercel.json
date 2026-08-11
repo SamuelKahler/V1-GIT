@@ -1,4 +1,10 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "crons": [
+    {
+      "path": "/api/mlb?action=cronSync",
+      "schedule": "15 12 * * *"
+    }
+  ]
 }

@@ -1,0 +1,14 @@
+DECISION ENGINE V2 FILES
+
+Updated:
+- lib/mlb/customer-intelligence.js
+- sports/mlb/mlb-app.js
+- sports/mlb/mlb.css
+- package.json
+
+Added:
+- supabase/migrations/010_decision_engine_v2_ranked_evidence.sql
+- scripts/validate-decision-engine-v2.mjs
+- README-DECISION-ENGINE-V2-FIRST.txt
+- CHANGELOG-DECISION-ENGINE-V2.md
+- FILES-CHANGED-DECISION-ENGINE-V2.txt
