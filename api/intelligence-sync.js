@@ -245,7 +245,7 @@ async function storedGrades(days=120){
   }));
 }
 
-async function processPicks(picks,{persistRows=false}={}){
+export async function processPicks(picks,{persistRows=false}={}){
   if(!Array.isArray(picks)||!picks.length) return {version:'12.0.0',generatedAt:new Date().toISOString(),total:0,counts:{},unresolved:0,pending:0,diagnostics:{dates:0,gamesResolved:0,source:'Official MLB Stats API',paidCreditsRequired:false},persistence:{enabled:false,inserted:0,reason:'NO_PICKS'},rows:[]};
   const dates=[...new Set(picks.map(p=>p.date||p.normalizedDate).filter(Boolean))];
   const scheduleRows=await mapWithConcurrency(dates,4,async date=>{

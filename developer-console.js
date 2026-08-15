@@ -4,6 +4,9 @@
   const SESSION_KEY = 'sports-edge-mlb-admin-token';
   const LOCAL_KEY = 'sports-edge-mlb-admin-token-remembered';
   const API_PATH = '/api/mlb';
+  const PICKS_API_PATH = '/api/admin-picks';
+  let lastPickPreviewText = '';
+  let lastPickPreviewCount = 0;
   let stopBackfillRequested = false;
 
   const byId = (id) => document.getElementById(id);
@@ -74,6 +77,70 @@
     }
     return data;
   }
+
+  async function picksRequest(action, text = '', method = 'POST') {
+    const adminToken = token();
+    if (!adminToken) throw new Error('Developer Console is locked.');
+    const options = {
+      method,
+      cache: 'no-store',
+      headers: { 'x-sports-edge-admin-token': adminToken }
+    };
+    let url = PICKS_API_PATH;
+    if (method === 'GET') {
+      url += '?limit=120';
+    } else {
+      options.headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify({ action, text });
+    }
+    const response = await fetch(url, options);
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.ok) throw new Error(data?.error || `Request failed (${response.status}).`);
+    return data;
+  }
+
+  function renderPickPreview(rows = []) {
+    const target = byId('pickPreview');
+    if (!target) return;
+    if (!rows.length) { target.innerHTML = '<div class="dev-note">No picks to show.</div>'; return; }
+    target.innerHTML = rows.map(row => `
+      <div class="pick-preview-row">
+        <strong>${row.date || '—'}</strong>
+        <span>${row.pick || row.raw_pick || row.raw_line || '—'}</span>
+        <span>${row.odds == null ? 'Odds —' : `Odds ${Number(row.odds) > 0 ? '+' : ''}${row.odds}`}</span>
+        <span>${row.units == null ? 'No unit' : `${row.units}U`}</span>
+        <span class="${row.official || row.has_explicit_units ? 'pick-official' : 'pick-research'}">${row.official || row.has_explicit_units ? 'OFFICIAL' : 'RESEARCH'}</span>
+      </div>`).join('');
+  }
+
+  async function previewPicks() {
+    const button = byId('previewPicks');
+    const text = byId('pickEntryText').value.trim();
+    const result = await runButton(button, 'Pick preview', () => picksRequest('preview', text));
+    lastPickPreviewText = text;
+    lastPickPreviewCount = result.count || 0;
+    renderPickPreview(result.preview || []);
+    byId('publishPicks').disabled = !lastPickPreviewCount;
+  }
+
+  async function publishPicks() {
+    const button = byId('publishPicks');
+    const text = byId('pickEntryText').value.trim();
+    if (!lastPickPreviewCount || text !== lastPickPreviewText) {
+      log('Publish blocked', 'Preview the current text before publishing.');
+      return;
+    }
+    const result = await runButton(button, 'Publish picks', () => picksRequest('publish', text));
+    renderPickPreview(result.preview || []);
+    log('Published pick dates', `${(result.dates || []).join(', ')} | ${result.count || 0} picks`);
+  }
+
+  async function refreshPublishedPicks() {
+    const button = byId('refreshPublishedPicks');
+    const result = await runButton(button, 'Recent published picks', () => picksRequest('', '', 'GET'));
+    renderPickPreview((result.rows || []).map(row => ({...row, pick: row.raw_pick, official: row.has_explicit_units})));
+  }
+
 
   function metric(label, value) {
     return `<div class="dev-metric"><strong>${value ?? '—'}</strong><span>${label}</span></div>`;
@@ -252,6 +319,10 @@
   byId('startBackfill').addEventListener('click', startBackfill);
   byId('stopBackfill').addEventListener('click', () => { stopBackfillRequested = true; byId('backfillLabel').textContent = 'Stop requested. Finishing current batch...'; });
   byId('clearLog').addEventListener('click', () => { logElement.textContent = 'Log cleared.'; });
+  byId('previewPicks').addEventListener('click', previewPicks);
+  byId('publishPicks').addEventListener('click', publishPicks);
+  byId('refreshPublishedPicks').addEventListener('click', refreshPublishedPicks);
+  byId('pickEntryText').addEventListener('input', () => { lastPickPreviewText = ''; lastPickPreviewCount = 0; byId('publishPicks').disabled = true; });
   document.querySelector('[data-action="status"]').addEventListener('click', refreshHealth);
   document.querySelector('[data-action="audit"]').addEventListener('click', runAudit);
 

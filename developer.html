@@ -22,7 +22,8 @@
     .dev-field { display:flex; flex-direction:column; gap:6px; }
     .dev-field.full { grid-column:1/-1; }
     .dev-field label { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:#536078; }
-    .dev-field input { width:100%; box-sizing:border-box; border:1px solid #cad5e4; border-radius:10px; padding:11px 12px; font:inherit; background:#fff; }
+    .dev-field input,.dev-field textarea { width:100%; box-sizing:border-box; border:1px solid #cad5e4; border-radius:10px; padding:11px 12px; font:inherit; background:#fff; color:#152033; }
+    .dev-field textarea { min-height:260px; resize:vertical; line-height:1.45; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
     .dev-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
     .dev-btn { border:0; border-radius:10px; padding:11px 15px; font-weight:800; cursor:pointer; background:#0f65c5; color:white; }
     .dev-btn.orange { background:#ef6c27; }
@@ -39,6 +40,12 @@
     .dev-log-line { padding:9px 0; border-bottom:1px solid rgba(255,255,255,.08); }
     .dev-progress { height:10px; border-radius:999px; background:#e5ecf5; overflow:hidden; margin-top:12px; }
     .dev-progress > span { display:block; height:100%; width:0; background:#0f65c5; transition:width .2s; }
+    .pick-preview { margin-top:16px; display:grid; gap:10px; }
+    .pick-preview-row { display:grid; grid-template-columns:110px minmax(220px,1fr) 90px 90px 110px; gap:10px; align-items:center; border:1px solid #dce7f3; border-radius:12px; padding:12px; background:#f8fbff; }
+    .pick-preview-row strong { color:#153c63; }
+    .pick-official { color:#147a4b; font-weight:900; }
+    .pick-research { color:#8a5a12; font-weight:900; }
+    @media (max-width:800px) { .pick-preview-row { grid-template-columns:1fr; } }
     .dev-hidden { display:none !important; }
     @media (max-width:800px) { .dev-card { grid-column:1/-1; } .dev-fields,.dev-status { grid-template-columns:1fr; } .dev-top { align-items:flex-start; flex-direction:column; } }
   </style>
@@ -128,6 +135,26 @@
         </div>
         <div class="dev-progress"><span id="backfillProgress"></span></div>
         <div id="backfillLabel" class="dev-note">Not started.</div>
+      </article>
+
+
+      <article class="dev-card full">
+        <h2>Today's Picks Publisher</h2>
+        <p>Paste one or several dated MLB slates. Preview the parser, then publish. Published dates replace the repository fallback for those dates immediately.</p>
+        <div class="dev-field full">
+          <label for="pickEntryText">Dated pick text</label>
+          <textarea id="pickEntryText" placeholder="08/15
+F5 TEX -0.5 -120, .4U & LIVE
+BAL ML +125
+CLE / DET U8.5 -110"></textarea>
+        </div>
+        <div class="dev-actions">
+          <button id="previewPicks" class="dev-btn secondary">Preview Picks</button>
+          <button id="publishPicks" class="dev-btn orange" disabled>Publish These Dates</button>
+          <button id="refreshPublishedPicks" class="dev-btn secondary">Recent Published Picks</button>
+        </div>
+        <div class="dev-note">Publishing replaces only the dates contained in the pasted text. It does not delete earlier dates. Unit-sized picks are marked Official; unitless picks remain Research.</div>
+        <div id="pickPreview" class="pick-preview"></div>
       </article>
 
       <article class="dev-card full">
