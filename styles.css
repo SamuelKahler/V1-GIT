@@ -635,3 +635,43 @@ body h1,body h2,body h3,body h4,body h5,body h6,body strong,body b{color:var(--s
 .home-preview-hidden{display:none!important}
 @media(max-width:980px){.sport-directory-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.home-hero-v2{grid-template-columns:1fr}}
 @media(max-width:620px){.sport-directory-grid{grid-template-columns:1fr!important}.sport-directory-card{min-height:210px!important}.home-hero-v2{padding-top:20px}.home-hero-v2 h1{font-size:2.7rem}}
+
+/* Custom F5 Model Engine V1A */
+#models .model-panel{background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);border:1px solid #d7e6f2;box-shadow:0 12px 34px rgba(16,52,82,.07)}
+#models .weight-slider{padding:10px 0;margin:0;border-bottom:1px solid #e3edf5}
+#models .weight-slider:last-child{border-bottom:0}
+#models .weight-slider span{font-size:14px;color:#294d69;margin-bottom:10px}
+#models .weight-slider span b{color:#102f4b;font-weight:900}
+#models .weight-slider span em{font-style:normal;font-weight:950;color:#0c6db4;background:#e8f5ff;border:1px solid #bddcf1;border-radius:999px;padding:4px 9px}
+#models .weight-slider input{height:24px;cursor:pointer;accent-color:#1689d4}
+#models .slider-track{background:#dce9f2;height:6px}
+#models .slider-track i{background:linear-gradient(90deg,#1788d2,#32c987)}
+#models .weight-total{background:#f4f9fd;border:1px solid #cee0ec;color:#102f4b;margin:16px 0}
+#models .weight-total small{display:block;color:#547086;margin-top:4px}
+#models .weight-ok{color:#14784b}
+#models .weight-warning{color:#b85c16}
+#models .model-run-actions{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;margin-top:12px}
+#models #runF5Model:disabled{opacity:.45;cursor:not-allowed}
+#models .model-integrity-note{margin-top:16px;padding:13px 14px;border-radius:14px;background:#fff7e9;color:#74420d;border:1px solid #f4d19a;font-weight:700;line-height:1.5}
+.model-empty-state,.model-loading-state,.model-error-state{padding:28px;border-radius:20px;background:#f5f9fc;border:1px dashed #bcd4e5;color:#274a66;text-align:center}
+.model-empty-state strong,.model-loading-state strong,.model-error-state strong{display:block;color:#102f4b;font-size:1.15rem;margin-bottom:6px}
+.model-empty-state p,.model-loading-state p,.model-error-state p{margin:0;color:#5c7488}
+.model-error-state{background:#fff5f5;border-color:#f2b6b6}.model-error-state strong{color:#9c2f2f}
+.model-loading-state span{display:inline-block;width:28px;height:28px;border:3px solid #d4e6f3;border-top-color:#1689d4;border-radius:50%;animation:modelSpin .8s linear infinite;margin-bottom:10px}
+@keyframes modelSpin{to{transform:rotate(360deg)}}
+.model-beta-note{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:16px;background:#fff8e9;border:1px solid #f3d6a1;color:#68451f;margin-bottom:16px}
+.model-beta-note strong{white-space:nowrap;color:#9a550d}.model-beta-note span{line-height:1.45}
+.custom-model-results{display:grid;gap:16px}
+.custom-model-result-card{display:grid;grid-template-columns:60px 1fr;background:#fff;border:1px solid #d4e4ef;border-radius:22px;overflow:hidden;box-shadow:0 12px 30px rgba(16,47,75,.07)}
+.model-rank{display:flex;align-items:flex-start;justify-content:center;padding-top:26px;background:linear-gradient(180deg,#0f5f9d,#173f68);color:#fff;font-size:1.2rem;font-weight:950}
+.model-result-main{padding:22px}
+.model-result-title{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}.model-result-title h3{margin:7px 0 4px;color:#102f4b;font-size:1.45rem}.model-result-title p{margin:0;color:#577086;font-weight:700}
+.model-status{display:inline-flex;border-radius:999px;padding:5px 9px;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;font-weight:950}.model-status.official{background:#e5f8ee;color:#14784b}.model-status.research{background:#edf4fa;color:#365b76}
+.coverage-pill{display:inline-flex;white-space:nowrap;border-radius:999px;padding:7px 10px;background:#edf7ff;color:#145d92;border:1px solid #c8e0f0;font-weight:850;font-size:.78rem}
+.model-metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.model-metrics-grid>div{padding:15px;border-radius:16px;background:#f4f8fb;border:1px solid #dbe7ef}.model-metrics-grid small{display:block;color:#657c8e;text-transform:uppercase;letter-spacing:.06em;font-size:.68rem;font-weight:900;margin-bottom:5px}.model-metrics-grid strong{display:block;color:#102f4b;font-size:1.5rem;font-weight:950}
+.model-metrics-grid .edge-metric.positive{background:#eaf9f1;border-color:#b8e6cd}.model-metrics-grid .edge-metric.positive strong{color:#12804d}.model-metrics-grid .edge-metric.negative{background:#fff3f3;border-color:#f0c4c4}.model-metrics-grid .edge-metric.negative strong{color:#b93b3b}
+.model-factor-details{margin-top:16px;border-top:1px solid #dce8f0;padding-top:12px}.model-factor-details summary{cursor:pointer;color:#164e79;font-weight:900}.model-factor-grid{display:grid;gap:8px;margin-top:12px}
+.model-factor-row{display:grid;grid-template-columns:minmax(210px,2fr) repeat(4,minmax(80px,.7fr));align-items:center;gap:10px;padding:12px 13px;border-radius:14px;background:#f7fbfe;border:1px solid #dfebf3}.model-factor-copy strong{display:block;color:#163b59}.model-factor-copy span{display:block;color:#60798c;font-size:.82rem;margin-top:3px}.model-factor-score small{display:block;color:#73889a;text-transform:uppercase;letter-spacing:.05em;font-size:.62rem;font-weight:900}.model-factor-score b{color:#193e5d}.model-factor-score.contribution b{color:#137b4b}.model-factor-row.factor-unavailable{opacity:.68;background:#f6f7f8}.model-factor-row.factor-unavailable .model-factor-score b{color:#75808a}
+@media(max-width:900px){#models .model-run-actions{grid-template-columns:1fr}.model-metrics-grid{grid-template-columns:1fr 1fr}.model-factor-row{grid-template-columns:1fr 1fr}.model-factor-copy{grid-column:1/-1}.custom-model-result-card{grid-template-columns:44px 1fr}.model-rank{font-size:1rem}.model-result-title{flex-direction:column}.model-beta-note{flex-direction:column}}
+@media(max-width:560px){.model-metrics-grid{grid-template-columns:1fr}.model-factor-row{grid-template-columns:1fr 1fr}.model-result-main{padding:16px}.custom-model-result-card{grid-template-columns:38px 1fr}}

@@ -1,0 +1,17 @@
+ADDED
+api/admin-picks.js
+app-bootstrap.js
+supabase/migrations/014_admin_pick_entry_v1.sql
+scripts/validate-admin-pick-entry-v1.mjs
+README-ADMIN-PICK-ENTRY-V1-FIRST.txt
+CHANGELOG-ADMIN-PICK-ENTRY-V1.md
+FILES-CHANGED-ADMIN-PICK-ENTRY-V1.txt
+
+UPDATED
+daily-import.js
+index.html
+developer.html
+developer-console.js
+lib/mlb/daily-operations.js
+api/intelligence-sync.js
+package.json

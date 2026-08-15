@@ -811,58 +811,40 @@
               </button>
             </div>
 
-            <h3>MLB F5 Run Line Weight Sliders</h3>
+            <h3>Build Your F5 Model</h3>
 
             <p>
-              Adjust the sliders to create a custom version
-              of the active model.
+              Decide what matters most. Every slider changes the math behind your personal F5 estimate.
             </p>
 
             <div id="f5Weights"></div>
             <div id="weightTotal" class="weight-total"></div>
 
-            <button id="resetWeights" class="secondary full">
-              Reset Default Weights
-            </button>
+            <div class="model-run-actions">
+              <button id="runF5Model" class="primary full">Run My F5 Model</button>
+              <button id="resetWeights" class="secondary full">Reset Balanced Weights</button>
+            </div>
           </article>
 
-          <article class="model-panel">
-            <span class="tag blue">Grade A Logic</span>
-            <h3>Current Qualification Rules</h3>
-
+          <article class="model-panel model-explainer-panel">
+            <span class="tag blue">Verified Inputs</span>
+            <h3>What Your Model Is Measuring</h3>
             <ul class="clean">
-              <li>
-                <strong>Grade A:</strong>
-                custom score 7.00 or higher.
-              </li>
-
-              <li>
-                <strong>Playable:</strong>
-                custom score 6.50 to 6.99.
-              </li>
-
-              <li>
-                <strong>Pass/Fade:</strong>
-                below 6.50 or price discipline fails.
-              </li>
-
-              <li>
-                <strong>Favorite odds cap:</strong>
-                avoid prices worse than -150.
-              </li>
+              <li><strong>Starter history:</strong> how this F5 line performed in prior starts by today's starter.</li>
+              <li><strong>F5 splits + recent form:</strong> verified first-five scores from the MLB backbone.</li>
+              <li><strong>Matchup + situation:</strong> opponent, location, rest and comparable game context.</li>
+              <li><strong>Market baseline:</strong> the implied probability of the price currently attached to the pick.</li>
             </ul>
+            <p class="model-integrity-note">Lineups, umpire data and unsupported inputs are intentionally not invented. They can be added only after a verified data feed is connected.</p>
           </article>
         </div>
 
         <div class="model-panel model-board-panel">
           <div class="section-head compact">
             <div>
-              <p class="eyebrow">Live Recalculation</p>
-              <h3>Custom Grade A Board</h3>
-
-              <p>
-                Re-ranked using the active model weights.
-              </p>
+              <p class="eyebrow">Your Model Output</p>
+              <h3>Custom F5 Edge Board</h3>
+              <p id="modelRunDate">Latest published F5 slate</p>
             </div>
           </div>
 
@@ -892,25 +874,6 @@
   -->
 
   <script src="daily-import.js"></script>
-  <script src="sports/mlb/mlb-data.js"></script>
-
-  <script src="sports/nfl/data/nfl-props.js"></script>
-  <script src="sports/nfl/data/nfl-systems.js"></script>
-  <script src="sports/nfl/data/nfl-win-trends.js"></script>
-  <script src="sports/nfl/data/nfl-games.js"></script>
-
-  <script src="sports/mlb/core/sports-edge-database.js"></script>
-  <script src="sports/mlb/core/master-ledger.js"></script>
-  <script src="sports/mlb/core/intelligence-engine.js"></script>
-  <script src="sports/mlb/core/intelligence-pipeline.js"></script>
-  <script src="sports/mlb/core/recent-results.js"></script>
-  <script src="sports/mlb/core/mlb-intelligence-client.js"></script>
-
-  <script src="sports/mlb/mlb-app.js"></script>
-
-  <!-- Must load after mlb-app.js so it can replace legacy F5 views. -->
-  <script src="sports/mlb/core/performance-engine.js"></script>
-
-  <script src="sports/nfl/nfl-app.js"></script>
+  <script src="app-bootstrap.js"></script>
 </body>
 </html>
