@@ -1,3 +1,4 @@
+import { loadRecentDailyPicks } from '../lib/mlb/daily-operations.js';
 const SCHEDULE_URL = 'https://statsapi.mlb.com/api/v1/schedule';
 const FEED_URL = 'https://statsapi.mlb.com/api/v1.1/game';
 
@@ -187,44 +188,128 @@ function authoritativeResult(pick){
 }
 
 async function persist(rows) {
-  const url=process.env.SUPABASE_URL; const key=process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url=process.env.SUPABASE_URL;
+  const key=process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
   if(!url||!key) return {enabled:false,inserted:0,reason:'SUPABASE_ENV_NOT_CONFIGURED'};
   const body=rows.map(row=>({pick_id:row.pickId,game_pk:row.gamePk,pick_date:row.date,selected_team:row.selectedTeam,opponent:row.opponent,market:row.market,period:row.period,line:row.line,odds:row.odds,result:row.result,grade_reason:row.gradeReason,resolution_confidence:row.resolutionConfidence,environment:row.environment,source_record:row.sourceRecord}));
-  const response=await fetch(`${url}/rest/v1/pick_observations?on_conflict=pick_id`,{method:'POST',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(body)});
-  if(!response.ok) throw new Error(`Supabase persistence failed (${response.status}): ${await response.text()}`);
-  return {enabled:true,inserted:rows.length};
+  let lastError;
+  for(let attempt=1;attempt<=3;attempt+=1){
+    try{
+      const response=await fetch(`${url}/rest/v1/pick_observations?on_conflict=pick_id`,{method:'POST',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(body)});
+      if(!response.ok) throw new Error(`Supabase persistence failed (${response.status}): ${await response.text()}`);
+      return {enabled:true,inserted:rows.length,attempts:attempt};
+    }catch(error){
+      lastError=error;
+      if(attempt<3) await new Promise(resolve=>setTimeout(resolve,400*attempt));
+    }
+  }
+  throw lastError;
+}
+
+function requireCronSecret(req){
+  const configured=String(process.env.CRON_SECRET||'').trim();
+  const authorization=String(req?.headers?.authorization||req?.headers?.Authorization||'').trim();
+  if(!configured) throw new Error('CRON_SECRET_NOT_CONFIGURED');
+  if(authorization!==`Bearer ${configured}`) throw new Error('CRON_AUTHORIZATION_FAILED');
+}
+
+async function storedGrades(days=120){
+  const url=process.env.SUPABASE_URL;
+  const key=process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+  if(!url||!key) throw new Error('SUPABASE_ENV_NOT_CONFIGURED');
+  const start=new Date();
+  start.setUTCDate(start.getUTCDate()-Math.max(1,Number(days)||120));
+  const startDate=start.toISOString().slice(0,10);
+  const select='pick_id,game_pk,pick_date,selected_team,opponent,market,period,line,odds,result,grade_reason,resolution_confidence,environment,updated_at';
+  const endpoint=`${url}/rest/v1/pick_observations?select=${encodeURIComponent(select)}&pick_date=gte.${startDate}&pick_id=like.SRC-DAILYIMPORTPICKS-*&order=pick_date.asc`;
+  const response=await fetch(endpoint,{headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json'}});
+  if(!response.ok) throw new Error(`Stored grade fetch failed (${response.status}): ${await response.text()}`);
+  const rows=await response.json();
+  return rows.map(row=>({
+    pickId:row.pick_id,
+    sourceId:row.pick_id,
+    gamePk:row.game_pk,
+    date:row.pick_date,
+    selectedTeam:row.selected_team,
+    opponent:row.opponent,
+    market:row.market,
+    period:row.period,
+    line:row.line,
+    odds:row.odds,
+    result:row.result,
+    gradeReason:row.grade_reason,
+    resolutionConfidence:row.resolution_confidence,
+    metadataStatus:row.game_pk?'RESOLVED':'RETRY_REQUIRED',
+    environment:row.environment,
+    updatedAt:row.updated_at
+  }));
+}
+
+async function processPicks(picks,{persistRows=false}={}){
+  if(!Array.isArray(picks)||!picks.length) return {version:'12.0.0',generatedAt:new Date().toISOString(),total:0,counts:{},unresolved:0,pending:0,diagnostics:{dates:0,gamesResolved:0,source:'Official MLB Stats API',paidCreditsRequired:false},persistence:{enabled:false,inserted:0,reason:'NO_PICKS'},rows:[]};
+  const dates=[...new Set(picks.map(p=>p.date||p.normalizedDate).filter(Boolean))];
+  const scheduleRows=await mapWithConcurrency(dates,4,async date=>{
+    try{return [date,scheduleGames(await getJson(`${SCHEDULE_URL}?sportId=1&date=${encodeURIComponent(date)}&hydrate=team,linescore,probablePitcher,venue`))];}
+    catch(error){return [date,{error:error.message,games:[]}];}
+  });
+  const schedules=new Map(scheduleRows);
+  const resolved=picks.map(pick=>{
+    const entry=schedules.get(pick.date||pick.normalizedDate); const games=Array.isArray(entry)?entry:(entry?.games||[]);
+    return {pick,resolution:resolveGame(pick,games),scheduleError:entry?.error||null};
+  });
+  const gamePks=[...new Set(resolved.map(x=>x.resolution.game?.gamePk).filter(Boolean))];
+  const feedRows=await mapWithConcurrency(gamePks,8,async gamePk=>{try{return [gamePk,feedSummary(await getJson(`${FEED_URL}/${gamePk}/feed/live`))];}catch(error){return [gamePk,{error:error.message}];}});
+  const feeds=new Map(feedRows);
+  const rows=resolved.map(({pick,resolution,scheduleError})=>{
+    const preserved=authoritativeResult(pick); const pickId=pick.id||pick.sourceId||pick.coreId||pick.preservationId;
+    const base={pickId,date:pick.date||pick.normalizedDate,selectedTeam:pick.selectedTeam||null,opponent:pick.opponent||null,market:market(pick),period:period(pick),line:line(pick),odds:finite(pick.odds),gamePk:resolution.game?.gamePk||pick.gamePk||null,sourceRecord:pick};
+    if(!resolution.game){return {...base,result:preserved||'UNVERIFIED',gradeReason:preserved?'PRESERVED_EXISTING_GRADE_METADATA_UNRESOLVED':(scheduleError?`SCHEDULE_API_FAILED: ${scheduleError}`:resolution.reason),metadataStatus:'RETRY_REQUIRED',resolutionConfidence:0,environment:null};}
+    const game=feeds.get(resolution.game.gamePk);
+    if(!game||game.error){return {...base,result:preserved||'UNVERIFIED',gradeReason:preserved?'PRESERVED_EXISTING_GRADE_FEED_UNRESOLVED':`GAME_FEED_FAILED: ${game?.error||'UNKNOWN'}`,metadataStatus:'RETRY_REQUIRED',resolutionConfidence:resolution.confidence,environment:null};}
+    const env=environment(pick,resolution.game,game); const computed=grade(pick,game);
+    return {...base,selectedTeam:env.team,opponent:env.opponent,gamePk:resolution.game.gamePk,result:preserved||computed.result,gradeReason:preserved?'PRESERVED_EXISTING_GRADE':computed.reason,metadataStatus:'RESOLVED',resolutionConfidence:resolution.confidence,environment:env};
+  });
+  const persistence=persistRows?await persist(rows):{enabled:false,inserted:0,reason:'PREVIEW_MODE'};
+  const counts={}; rows.forEach(r=>counts[r.result]=(counts[r.result]||0)+1);
+  return {version:'12.0.0',generatedAt:new Date().toISOString(),total:rows.length,counts,unresolved:rows.filter(r=>r.result==='UNVERIFIED').length,pending:rows.filter(r=>r.result==='PENDING').length,diagnostics:{dates:dates.length,gamesResolved:gamePks.length,source:'Official MLB Stats API',paidCreditsRequired:false},persistence,rows};
+}
+
+async function runDailyCron(req){
+  requireCronSecret(req);
+  const days=Math.min(45,Math.max(7,Number(req.query?.days)||28));
+  const picks=await loadRecentDailyPicks(days,false);
+  const batches=[];
+  for(let i=0;i<picks.length;i+=90) batches.push(picks.slice(i,i+90));
+  const parts=[];
+  for(const batch of batches) parts.push(await processPicks(batch,{persistRows:true}));
+  const counts={}; let total=0,unresolved=0,pending=0,inserted=0;
+  parts.forEach(part=>{
+    total+=part.total; unresolved+=part.unresolved; pending+=part.pending; inserted+=Number(part.persistence?.inserted||0);
+    Object.entries(part.counts||{}).forEach(([key,value])=>counts[key]=(counts[key]||0)+Number(value||0));
+  });
+  return {version:'12.0.0',mode:'DAILY_OPERATIONS_CRON',generatedAt:new Date().toISOString(),lookbackDays:days,batches:batches.length,total,counts,unresolved,pending,persistence:{enabled:true,inserted}};
 }
 
 export default async function handler(req,res){
-  if(req.method!=='POST') return res.status(405).json({error:'METHOD_NOT_ALLOWED'});
   try{
+    if(req.method==='GET'){
+      const mode=String(req.query?.mode||'').trim().toLowerCase();
+      if(mode==='stored'){
+        const rows=await storedGrades(req.query?.days||120);
+        return res.status(200).json({version:'12.0.0',mode:'STORED_GRADES',generatedAt:new Date().toISOString(),total:rows.length,rows});
+      }
+      if(mode==='cron') return res.status(200).json(await runDailyCron(req));
+      return res.status(400).json({error:'UNKNOWN_GET_MODE',allowed:['stored','cron']});
+    }
+    if(req.method!=='POST') return res.status(405).json({error:'METHOD_NOT_ALLOWED'});
     const picks=Array.isArray(req.body?.picks)?req.body.picks:[];
     if(!picks.length) return res.status(400).json({error:'NO_PICKS'});
     if(picks.length>100) return res.status(413).json({error:'BATCH_TOO_LARGE',limit:100});
-    const dates=[...new Set(picks.map(p=>p.date||p.normalizedDate).filter(Boolean))];
-    const scheduleRows=await mapWithConcurrency(dates,4,async date=>{
-      try{return [date,scheduleGames(await getJson(`${SCHEDULE_URL}?sportId=1&date=${encodeURIComponent(date)}&hydrate=team,linescore,probablePitcher,venue`))];}
-      catch(error){return [date,{error:error.message,games:[]}];}
-    });
-    const schedules=new Map(scheduleRows);
-    const resolved=picks.map(pick=>{
-      const entry=schedules.get(pick.date||pick.normalizedDate); const games=Array.isArray(entry)?entry:(entry?.games||[]);
-      return {pick,resolution:resolveGame(pick,games),scheduleError:entry?.error||null};
-    });
-    const gamePks=[...new Set(resolved.map(x=>x.resolution.game?.gamePk).filter(Boolean))];
-    const feedRows=await mapWithConcurrency(gamePks,8,async gamePk=>{try{return [gamePk,feedSummary(await getJson(`${FEED_URL}/${gamePk}/feed/live`))];}catch(error){return [gamePk,{error:error.message}];}});
-    const feeds=new Map(feedRows);
-    const rows=resolved.map(({pick,resolution,scheduleError})=>{
-      const preserved=authoritativeResult(pick); const pickId=pick.id||pick.sourceId||pick.coreId||pick.preservationId;
-      const base={pickId,date:pick.date||pick.normalizedDate,selectedTeam:pick.selectedTeam||null,opponent:pick.opponent||null,market:market(pick),period:period(pick),line:line(pick),odds:finite(pick.odds),gamePk:resolution.game?.gamePk||pick.gamePk||null,sourceRecord:pick};
-      if(!resolution.game){return {...base,result:preserved||'UNVERIFIED',gradeReason:preserved?'PRESERVED_EXISTING_GRADE_METADATA_UNRESOLVED':(scheduleError?`SCHEDULE_API_FAILED: ${scheduleError}`:resolution.reason),metadataStatus:'RETRY_REQUIRED',resolutionConfidence:0,environment:null};}
-      const game=feeds.get(resolution.game.gamePk);
-      if(!game||game.error){return {...base,result:preserved||'UNVERIFIED',gradeReason:preserved?'PRESERVED_EXISTING_GRADE_FEED_UNRESOLVED':`GAME_FEED_FAILED: ${game?.error||'UNKNOWN'}`,metadataStatus:'RETRY_REQUIRED',resolutionConfidence:resolution.confidence,environment:null};}
-      const env=environment(pick,resolution.game,game); const computed=grade(pick,game);
-      return {...base,selectedTeam:env.team,opponent:env.opponent,gamePk:resolution.game.gamePk,result:preserved||computed.result,gradeReason:preserved?'PRESERVED_EXISTING_GRADE':computed.reason,metadataStatus:'RESOLVED',resolutionConfidence:resolution.confidence,environment:env};
-    });
-    const persistence=req.query.persist==='1'?await persist(rows):{enabled:false,inserted:0,reason:'PREVIEW_MODE'};
-    const counts={}; rows.forEach(r=>counts[r.result]=(counts[r.result]||0)+1);
-    return res.status(200).json({version:'11.0.0',generatedAt:new Date().toISOString(),total:rows.length,counts,unresolved:rows.filter(r=>r.result==='UNVERIFIED').length,pending:rows.filter(r=>r.result==='PENDING').length,diagnostics:{dates:dates.length,gamesResolved:gamePks.length,source:'Official MLB Stats API',paidCreditsRequired:false},persistence,rows});
-  }catch(error){return res.status(500).json({error:'INTELLIGENCE_SYNC_FAILED',message:error.message});}
+    const data=await processPicks(picks,{persistRows:req.query.persist==='1'});
+    return res.status(200).json(data);
+  }catch(error){
+    const message=error?.message||String(error);
+    const status=/AUTHORIZATION_FAILED/.test(message)?401:/NOT_CONFIGURED/.test(message)?503:500;
+    return res.status(status).json({error:'INTELLIGENCE_SYNC_FAILED',message});
+  }
 }

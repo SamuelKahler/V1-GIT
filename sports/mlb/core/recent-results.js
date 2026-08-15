@@ -6,10 +6,19 @@
   async function syncAll(){const data=await window.SportsEdgePipeline.syncAll(true);rebuild();try{localStorage.setItem(LAST_FULL_SYNC,new Date().toISOString().slice(0,10));}catch{}return{...data,database:window.SportsEdgeDatabase.audit()};}
   async function syncUnresolved(){const unresolved=(window.SportsEdgeDatabase?.observations||[]).filter(row=>!['WIN','LOSS','PUSH','VOID'].includes(row.result));if(!unresolved.length)return{total:0,message:'Every canonical record is already graded.'};const dates=unresolved.map(row=>row.date).filter(Boolean).sort();return window.SportsEdgePipeline.sync({from:dates[0],to:dates[dates.length-1]});}
   async function preview(){const data=await window.SportsEdgePipeline.syncAll(false);rebuild();return data;}
+  async function hydrateStored(){
+    try{
+      const response=await fetch('/api/intelligence-sync?mode=stored&days=120',{cache:'no-store'});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(data.message||data.error||`HTTP ${response.status}`);
+      if(Array.isArray(data.rows)&&data.rows.length){window.SportsEdgeDatabase.applyGrades(data.rows);rebuild();}
+      return data;
+    }catch(error){console.warn('[Sports Edge V12] stored grade hydration deferred:',error.message);return{total:0,error:error.message};}
+  }
   function unresolved(){return(window.SportsEdgeDatabase?.observations||[]).filter(row=>!['WIN','LOSS','PUSH','VOID'].includes(row.result));}
   function audit(){const rows=unresolved();const reasons={};rows.forEach(row=>{const reason=row.gradeReason||row.metadataStatus||row.status||'UNKNOWN';reasons[reason]=(reasons[reason]||0)+1;});return{database:window.SportsEdgeDatabase?.audit(),pipeline:window.SportsEdgePipeline?.health(),unresolved:rows.length,reasons};}
   rebuild();window.addEventListener('sportsedge:database-updated',rebuild);
-  window.SportsEdgeRecent=Object.freeze({version:'11.0.0',sync,syncAll,syncUnresolved,preview,apply:rows=>{window.SportsEdgeDatabase.applyGrades(rows);return rebuild();},grades:()=>window.SportsEdgeRecentGrades||[],f5:()=>window.SportsEdgeRecentF5Results||[],unresolved,audit});
-  const start=()=>setTimeout(async()=>{try{const today=new Date().toISOString().slice(0,10);if(localStorage.getItem(LAST_FULL_SYNC)!==today)await syncAll();else await sync();}catch(error){console.warn('[Sports Edge V11] automatic grading deferred:',error.message);}},1200);
+  window.SportsEdgeRecent=Object.freeze({version:'12.0.0',sync,syncAll,syncUnresolved,preview,hydrateStored,apply:rows=>{window.SportsEdgeDatabase.applyGrades(rows);return rebuild();},grades:()=>window.SportsEdgeRecentGrades||[],f5:()=>window.SportsEdgeRecentF5Results||[],unresolved,audit});
+  const start=()=>setTimeout(async()=>{try{await hydrateStored();const today=new Date().toISOString().slice(0,10);if(localStorage.getItem(LAST_FULL_SYNC)!==today)await syncAll();else await sync();}catch(error){console.warn('[Sports Edge V12] automatic grading deferred:',error.message);}},1200);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();

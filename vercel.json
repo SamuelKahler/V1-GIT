@@ -5,6 +5,10 @@
     {
       "path": "/api/mlb?action=cronSync",
       "schedule": "15 12 * * *"
+    },
+    {
+      "path": "/api/intelligence-sync?mode=cron&days=28",
+      "schedule": "45 12 * * *"
     }
   ]
 }
