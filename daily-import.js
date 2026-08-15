@@ -1,6 +1,6 @@
-// Sports Edge V6 daily pick source.
-// This is the only file that should be edited for routine daily MLB pick entry.
-window.SPORTS_EDGE_DAILY_IMPORT_TEXT = `
+// Sports Edge canonical daily pick loader.
+// Admin-published Supabase picks replace matching fallback dates.
+window.SPORTS_EDGE_DAILY_IMPORT_FALLBACK_TEXT = `
 08/11
 F5 TEX -0.5 -114 - LIVE
 F5 PIT -0.5 +120 - LIVE
@@ -190,3 +190,20 @@ F5 PHI -0.5 -135
 F5 DET -0.5 -135, .25U
 KC / DET U9 -110 - LIVE
 `;
+window.SPORTS_EDGE_DAILY_IMPORT_TEXT = window.SPORTS_EDGE_DAILY_IMPORT_FALLBACK_TEXT;
+window.SPORTS_EDGE_DAILY_IMPORT_READY = (async () => {
+  try {
+    const response = await fetch('/api/admin-picks?mode=publicText', { cache: 'no-store' });
+    const data = await response.json();
+    if (response.ok && data?.ok && typeof data.text === 'string' && data.text.trim()) {
+      window.SPORTS_EDGE_DAILY_IMPORT_TEXT = data.text.trim();
+      window.SPORTS_EDGE_DAILY_IMPORT_SOURCE = data.source || 'SPORTS_EDGE_CANONICAL_PICKS';
+    } else {
+      window.SPORTS_EDGE_DAILY_IMPORT_SOURCE = 'STATIC_FALLBACK';
+    }
+  } catch (error) {
+    console.warn('[Sports Edge] Canonical pick API unavailable; using repository fallback.', error);
+    window.SPORTS_EDGE_DAILY_IMPORT_SOURCE = 'STATIC_FALLBACK';
+  }
+  return window.SPORTS_EDGE_DAILY_IMPORT_TEXT;
+})();
