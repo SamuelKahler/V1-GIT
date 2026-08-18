@@ -1,10 +1,23 @@
 // Sports Edge Core V2: Today's Picks now reads the reconciled master ledger view.
 // The original data remains preserved in mlb-data.js and SportsEdgeCore.preserved.
-const coreDailyPicks = (window.SportsEdgeDatabase && Array.isArray(window.SportsEdgeDatabase.displayPicks) && window.SportsEdgeDatabase.displayPicks.length)
+const initialCoreDailyPicks = (window.SportsEdgeDatabase && Array.isArray(window.SportsEdgeDatabase.displayPicks) && window.SportsEdgeDatabase.displayPicks.length)
   ? window.SportsEdgeDatabase.displayPicks
   : (window.SportsEdgeCore && Array.isArray(window.SportsEdgeCore.uiPicks) && window.SportsEdgeCore.uiPicks.length)
   ? window.SportsEdgeCore.uiPicks
   : ((typeof trackedPickResults !== 'undefined' && Array.isArray(trackedPickResults)) ? trackedPickResults : []);
+const coreDailyPicks = [...initialCoreDailyPicks];
+function refreshCoreDailyPicks(){
+  const next=(window.SportsEdgeDatabase&&Array.isArray(window.SportsEdgeDatabase.displayPicks))?window.SportsEdgeDatabase.displayPicks:[];
+  if(!next.length) return coreDailyPicks;
+  coreDailyPicks.splice(0,coreDailyPicks.length,...next);
+  return coreDailyPicks;
+}
+window.addEventListener('sportsedge:database-updated',()=>{
+  refreshCoreDailyPicks();
+  try{ if(typeof renderPicks==='function') renderPicks(); }catch{}
+  try{ if(typeof renderHomeDailyDashboard==='function') renderHomeDailyDashboard(); }catch{}
+  try{ if(typeof renderPerformanceLab==='function') renderPerformanceLab(); }catch{}
+});
 
 // V43 stability helper: all missing/blank unit values default to 1U.
 function parseUnits(value) {
@@ -1489,18 +1502,122 @@ function renderSeries(){
 
 
 const DEFAULT_MODEL_WEIGHTS = {
-  'Starting Pitcher Edge': 30,
-  'Opponent Early Offense': 15,
-  'Team F5 Split Performance': 15,
-  'Ballpark + Weather': 10,
-  'Lineup Construction': 10,
-  'Travel / Environment': 5,
-  'Market Inefficiency': 10,
-  'Umpire / Micro': 5
+  starter_history: 25,
+  opponent_early_offense: 15,
+  team_f5_split: 15,
+  recent_f5_form: 15,
+  matchup_history: 10,
+  situation_match: 10,
+  rest_location: 5,
+  market_baseline: 5
 };
-let activeModelWeights = {...DEFAULT_MODEL_WEIGHTS};
+const MODEL_FACTOR_LABELS = {
+  starter_history: 'Starting Pitcher History',
+  opponent_early_offense: 'Opponent Early Offense',
+  team_f5_split: 'Team F5 Split',
+  recent_f5_form: 'Recent F5 Form',
+  matchup_history: 'Matchup History',
+  situation_match: 'Situation Match',
+  rest_location: 'Rest / Location',
+  market_baseline: 'Market Baseline'
+};
+const MODEL_WEIGHT_STORAGE_KEY = 'sportsEdgeCustomF5WeightsV1B';
+const MODEL_AUTOBALANCE_STORAGE_KEY = 'sportsEdgeModelAutoBalanceV1B';
+const MODEL_PRESETS = {
+  balanced: {...DEFAULT_MODEL_WEIGHTS},
+  pitching: {
+    starter_history: 45,
+    opponent_early_offense: 10,
+    team_f5_split: 10,
+    recent_f5_form: 10,
+    matchup_history: 10,
+    situation_match: 5,
+    rest_location: 5,
+    market_baseline: 5
+  },
+  form: {
+    starter_history: 20,
+    opponent_early_offense: 25,
+    team_f5_split: 15,
+    recent_f5_form: 25,
+    matchup_history: 5,
+    situation_match: 5,
+    rest_location: 3,
+    market_baseline: 2
+  },
+  market: {
+    starter_history: 20,
+    opponent_early_offense: 10,
+    team_f5_split: 10,
+    recent_f5_form: 10,
+    matchup_history: 10,
+    situation_match: 10,
+    rest_location: 5,
+    market_baseline: 25
+  }
+};
+function loadStoredModelWeights(){
+  try{
+    const parsed = JSON.parse(localStorage.getItem(MODEL_WEIGHT_STORAGE_KEY) || 'null');
+    if(!parsed || typeof parsed !== 'object') return {...DEFAULT_MODEL_WEIGHTS};
+    const next = {};
+    for(const key of Object.keys(DEFAULT_MODEL_WEIGHTS)){
+      const n = Number(parsed[key]);
+      next[key] = Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : DEFAULT_MODEL_WEIGHTS[key];
+    }
+    return next;
+  }catch(_){return {...DEFAULT_MODEL_WEIGHTS};}
+}
+let activeModelWeights = loadStoredModelWeights();
+let lastF5ModelResult = null;
+let f5ModelRunning = false;
+let modelAutoBalance = localStorage.getItem(MODEL_AUTOBALANCE_STORAGE_KEY) !== 'no';
+function saveModelWeights(){
+  try{localStorage.setItem(MODEL_WEIGHT_STORAGE_KEY, JSON.stringify(activeModelWeights));}catch(_){}
+}
 function isModelUnlocked(){return localStorage.getItem('sportsEdgeModelUnlocked') === 'yes';}
 function setModelUnlocked(value){localStorage.setItem('sportsEdgeModelUnlocked', value ? 'yes' : 'no'); renderModelAccess(); if(value){showPage('models'); setTimeout(()=>$('#modelLab')?.scrollIntoView({behavior:'smooth',block:'start'}),80);} }
+function modelWeightTotal(){return Object.values(activeModelWeights).reduce((s,v)=>s+Number(v||0),0);}
+function modelWeightsValid(){return Math.abs(modelWeightTotal()-100)<0.01;}
+function clampModelWeight(value){return Math.max(0,Math.min(100,Math.round(Number(value)||0)));}
+function normalizedModelWeights(weights=activeModelWeights){
+  const keys=Object.keys(DEFAULT_MODEL_WEIGHTS);
+  const total=keys.reduce((sum,key)=>sum+Math.max(0,Number(weights[key])||0),0);
+  if(total<=0) return {...DEFAULT_MODEL_WEIGHTS};
+  const raw=keys.map(key=>({key,value:Math.max(0,Number(weights[key])||0)*100/total}));
+  const whole=raw.map(item=>({key:item.key,value:Math.floor(item.value),frac:item.value-Math.floor(item.value)}));
+  let remaining=100-whole.reduce((sum,item)=>sum+item.value,0);
+  whole.sort((a,b)=>b.frac-a.frac).forEach(item=>{if(remaining>0){item.value+=1;remaining-=1;}});
+  return Object.fromEntries(whole.map(item=>[item.key,item.value]));
+}
+function rebalanceModelWeights(changedKey,nextValue){
+  const keys=Object.keys(activeModelWeights);
+  const target=clampModelWeight(nextValue);
+  const others=keys.filter(key=>key!==changedKey);
+  const remaining=100-target;
+  const oldOtherTotal=others.reduce((sum,key)=>sum+Number(activeModelWeights[key]||0),0);
+  const next={...activeModelWeights,[changedKey]:target};
+  if(!others.length) return next;
+  if(remaining<=0){others.forEach(key=>next[key]=0);return next;}
+  if(oldOtherTotal<=0){
+    const even=remaining/others.length;
+    others.forEach(key=>next[key]=even);
+  }else{
+    others.forEach(key=>next[key]=Number(activeModelWeights[key]||0)/oldOtherTotal*remaining);
+  }
+  return normalizedModelWeights(next);
+}
+function setModelWeight(key,value,{rebalance=modelAutoBalance}={}){
+  if(!(key in DEFAULT_MODEL_WEIGHTS)) return;
+  activeModelWeights = rebalance ? rebalanceModelWeights(key,value) : {...activeModelWeights,[key]:clampModelWeight(value)};
+  saveModelWeights();
+  updateWeightControls();
+}
+function applyModelPreset(name){
+  const preset=MODEL_PRESETS[name]; if(!preset) return;
+  activeModelWeights={...preset}; saveModelWeights(); updateWeightControls();
+}
+function normalizeActiveModelWeights(){activeModelWeights=normalizedModelWeights(activeModelWeights);saveModelWeights();updateWeightControls();}
 function renderModelAccess(){
   const paywall = $('#modelPaywall');
   const lab = $('#modelLab');
@@ -1509,79 +1626,169 @@ function renderModelAccess(){
   paywall.classList.toggle('hidden', unlocked);
   lab.classList.toggle('hidden', !unlocked);
   if(unlocked){renderWeights(); renderCustomModelBoard();}
+  updateModelSidebarAccess();
 }
-function componentValue(breakdown, aliases){
-  if(!breakdown) return null;
-  for(const key of aliases){
-    if(breakdown[key] !== undefined){
-      const n = Number(breakdown[key]);
-      if(Number.isFinite(n)) return n;
-    }
-  }
-  return null;
+function weightControlHtml(key,value,scope='main'){
+  const id=`${scope}-weight-${key}`;
+  return `<div class="weight-slider" data-weight-row="${key}">
+    <div class="weight-slider-head"><label for="${id}"><b>${MODEL_FACTOR_LABELS[key]||key}</b></label><div class="weight-value-control"><button type="button" data-weight-step="-5" data-weight-key="${key}" aria-label="Decrease ${MODEL_FACTOR_LABELS[key]} by 5 percent">−</button><input class="weight-number" type="number" min="0" max="100" step="1" value="${value}" data-weight-number="${key}" aria-label="${MODEL_FACTOR_LABELS[key]} percentage"><span>%</span><button type="button" data-weight-step="5" data-weight-key="${key}" aria-label="Increase ${MODEL_FACTOR_LABELS[key]} by 5 percent">+</button></div></div>
+    <input id="${id}" type="range" min="0" max="100" step="1" value="${value}" data-weight="${key}">
+    <div class="slider-track"><i data-weight-track="${key}" style="width:${value}%"></i></div>
+  </div>`;
 }
-function modelComponentsForPick(p){
-  const b = p.breakdown || {};
-  return {
-    'Starting Pitcher Edge': componentValue(b, ['SP Edge','Starting Pitcher Edge']),
-    'Opponent Early Offense': componentValue(b, ['Opponent Early Offense','Opponent Offense','Opp Off']),
-    'Team F5 Split Performance': componentValue(b, ['Team F5 Splits','F5 Split','F5 Splits']),
-    'Ballpark + Weather': componentValue(b, ['Ballpark/Weather','Ballpark + Weather','Weather']),
-    'Lineup Construction': componentValue(b, ['Lineup Construction','Lineup']),
-    'Travel / Environment': componentValue(b, ['Travel/Environment','Travel / Environment','Travel']),
-    'Market Inefficiency': componentValue(b, ['Market Edge','Market Inefficiency','Mkt Edge']),
-    'Umpire / Micro': componentValue(b, ['Umpire','Umpire / Micro'])
-  };
-}
-function customScoreForPick(p){
-  const comps = modelComponentsForPick(p);
-  let weighted = 0, usedWeight = 0;
-  Object.entries(activeModelWeights).forEach(([key,weight])=>{
-    const value = comps[key];
-    if(Number.isFinite(value)){
-      weighted += value * weight;
-      usedWeight += weight;
-    }
+function bindWeightControls(container){
+  if(!container || container.dataset.weightBound==='yes') return;
+  container.dataset.weightBound='yes';
+  container.addEventListener('input',event=>{
+    const range=event.target.closest('input[data-weight]');
+    const number=event.target.closest('input[data-weight-number]');
+    if(range) setModelWeight(range.dataset.weight,range.value);
+    else if(number) setModelWeight(number.dataset.weightNumber,number.value);
   });
-  return usedWeight ? weighted / usedWeight : (typeof p.score === 'number' ? p.score : 0);
-}
-function gradeForScore(score){
-  if(score >= 7) return 'GRADE A';
-  if(score >= 6.5) return 'PLAYABLE';
-  return 'PASS';
-}
-function modelEligiblePicks(){
-  return coreDailyPicks.filter(p=>p.breakdown && Object.keys(p.breakdown).length && typeof p.score === 'number');
+  container.addEventListener('click',event=>{
+    const button=event.target.closest('button[data-weight-step]');
+    if(!button) return;
+    const key=button.dataset.weightKey;
+    setModelWeight(key,Number(activeModelWeights[key]||0)+Number(button.dataset.weightStep||0));
+  });
 }
 function renderWeights(){
   const wrap = $('#f5Weights');
-  if(!wrap) return;
-  wrap.innerHTML = Object.entries(activeModelWeights).map(([k,v])=>`<label class="weight-slider"><span><b>${k}</b><em>${v}%</em></span><input type="range" min="0" max="40" step="1" value="${v}" data-weight="${k}"><div class="slider-track"><i style="width:${Math.min(v*2.5,100)}%"></i></div></label>`).join('');
-  wrap.querySelectorAll('input[type="range"]').forEach(input=>{
-    input.addEventListener('input', e=>{
-      activeModelWeights[e.target.dataset.weight] = Number(e.target.value);
-      renderWeights();
-      renderCustomModelBoard();
-    });
-  });
-  const total = Object.values(activeModelWeights).reduce((s,v)=>s+v,0);
-  const totalEl = $('#weightTotal');
-  if(totalEl) totalEl.innerHTML = `<strong>Total active weight: ${total}%</strong><small> Scores are normalized to the active slider total, so custom models still calculate on a 0-10 scale.</small>`;
+  if(wrap && !wrap.children.length){wrap.innerHTML = Object.entries(activeModelWeights).map(([key,value])=>weightControlHtml(key,value,'main')).join('');bindWeightControls(wrap);}
+  const side=$('#sidebarF5Weights');
+  if(side && !side.children.length){side.innerHTML=Object.entries(activeModelWeights).map(([key,value])=>weightControlHtml(key,value,'sidebar')).join('');bindWeightControls(side);}
+  updateWeightControls();
+}
+function updateWeightControls(){
+  for(const key of Object.keys(DEFAULT_MODEL_WEIGHTS)){
+    const value=clampModelWeight(activeModelWeights[key]);
+    $$(`input[data-weight="${key}"]`).forEach(input=>{if(document.activeElement!==input) input.value=value;});
+    $$(`input[data-weight-number="${key}"]`).forEach(input=>{if(document.activeElement!==input) input.value=value;});
+    $$(`[data-weight-track="${key}"]`).forEach(track=>track.style.width=`${value}%`);
+  }
+  const total = modelWeightTotal();
+  const valid = modelWeightsValid();
+  [$('#weightTotal'),$('#sidebarWeightTotal')].filter(Boolean).forEach(totalEl=>{totalEl.innerHTML = `<strong class="${valid?'weight-ok':'weight-warning'}">${total.toFixed(0)}% total weight</strong><small>${modelAutoBalance?'Auto-balance is on — every move stays at 100%.':valid?'Ready to run.':'Adjust manually or press Normalize.'}</small>`;});
+  [$('#runF5Model'),$('#sidebarRunF5Model')].filter(Boolean).forEach(run=>{run.disabled = !valid || f5ModelRunning; run.textContent = f5ModelRunning ? 'Running Model…' : 'Run My F5 Model';});
+  const auto=$('#modelAutoBalance'); if(auto) auto.checked=modelAutoBalance;
+}
+function modelPct(value){return Number.isFinite(Number(value))?`${Number(value).toFixed(1)}%`:'—';}
+function modelSignedPct(value){if(!Number.isFinite(Number(value)))return '—';const n=Number(value);return `${n>=0?'+':''}${n.toFixed(1)}%`;}
+function factorRowHtml(factor){
+  const available = factor.available && Number.isFinite(Number(factor.score));
+  return `<div class="model-factor-row ${available?'':'factor-unavailable'}">
+    <div class="model-factor-copy"><strong>${factor.label}</strong><span>${factor.detail||''}</span></div>
+    <div class="model-factor-score"><small>Score</small><b>${available?modelPct(factor.score):'Pending'}</b></div>
+    <div class="model-factor-score"><small>Weight</small><b>${Number(factor.configuredWeight||0).toFixed(0)}%</b></div>
+    <div class="model-factor-score"><small>Effective</small><b>${available?`${Number(factor.effectiveWeight||0).toFixed(1)}%`:'—'}</b></div>
+    <div class="model-factor-score contribution"><small>Contribution</small><b>${available?Number(factor.contribution||0).toFixed(1):'—'}</b></div>
+  </div>`;
+}
+function modelCardHtml(row,index){
+  const positive = Number(row.edge)>0;
+  const edgeClass = !Number.isFinite(Number(row.edge)) ? 'neutral' : positive ? 'positive' : 'negative';
+  const status = row.official ? '<span class="model-status official">Official</span>' : '<span class="model-status research">Research</span>';
+  return `<article class="custom-model-result-card">
+    <div class="model-rank">#${index+1}</div>
+    <div class="model-result-main">
+      <div class="model-result-title"><div>${status}<h3>${row.rawPick}</h3><p>${row.team}${row.opponent?` @/vs ${row.opponent}`:''}${row.starter?` • ${row.starter}`:''}</p></div><span class="coverage-pill">${row.dataCoverage}% data coverage</span></div>
+      <div class="model-metrics-grid">
+        <div><small>Weighted Win Estimate</small><strong>${modelPct(row.modelProbability)}</strong></div>
+        <div><small>Market Implied</small><strong>${modelPct(row.marketProbability)}</strong></div>
+        <div class="edge-metric ${edgeClass}"><small>Estimated Edge</small><strong>${modelSignedPct(row.edge)}</strong></div>
+        <div><small>Listed Odds</small><strong>${row.odds==null?'—':`${Number(row.odds)>0?'+':''}${row.odds}`}</strong></div>
+      </div>
+      <details class="model-factor-details"><summary>See how your weights built this result</summary><div class="model-factor-grid">${row.factors.map(factorRowHtml).join('')}</div></details>
+    </div>
+  </article>`;
+}
+function compactModelResultHtml(row,index){
+  const edgeClass=Number(row.edge)>0?'positive':Number(row.edge)<0?'negative':'neutral';
+  return `<button class="sidebar-result-card" type="button" data-open-model-result="${index}"><span class="sidebar-result-rank">#${index+1}</span><span class="sidebar-result-copy"><strong>${row.rawPick}</strong><small>${modelPct(row.modelProbability)} model • ${modelPct(row.marketProbability)} market</small></span><span class="sidebar-edge ${edgeClass}">${modelSignedPct(row.edge)}</span></button>`;
+}
+function renderSidebarModelResults(){
+  const board=$('#sidebarModelResults'); if(!board) return;
+  const rows=Array.isArray(lastF5ModelResult?.rows)?lastF5ModelResult.rows:[];
+  if(!rows.length){board.innerHTML='<div class="model-empty-state compact"><strong>Ready when you are.</strong><p>Adjust the weights and run your personal F5 board from anywhere in Sports Edge.</p></div>';return;}
+  board.innerHTML=`<div class="sidebar-results-head"><strong>Top edges</strong><span>${lastF5ModelResult.date||''}</span></div>${rows.slice(0,4).map(compactModelResultHtml).join('')}`;
 }
 function renderCustomModelBoard(){
   const board = $('#customModelBoard');
-  if(!board) return;
-  const rows = modelEligiblePicks().map(p=>({p, custom: customScoreForPick(p)})).sort((a,b)=>b.custom-a.custom);
-  board.innerHTML = `<div class="model-board-table"><table><thead><tr><th>Pick</th><th>Default</th><th>Custom</th><th>Grade</th><th>Odds</th><th>Edge</th></tr></thead><tbody>${rows.map(({p,custom})=>`<tr><td><strong>${p.pick}</strong><br><small>${p.slate}</small></td><td>${Number(p.score).toFixed(2)}</td><td><strong>${custom.toFixed(2)}</strong></td><td><span class="pill ${gradeForScore(custom)==='GRADE A'?'status-WIN':gradeForScore(custom)==='PLAYABLE'?'status-ACTIVE':'status-UNGRADED'}">${gradeForScore(custom)}</span></td><td>${p.odds||'-'}</td><td><small>${p.edge||''}</small></td></tr>`).join('')}</tbody></table></div>`;
+  if(!board){renderSidebarModelResults();return;}
+  if(!lastF5ModelResult){
+    board.innerHTML = `<div class="model-empty-state"><strong>Build your own F5 board.</strong><p>Set your factors, then run the model. Sports Edge will recalculate the latest published F5 slate and compare your weighted estimate with the listed price.</p></div>`;
+    renderSidebarModelResults();
+    return;
+  }
+  const rows = Array.isArray(lastF5ModelResult.rows) ? lastF5ModelResult.rows : [];
+  const dateEl = $('#modelRunDate');
+  if(dateEl) dateEl.textContent = lastF5ModelResult.date ? `Slate: ${lastF5ModelResult.date}` : 'No F5 slate found';
+  if(!rows.length){
+    board.innerHTML = `<div class="model-empty-state"><strong>No tracked F5 markets found for this slate.</strong><p>Publish F5 plays with a verified line and odds, then run the model again.</p></div>`;
+    renderSidebarModelResults();
+    return;
+  }
+  board.innerHTML = `<div class="model-beta-note"><strong>Weighted empirical estimate</strong><span>Your slider weights drive every result below. Missing factor data is excluded and the remaining verified inputs are re-normalized. This is not yet a statistically calibrated probability model.</span></div><div class="custom-model-results">${rows.map(modelCardHtml).join('')}</div>`;
+  renderSidebarModelResults();
+}
+async function runCustomF5Model(){
+  if(f5ModelRunning || !modelWeightsValid()) return;
+  f5ModelRunning = true; updateWeightControls();
+  const board = $('#customModelBoard');
+  const side=$('#sidebarModelResults');
+  if(board) board.innerHTML = `<div class="model-loading-state"><span></span><strong>Running your F5 model…</strong><p>Reading verified F5 history, starter context, matchup history and current market price.</p></div>`;
+  if(side) side.innerHTML='<div class="model-loading-state compact"><span></span><strong>Recalculating…</strong></div>';
+  try{
+    const response = await fetch('/api/f5-model',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({weights:activeModelWeights})});
+    const data = await response.json().catch(()=>null);
+    if(!response.ok || !data?.ok) throw new Error(data?.error || `Model request failed (${response.status}).`);
+    lastF5ModelResult = data;
+    renderCustomModelBoard();
+  }catch(error){
+    if(board) board.innerHTML = `<div class="model-error-state"><strong>Model run could not complete.</strong><p>${String(error?.message||error)}</p></div>`;
+    if(side) side.innerHTML=`<div class="model-error-state compact"><strong>Could not run model.</strong><p>${String(error?.message||error)}</p></div>`;
+  }finally{
+    f5ModelRunning = false; updateWeightControls();
+  }
+}
+function setModelSidebarOpen(open){
+  const sidebar=$('#modelLabSidebar'), backdrop=$('#modelSidebarBackdrop'), launcher=$('#modelLabLauncher');
+  if(!sidebar||!backdrop||!launcher) return;
+  sidebar.classList.toggle('open',open);backdrop.classList.toggle('open',open);
+  sidebar.setAttribute('aria-hidden',open?'false':'true');backdrop.setAttribute('aria-hidden',open?'false':'true');launcher.setAttribute('aria-expanded',open?'true':'false');
+  document.body.classList.toggle('model-sidebar-open',open);
+  if(open){renderWeights();renderSidebarModelResults();}
+}
+function updateModelSidebarAccess(){
+  const launcher=$('#modelLabLauncher'); if(!launcher) return;
+  launcher.classList.toggle('locked',!isModelUnlocked());
+  const small=launcher.querySelector('small'); if(small) small.textContent=isModelUnlocked()?'Customize F5 weights':'Unlock in Model Center';
+}
+function initModelSidebar(){
+  const launcher=$('#modelLabLauncher'), close=$('#closeModelSidebar'), backdrop=$('#modelSidebarBackdrop'), full=$('#openFullModelLab');
+  launcher?.addEventListener('click',()=>{if(!isModelUnlocked()){showPage('models');return;}setModelSidebarOpen(true);});
+  close?.addEventListener('click',()=>setModelSidebarOpen(false));backdrop?.addEventListener('click',()=>setModelSidebarOpen(false));
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')setModelSidebarOpen(false);});
+  full?.addEventListener('click',()=>{setModelSidebarOpen(false);showPage('models');setTimeout(()=>$('#modelLab')?.scrollIntoView({behavior:'smooth',block:'start'}),80);});
+  $('#sidebarRunF5Model')?.addEventListener('click',runCustomF5Model);
+  $('#sidebarResetWeights')?.addEventListener('click',()=>{activeModelWeights={...DEFAULT_MODEL_WEIGHTS};saveModelWeights();updateWeightControls();});
+  $('#normalizeSidebarWeights')?.addEventListener('click',normalizeActiveModelWeights);
+  $('#modelAutoBalance')?.addEventListener('change',event=>{modelAutoBalance=Boolean(event.target.checked);localStorage.setItem(MODEL_AUTOBALANCE_STORAGE_KEY,modelAutoBalance?'yes':'no');if(modelAutoBalance)normalizeActiveModelWeights();else updateWeightControls();});
+  $$('.model-sidebar-presets [data-model-preset]').forEach(button=>button.addEventListener('click',()=>applyModelPreset(button.dataset.modelPreset)));
+  $('#sidebarModelResults')?.addEventListener('click',event=>{const card=event.target.closest('[data-open-model-result]');if(!card)return;setModelSidebarOpen(false);showPage('models');setTimeout(()=>$('#customModelBoard')?.scrollIntoView({behavior:'smooth',block:'start'}),80);});
+  updateModelSidebarAccess();renderWeights();
 }
 function initPremiumModelCenter(){
   const unlock = $('#unlockModelDemo');
   const lock = $('#lockModelDemo');
   const reset = $('#resetWeights');
+  const run = $('#runF5Model');
   if(unlock) unlock.addEventListener('click',()=>setModelUnlocked(true));
   if(lock) lock.addEventListener('click',()=>setModelUnlocked(false));
-  if(reset) reset.addEventListener('click',()=>{activeModelWeights={...DEFAULT_MODEL_WEIGHTS}; renderWeights(); renderCustomModelBoard();});
+  if(reset) reset.addEventListener('click',()=>{activeModelWeights={...DEFAULT_MODEL_WEIGHTS}; saveModelWeights(); lastF5ModelResult=null; renderWeights(); renderCustomModelBoard();});
+  if(run) run.addEventListener('click',runCustomF5Model);
   renderModelAccess();
+  initModelSidebar();
 }
 
 
@@ -1865,17 +2072,23 @@ function showPage(page){
 $$('.nav,.jump').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
 
 function verifiedStatusForPick(p){
+  const canonical = String(p?.result || p?.status || '').toUpperCase();
+  if(['WIN','LOSS','PUSH','VOID'].includes(canonical)) return canonical;
   const apiStatus = apiStatusForPick(p);
   if(apiStatus) return apiStatus;
-  const raw = String(p.status || '').toUpperCase();
-  if(raw === 'LIVE' || raw === 'PENDING' || raw === 'ACTIVE') return 'ACTIVE';
+  if(canonical === 'LIVE' || canonical === 'PENDING' || canonical === 'ACTIVE') return 'ACTIVE';
   return null;
 }
 function verificationNoteForPick(p){
+  const canonical = String(p?.result || p?.status || '').toUpperCase();
+  if(['WIN','LOSS','PUSH','VOID'].includes(canonical)){
+    const source = p?.gamePk ? 'Verified from the official MLB game result.' : 'Verified by Sports Edge grading.';
+    return `${source}${p?.gradeReason ? ` ${String(p.gradeReason).replace(/_/g,' ').toLowerCase()}.` : ''}`;
+  }
   const apiNote = apiVerificationNoteForPick(p);
   if(apiNote) return apiNote;
   const d = dateKey(parseSlateDate(p?.slate || ''));
-  return `API verification pending for ${d}. This pick will display WIN, LOSS, PUSH, or UNVERIFIED after /api/grade-picks returns an official MLB result.`;
+  return `Verification pending for ${d}.`;
 }
 function statusDisplayName(st){
   if(st === 'UNVERIFIED') return 'API Pending';
