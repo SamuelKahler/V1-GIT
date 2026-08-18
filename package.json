@@ -1,6 +1,6 @@
 {
   "name": "sports-edge",
-  "version": "26.0.0",
+  "version": "27.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -26,6 +26,7 @@
     "validate:daily-sync-v1": "node scripts/validate-daily-sync-v1.mjs",
     "validate:daily-operations-v1": "node scripts/validate-daily-operations-v1.mjs",
     "validate:admin-pick-entry-v1": "node scripts/validate-admin-pick-entry-v1.mjs",
-    "validate:f5-model-v1a": "node scripts/validate-f5-model-v1a.mjs"
+    "validate:f5-model-v1a": "node scripts/validate-f5-model-v1a.mjs",
+    "validate:f5-model-v1b": "node scripts/validate-f5-model-v1b.mjs"
   }
 }
