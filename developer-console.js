@@ -5,8 +5,11 @@
   const LOCAL_KEY = 'sports-edge-mlb-admin-token-remembered';
   const API_PATH = '/api/mlb';
   const PICKS_API_PATH = '/api/admin-picks';
+  const F5_SLATE_API_PATH = '/api/admin-f5-slate';
   let lastPickPreviewText = '';
   let lastPickPreviewCount = 0;
+  let lastF5SlatePreviewText = '';
+  let lastF5SlatePreviewCount = 0;
   let stopBackfillRequested = false;
 
   const byId = (id) => document.getElementById(id);
@@ -141,6 +144,56 @@
     renderPickPreview((result.rows || []).map(row => ({...row, pick: row.raw_pick, official: row.has_explicit_units})));
   }
 
+
+
+  async function f5SlateRequest(action, text = '', method = 'POST') {
+    const adminToken = token();
+    if (!adminToken) throw new Error('Developer Console is locked.');
+    const options = { method, cache: 'no-store', headers: { 'x-sports-edge-admin-token': adminToken } };
+    let url = F5_SLATE_API_PATH;
+    if (method === 'GET') url += '?limit=20';
+    else { options.headers['Content-Type'] = 'application/json'; options.body = JSON.stringify({ action, text }); }
+    const response = await fetch(url, options);
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.ok) throw new Error(data?.error || `Request failed (${response.status}).`);
+    return data;
+  }
+
+  function renderF5SlatePreview(rows = [], warnings = []) {
+    const target = byId('f5SlatePreview');
+    if (!target) return;
+    const warningHtml = warnings.length ? `<div class="dev-note">${warnings.join('<br>')}</div>` : '';
+    if (!rows.length) { target.innerHTML = warningHtml || '<div class="dev-note">No F5 slate to show.</div>'; return; }
+    target.innerHTML = warningHtml + rows.map(row => {
+      const markets = (row.markets || []).map(m => `${m.team} ${m.line > 0 ? '+' : ''}${m.line} ${m.odds > 0 ? '+' : ''}${m.odds}`).join(' • ');
+      return `<div class="pick-preview-row"><strong>${row.date || '—'}</strong><span>${row.game}</span><span>${row.awayStarter || 'Starter —'} vs ${row.homeStarter || 'Starter —'}</span><span>${markets || 'No recognized F5 price'}</span><span>${row.venue || 'Venue —'}</span></div>`;
+    }).join('');
+  }
+
+  async function previewF5Slate() {
+    const button = byId('previewF5Slate');
+    const text = byId('f5SlateText').value.trim();
+    const result = await runButton(button, 'F5 slate preview', () => f5SlateRequest('preview', text));
+    lastF5SlatePreviewText = text; lastF5SlatePreviewCount = result.count || 0;
+    renderF5SlatePreview(result.preview || [], result.warnings || []);
+    byId('publishF5Slate').disabled = !lastF5SlatePreviewCount;
+  }
+
+  async function publishF5Slate() {
+    const button = byId('publishF5Slate');
+    const text = byId('f5SlateText').value.trim();
+    if (!lastF5SlatePreviewCount || text !== lastF5SlatePreviewText) { log('F5 slate publish blocked', 'Preview the current slate before publishing.'); return; }
+    const result = await runButton(button, 'Publish F5 slate', () => f5SlateRequest('publish', text));
+    renderF5SlatePreview(result.preview || [], result.warnings || []);
+    log('Published F5 model slate', `${result.date} | ${result.count || 0} games`);
+  }
+
+  async function refreshF5Slates() {
+    const button = byId('refreshF5Slates');
+    const result = await runButton(button, 'Recent F5 slates', () => f5SlateRequest('', '', 'GET'));
+    const rows = (result.rows || []).flatMap(row => (row.games || []).map(g => ({date:row.slate_date,game:`${g.away} @ ${g.home}`,awayStarter:g.awayStarter,homeStarter:g.homeStarter,venue:g.venue,markets:g.sides || []})));
+    renderF5SlatePreview(rows, []);
+  }
 
   function metric(label, value) {
     return `<div class="dev-metric"><strong>${value ?? '—'}</strong><span>${label}</span></div>`;
@@ -323,6 +376,11 @@
   byId('publishPicks').addEventListener('click', publishPicks);
   byId('refreshPublishedPicks').addEventListener('click', refreshPublishedPicks);
   byId('pickEntryText').addEventListener('input', () => { lastPickPreviewText = ''; lastPickPreviewCount = 0; byId('publishPicks').disabled = true; });
+  byId('previewF5Slate')?.addEventListener('click', previewF5Slate);
+  byId('publishF5Slate')?.addEventListener('click', publishF5Slate);
+  byId('refreshF5Slates')?.addEventListener('click', refreshF5Slates);
+  byId('f5SlateText')?.addEventListener('input', () => { lastF5SlatePreviewText = ''; lastF5SlatePreviewCount = 0; if (byId('publishF5Slate')) byId('publishF5Slate').disabled = true; });
+
   document.querySelector('[data-action="status"]').addEventListener('click', refreshHealth);
   document.querySelector('[data-action="audit"]').addEventListener('click', runAudit);
 

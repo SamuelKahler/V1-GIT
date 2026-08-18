@@ -1502,59 +1502,32 @@ function renderSeries(){
 
 
 const DEFAULT_MODEL_WEIGHTS = {
-  starter_history: 25,
-  opponent_early_offense: 15,
-  team_f5_split: 15,
-  recent_f5_form: 15,
-  matchup_history: 10,
-  situation_match: 10,
-  rest_location: 5,
-  market_baseline: 5
+  sp_edge: 30,
+  opponent_run_suppression: 15,
+  f5_splits: 12,
+  park_weather: 10,
+  lineup_strength_certainty: 13,
+  travel_rest: 5,
+  market_inefficiency: 10,
+  home_plate_umpire: 5
 };
 const MODEL_FACTOR_LABELS = {
-  starter_history: 'Starting Pitcher History',
-  opponent_early_offense: 'Opponent Early Offense',
-  team_f5_split: 'Team F5 Split',
-  recent_f5_form: 'Recent F5 Form',
-  matchup_history: 'Matchup History',
-  situation_match: 'Situation Match',
-  rest_location: 'Rest / Location',
-  market_baseline: 'Market Baseline'
+  sp_edge: 'SP Edge',
+  opponent_run_suppression: 'Opponent Run Suppression',
+  f5_splits: 'F5 Splits',
+  park_weather: 'Park & Weather',
+  lineup_strength_certainty: 'Lineup Strength & Certainty',
+  travel_rest: 'Travel & Rest',
+  market_inefficiency: 'Market Inefficiency',
+  home_plate_umpire: 'Home Plate Umpire'
 };
-const MODEL_WEIGHT_STORAGE_KEY = 'sportsEdgeCustomF5WeightsV1B';
+const MODEL_WEIGHT_STORAGE_KEY = 'sportsEdgeCanonicalF5PromptWeightsV1';
 const MODEL_AUTOBALANCE_STORAGE_KEY = 'sportsEdgeModelAutoBalanceV1B';
 const MODEL_PRESETS = {
   balanced: {...DEFAULT_MODEL_WEIGHTS},
-  pitching: {
-    starter_history: 45,
-    opponent_early_offense: 10,
-    team_f5_split: 10,
-    recent_f5_form: 10,
-    matchup_history: 10,
-    situation_match: 5,
-    rest_location: 5,
-    market_baseline: 5
-  },
-  form: {
-    starter_history: 20,
-    opponent_early_offense: 25,
-    team_f5_split: 15,
-    recent_f5_form: 25,
-    matchup_history: 5,
-    situation_match: 5,
-    rest_location: 3,
-    market_baseline: 2
-  },
-  market: {
-    starter_history: 20,
-    opponent_early_offense: 10,
-    team_f5_split: 10,
-    recent_f5_form: 10,
-    matchup_history: 10,
-    situation_match: 10,
-    rest_location: 5,
-    market_baseline: 25
-  }
+  pitching: {sp_edge:45,opponent_run_suppression:12,f5_splits:10,park_weather:7,lineup_strength_certainty:10,travel_rest:4,market_inefficiency:8,home_plate_umpire:4},
+  form: {sp_edge:24,opponent_run_suppression:20,f5_splits:20,park_weather:8,lineup_strength_certainty:13,travel_rest:5,market_inefficiency:7,home_plate_umpire:3},
+  market: {sp_edge:25,opponent_run_suppression:12,f5_splits:10,park_weather:8,lineup_strength_certainty:10,travel_rest:5,market_inefficiency:25,home_plate_umpire:5}
 };
 function loadStoredModelWeights(){
   try{
@@ -1671,116 +1644,83 @@ function updateWeightControls(){
   const total = modelWeightTotal();
   const valid = modelWeightsValid();
   [$('#weightTotal'),$('#sidebarWeightTotal')].filter(Boolean).forEach(totalEl=>{totalEl.innerHTML = `<strong class="${valid?'weight-ok':'weight-warning'}">${total.toFixed(0)}% total weight</strong><small>${modelAutoBalance?'Auto-balance is on — every move stays at 100%.':valid?'Ready to run.':'Adjust manually or press Normalize.'}</small>`;});
-  [$('#runF5Model'),$('#sidebarRunF5Model')].filter(Boolean).forEach(run=>{run.disabled = !valid || f5ModelRunning; run.textContent = f5ModelRunning ? 'Running Model…' : 'Run My F5 Model';});
+  [$('#runF5Model'),$('#sidebarRunF5Model')].filter(Boolean).forEach(run=>{run.disabled = !valid || f5ModelRunning; run.textContent = f5ModelRunning ? 'Running Full Slate…' : 'Run My F5 Prompt';});
   const auto=$('#modelAutoBalance'); if(auto) auto.checked=modelAutoBalance;
 }
 function modelPct(value){return Number.isFinite(Number(value))?`${Number(value).toFixed(1)}%`:'—';}
 function modelSignedPct(value){if(!Number.isFinite(Number(value)))return '—';const n=Number(value);return `${n>=0?'+':''}${n.toFixed(1)}%`;}
-function factorRowHtml(factor){
-  const available = factor.available && Number.isFinite(Number(factor.score));
-  return `<div class="model-factor-row ${available?'':'factor-unavailable'}">
-    <div class="model-factor-copy"><strong>${factor.label}</strong><span>${factor.detail||''}</span></div>
-    <div class="model-factor-score"><small>Score</small><b>${available?modelPct(factor.score):'Pending'}</b></div>
-    <div class="model-factor-score"><small>Weight</small><b>${Number(factor.configuredWeight||0).toFixed(0)}%</b></div>
-    <div class="model-factor-score"><small>Effective</small><b>${available?`${Number(factor.effectiveWeight||0).toFixed(1)}%`:'—'}</b></div>
-    <div class="model-factor-score contribution"><small>Contribution</small><b>${available?Number(factor.contribution||0).toFixed(1):'—'}</b></div>
-  </div>`;
+function promptScore(value){return Number.isFinite(Number(value))?`${Number(value).toFixed(1)} / 10`:'—';}
+function runtimePickLabel(row){
+  if(!row?.selectedTeam) return `${row?.away||''} @ ${row?.home||''} — No Play`;
+  const line=Number(row.selectedLine);
+  return `F5 ${row.selectedTeam} ${Number.isFinite(line)?`${line>0?'+':''}${line}`:''}`.trim();
 }
-function modelAnalystKey(row){return String(row?.pickId || row?.rawPick || '').trim();}
-function analystQuestionLabel(question){
-  const q=String(question||'').trim();
-  if(q==='weights') return 'What changed because of my weights?';
-  if(q==='risk') return 'What is the biggest risk?';
-  if(q==='sensitivity') return 'Which weight would change this result most?';
-  return 'Why does this rank here?';
-}
-function aiAnalystPanelHtml(row,index){
-  const key=modelAnalystKey(row);
-  const state=aiAnalystState.get(key)||{};
-  const loading=aiAnalystLoadingKey===key;
-  const body=loading
-    ? '<div class="model-ai-loading"><span></span><strong>AI Analyst is reading your model…</strong></div>'
-    : state.error
-      ? `<div class="model-ai-error"><strong>AI Analyst could not complete.</strong><span>${escapeHtml(state.error)}</span></div>`
-      : state.analysis
-        ? `<div class="model-ai-response"><div class="model-ai-response-head"><span>AI ANALYST</span><strong>${escapeHtml(state.title||'Model explanation')}</strong></div><p>${escapeHtml(state.analysis).replace(/\n/g,'<br>')}</p><small>${escapeHtml(state.disclaimer||'Explanation is based only on the verified model inputs shown above.')}</small></div>`
-        : '<div class="model-ai-empty"><strong>Ask why your model sees an edge.</strong><span>The analyst explains the deterministic Sports Edge result. It does not invent a new pick.</span></div>';
-  return `<div class="model-ai-analyst" data-ai-panel-index="${index}">
-    <div class="model-ai-actions">
-      <button type="button" data-ai-analyze-index="${index}" data-ai-question="why">Why this rank?</button>
-      <button type="button" data-ai-analyze-index="${index}" data-ai-question="weights">My weights</button>
-      <button type="button" data-ai-analyze-index="${index}" data-ai-question="risk">Biggest risk</button>
-      <button type="button" data-ai-analyze-index="${index}" data-ai-question="sensitivity">Most sensitive weight</button>
-    </div>${body}
-  </div>`;
+function promptFactorRows(row){
+  const scores=row?.categoryScores||{}, rationales=row?.rationales||{};
+  return Object.keys(DEFAULT_MODEL_WEIGHTS).map(key=>`<div class="model-factor-row">
+    <div class="model-factor-copy"><strong>${MODEL_FACTOR_LABELS[key]}</strong><span>${escapeHtml(rationales[key]||'No additional rationale returned.')}</span></div>
+    <div class="model-factor-score"><small>Score</small><b>${promptScore(scores[key])}</b></div>
+    <div class="model-factor-score"><small>Your Weight</small><b>${Number(activeModelWeights[key]||0).toFixed(0)}%</b></div>
+  </div>`).join('');
 }
 function modelCardHtml(row,index){
-  const positive = Number(row.edge)>0;
-  const edgeClass = !Number.isFinite(Number(row.edge)) ? 'neutral' : positive ? 'positive' : 'negative';
-  const status = row.official ? '<span class="model-status official">Official</span>' : '<span class="model-status research">Research</span>';
-  return `<article class="custom-model-result-card" data-model-result-index="${index}">
-    <div class="model-rank">#${index+1}</div>
+  const top=row.decision==='TOP_PLAY';
+  const edgeClass=Number(row.edge)>0?'positive':Number(row.edge)<0?'negative':'neutral';
+  const sources=(row.sources||[]).filter(x=>x?.url).slice(0,6);
+  return `<article class="custom-model-result-card ${top?'top-play-card':'passed-card'}" data-model-result-index="${index}">
+    <div class="model-rank">${top?`#${(lastF5ModelResult?.topPlays||[]).findIndex(x=>x.id===row.id)+1}`:'—'}</div>
     <div class="model-result-main">
-      <div class="model-result-title"><div>${status}<h3>${row.rawPick}</h3><p>${row.team}${row.opponent?` @/vs ${row.opponent}`:''}${row.starter?` • ${row.starter}`:''}</p></div><span class="coverage-pill">${row.dataCoverage}% data coverage</span></div>
+      <div class="model-result-title"><div><span class="model-status ${top?'official':'research'}">${top?'TOP PLAY':row.decision.replace('_',' ')}</span><h3>${runtimePickLabel(row)}</h3><p>${row.away} @ ${row.home}${row.venue?` • ${row.venue}`:''}${row.firstPitch?` • ${row.firstPitch}`:''}</p></div><span class="coverage-pill">FMS ${row.finalModelScore==null?'—':Number(row.finalModelScore).toFixed(2)}</span></div>
       <div class="model-metrics-grid">
-        <div><small>Weighted Win Estimate</small><strong>${modelPct(row.modelProbability)}</strong></div>
-        <div><small>Market Implied</small><strong>${modelPct(row.marketProbability)}</strong></div>
-        <div class="edge-metric ${edgeClass}"><small>Estimated Edge</small><strong>${modelSignedPct(row.edge)}</strong></div>
-        <div><small>Listed Odds</small><strong>${row.odds==null?'—':`${Number(row.odds)>0?'+':''}${row.odds}`}</strong></div>
+        <div><small>Projected F5</small><strong>${modelPct(row.projectedF5Pct)}</strong></div>
+        <div><small>Market Implied</small><strong>${modelPct(row.impliedPct)}</strong></div>
+        <div class="edge-metric ${edgeClass}"><small>Expected Edge</small><strong>${modelSignedPct(row.edge)}</strong></div>
+        <div><small>Listed Price</small><strong>${row.price==null?'—':`${Number(row.price)>0?'+':''}${row.price}`}</strong></div>
       </div>
-      <details class="model-factor-details"><summary>See how your weights built this result</summary><div class="model-factor-grid">${row.factors.map(factorRowHtml).join('')}</div></details>
-      ${aiAnalystPanelHtml(row,index)}
+      <div class="model-runtime-decision"><strong>${top?'Qualified by your model':'Why it did not qualify'}</strong><span>${escapeHtml(row.qualificationReason||'')}</span>${top?`<b>${Number(row.suggestedUnits||0).toFixed(2)}U suggested</b>`:''}</div>
+      <details class="model-factor-details" ${top?'open':''}><summary>See all 8 category scores</summary><div class="model-factor-grid">${promptFactorRows(row)}</div></details>
+      ${(row.weatherReason||row.volatilityReason||row.lineupRisk)?`<div class="model-runtime-notes">${row.weatherReason?`<span><b>Weather:</b> ${escapeHtml(row.weatherReason)}</span>`:''}${row.volatilityReason?`<span><b>SP volatility:</b> ${escapeHtml(row.volatilityReason)}</span>`:''}${row.lineupRisk?`<span><b>Lineup:</b> ${escapeHtml(row.lineupRisk)}</span>`:''}</div>`:''}
+      ${sources.length?`<details class="model-source-list"><summary>Research sources</summary>${sources.map(x=>`<a href="${escapeHtml(x.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.title||x.url)}</a>`).join('')}</details>`:''}
     </div>
   </article>`;
 }
 function compactModelResultHtml(row,index){
   const edgeClass=Number(row.edge)>0?'positive':Number(row.edge)<0?'negative':'neutral';
-  return `<button class="sidebar-result-card" type="button" data-open-model-result="${index}"><span class="sidebar-result-rank">#${index+1}</span><span class="sidebar-result-copy"><strong>${row.rawPick}</strong><small>${modelPct(row.modelProbability)} model • ${modelPct(row.marketProbability)} market</small></span><span class="sidebar-edge ${edgeClass}">${modelSignedPct(row.edge)}</span></button>`;
+  return `<button class="sidebar-result-card" type="button" data-open-model-result="${index}"><span class="sidebar-result-rank">#${index+1}</span><span class="sidebar-result-copy"><strong>${runtimePickLabel(row)}</strong><small>${modelPct(row.projectedF5Pct)} projected • ${modelPct(row.impliedPct)} market</small></span><span class="sidebar-edge ${edgeClass}">${modelSignedPct(row.edge)}</span></button>`;
 }
 function renderSidebarModelResults(){
   const board=$('#sidebarModelResults'); if(!board) return;
-  const rows=Array.isArray(lastF5ModelResult?.rows)?lastF5ModelResult.rows:[];
-  if(!rows.length){board.innerHTML='<div class="model-empty-state compact"><strong>Ready when you are.</strong><p>Adjust the weights and run your personal F5 board from anywhere in Sports Edge.</p></div>';return;}
-  board.innerHTML=`<div class="sidebar-results-head"><strong>Top edges</strong><span>${lastF5ModelResult.date||''}</span></div>${rows.slice(0,4).map(compactModelResultHtml).join('')}<button id="sidebarAnalyzeTop" class="sidebar-ai-top" type="button">Ask AI why #1 ranks first</button>`; $('#sidebarAnalyzeTop')?.addEventListener('click',()=>{setModelSidebarOpen(false);showPage('models');setTimeout(()=>{runAiAnalyst(0,'why');$('#customModelBoard')?.scrollIntoView({behavior:'smooth',block:'start'});},80);});
+  const rows=Array.isArray(lastF5ModelResult?.topPlays)?lastF5ModelResult.topPlays:[];
+  if(!rows.length){board.innerHTML='<div class="model-empty-state compact"><strong>No qualifying Top Play yet.</strong><p>Adjust your eight prompt weights and rerun the complete F5 slate.</p></div>';return;}
+  board.innerHTML=`<div class="sidebar-results-head"><strong>Your Top Plays</strong><span>${lastF5ModelResult.date||''}</span></div>${rows.slice(0,4).map(compactModelResultHtml).join('')}`;
 }
 function renderCustomModelBoard(){
-  const board = $('#customModelBoard');
-  if(!board){renderSidebarModelResults();return;}
-  if(!lastF5ModelResult){
-    board.innerHTML = `<div class="model-empty-state"><strong>Build your own F5 board.</strong><p>Set your factors, then run the model. Sports Edge will recalculate the latest published F5 slate and compare your weighted estimate with the listed price.</p></div>`;
-    renderSidebarModelResults();
-    return;
-  }
-  const rows = Array.isArray(lastF5ModelResult.rows) ? lastF5ModelResult.rows : [];
-  const dateEl = $('#modelRunDate');
-  if(dateEl) dateEl.textContent = lastF5ModelResult.date ? `Slate: ${lastF5ModelResult.date}` : 'No F5 slate found';
-  if(!rows.length){
-    board.innerHTML = `<div class="model-empty-state"><strong>No tracked F5 markets found for this slate.</strong><p>Publish F5 plays with a verified line and odds, then run the model again.</p></div>`;
-    renderSidebarModelResults();
-    return;
-  }
-  board.innerHTML = `<div class="model-beta-note"><strong>Weighted empirical estimate</strong><span>Your slider weights drive every result below. Missing factor data is excluded and the remaining verified inputs are re-normalized. This is not yet a statistically calibrated probability model.</span></div><div class="custom-model-results">${rows.map(modelCardHtml).join('')}</div>`;
+  const board=$('#customModelBoard'); if(!board){renderSidebarModelResults();return;}
+  if(!lastF5ModelResult){board.innerHTML='<div class="model-empty-state"><strong>Run your version of the Sports Edge F5 prompt.</strong><p>Your weights control the eight canonical categories. Sports Edge AI researches the complete published slate, then code independently applies every price, score and edge gate.</p></div>';renderSidebarModelResults();return;}
+  const top=Array.isArray(lastF5ModelResult.topPlays)?lastF5ModelResult.topPlays:[];
+  const passed=Array.isArray(lastF5ModelResult.passed)?lastF5ModelResult.passed:[];
+  const dateEl=$('#modelRunDate'); if(dateEl)dateEl.textContent=lastF5ModelResult.date?`Slate: ${lastF5ModelResult.date}`:'No F5 slate found';
+  board.innerHTML=`<div class="model-beta-note"><strong>Your canonical F5 prompt — your weights</strong><span>AI researches and scores the eight categories. Sports Edge code independently calculates FMS, implied probability, expected edge, price disqualifications, probability caps and Top Play gates.</span></div>
+    <div class="model-runtime-summary"><div><small>Games Scored</small><strong>${(lastF5ModelResult.games||[]).length}</strong></div><div><small>Top Plays</small><strong>${top.length}</strong></div><div><small>AI Model</small><strong>${escapeHtml(lastF5ModelResult.model||'Configured model')}</strong></div></div>
+    ${top.length?`<h3 class="model-section-heading">Top Plays — ranked by Expected Edge</h3><div class="custom-model-results">${top.map(modelCardHtml).join('')}</div>`:'<div class="model-empty-state"><strong>No game cleared all three Top Play gates.</strong><p>The slate was still fully scored. Passed and fade candidates are below.</p></div>'}
+    <details class="model-passed-board"><summary>Passed / Fade candidates (${passed.length})</summary><div class="custom-model-results">${passed.map(modelCardHtml).join('')}</div></details>`;
   renderSidebarModelResults();
 }
 async function runCustomF5Model(){
-  if(f5ModelRunning || !modelWeightsValid()) return;
-  f5ModelRunning = true; updateWeightControls();
-  const board = $('#customModelBoard');
-  const side=$('#sidebarModelResults');
-  if(board) board.innerHTML = `<div class="model-loading-state"><span></span><strong>Running your F5 model…</strong><p>Reading verified F5 history, starter context, matchup history and current market price.</p></div>`;
-  if(side) side.innerHTML='<div class="model-loading-state compact"><span></span><strong>Recalculating…</strong></div>';
+  if(f5ModelRunning||!modelWeightsValid())return;
+  f5ModelRunning=true;updateWeightControls();
+  const board=$('#customModelBoard'),side=$('#sidebarModelResults');
+  if(board)board.innerHTML='<div class="model-loading-state"><span></span><strong>Running your full F5 prompt…</strong><p>Researching the complete published slate, scoring eight categories, then enforcing Sports Edge hard rules.</p></div>';
+  if(side)side.innerHTML='<div class="model-loading-state compact"><span></span><strong>Researching slate…</strong></div>';
   try{
-    const response = await fetch('/api/f5-model',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({weights:activeModelWeights})});
-    const data = await response.json().catch(()=>null);
-    if(!response.ok || !data?.ok) throw new Error(data?.error || `Model request failed (${response.status}).`);
-    lastF5ModelResult = data;
-    renderCustomModelBoard();
+    const response=await fetch('/api/f5-prompt-runtime',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({weights:activeModelWeights})});
+    const data=await response.json().catch(()=>null);
+    if(!response.ok||!data?.ok)throw new Error(data?.error||`Model request failed (${response.status}).`);
+    lastF5ModelResult=data;renderCustomModelBoard();
   }catch(error){
-    if(board) board.innerHTML = `<div class="model-error-state"><strong>Model run could not complete.</strong><p>${String(error?.message||error)}</p></div>`;
-    if(side) side.innerHTML=`<div class="model-error-state compact"><strong>Could not run model.</strong><p>${String(error?.message||error)}</p></div>`;
-  }finally{
-    f5ModelRunning = false; updateWeightControls();
-  }
+    if(board)board.innerHTML=`<div class="model-error-state"><strong>Prompt run could not complete.</strong><p>${escapeHtml(String(error?.message||error))}</p></div>`;
+    if(side)side.innerHTML=`<div class="model-error-state compact"><strong>Could not run model.</strong><p>${escapeHtml(String(error?.message||error))}</p></div>`;
+  }finally{f5ModelRunning=false;updateWeightControls();}
 }
 async function runAiAnalyst(index,question='why'){
   const rows=Array.isArray(lastF5ModelResult?.rows)?lastF5ModelResult.rows:[];
