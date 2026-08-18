@@ -811,58 +811,40 @@
               </button>
             </div>
 
-            <h3>MLB F5 Run Line Weight Sliders</h3>
+            <h3>Build Your F5 Model</h3>
 
             <p>
-              Adjust the sliders to create a custom version
-              of the active model.
+              Decide what matters most. Every slider changes the math behind your personal F5 estimate.
             </p>
 
             <div id="f5Weights"></div>
             <div id="weightTotal" class="weight-total"></div>
 
-            <button id="resetWeights" class="secondary full">
-              Reset Default Weights
-            </button>
+            <div class="model-run-actions">
+              <button id="runF5Model" class="primary full">Run My F5 Model</button>
+              <button id="resetWeights" class="secondary full">Reset Balanced Weights</button>
+            </div>
           </article>
 
-          <article class="model-panel">
-            <span class="tag blue">Grade A Logic</span>
-            <h3>Current Qualification Rules</h3>
-
+          <article class="model-panel model-explainer-panel">
+            <span class="tag blue">Verified Inputs</span>
+            <h3>What Your Model Is Measuring</h3>
             <ul class="clean">
-              <li>
-                <strong>Grade A:</strong>
-                custom score 7.00 or higher.
-              </li>
-
-              <li>
-                <strong>Playable:</strong>
-                custom score 6.50 to 6.99.
-              </li>
-
-              <li>
-                <strong>Pass/Fade:</strong>
-                below 6.50 or price discipline fails.
-              </li>
-
-              <li>
-                <strong>Favorite odds cap:</strong>
-                avoid prices worse than -150.
-              </li>
+              <li><strong>Starter history:</strong> how this F5 line performed in prior starts by today's starter.</li>
+              <li><strong>F5 splits + recent form:</strong> verified first-five scores from the MLB backbone.</li>
+              <li><strong>Matchup + situation:</strong> opponent, location, rest and comparable game context.</li>
+              <li><strong>Market baseline:</strong> the implied probability of the price currently attached to the pick.</li>
             </ul>
+            <p class="model-integrity-note">Lineups, umpire data and unsupported inputs are intentionally not invented. They can be added only after a verified data feed is connected.</p>
           </article>
         </div>
 
         <div class="model-panel model-board-panel">
           <div class="section-head compact">
             <div>
-              <p class="eyebrow">Live Recalculation</p>
-              <h3>Custom Grade A Board</h3>
-
-              <p>
-                Re-ranked using the active model weights.
-              </p>
+              <p class="eyebrow">Your Model Output</p>
+              <h3>Custom F5 Edge Board</h3>
+              <p id="modelRunDate">Latest published F5 slate</p>
             </div>
           </div>
 
@@ -871,6 +853,51 @@
       </div>
     </section>
   </main>
+
+  <button id="modelLabLauncher" class="model-lab-launcher" type="button" aria-controls="modelLabSidebar" aria-expanded="false">
+    <span class="model-lab-launcher-dot"></span>
+    <span><strong>Model Lab</strong><small>Customize F5 weights</small></span>
+  </button>
+
+  <aside id="modelLabSidebar" class="model-lab-sidebar" aria-hidden="true">
+    <div class="model-lab-sidebar-head">
+      <div>
+        <p class="eyebrow">F5 Model Lab</p>
+        <h3>Your weights. Your board.</h3>
+      </div>
+      <button id="closeModelSidebar" class="model-sidebar-close" type="button" aria-label="Close Model Lab">×</button>
+    </div>
+
+    <div class="model-sidebar-presets" aria-label="Model presets">
+      <button type="button" data-model-preset="balanced">Balanced</button>
+      <button type="button" data-model-preset="pitching">Pitching Heavy</button>
+      <button type="button" data-model-preset="form">Form + Offense</button>
+      <button type="button" data-model-preset="market">Market Aware</button>
+    </div>
+
+    <div class="model-sidebar-toolbar">
+      <label class="model-auto-balance-toggle">
+        <input id="modelAutoBalance" type="checkbox" checked>
+        <span>Keep total at 100%</span>
+      </label>
+      <button id="normalizeSidebarWeights" class="model-mini-button" type="button">Normalize</button>
+    </div>
+
+    <div id="sidebarF5Weights" class="sidebar-f5-weights"></div>
+    <div id="sidebarWeightTotal" class="weight-total sidebar-weight-total"></div>
+
+    <div class="model-sidebar-actions">
+      <button id="sidebarRunF5Model" class="primary full" type="button">Run My F5 Model</button>
+      <button id="sidebarResetWeights" class="secondary full" type="button">Reset</button>
+    </div>
+
+    <div id="sidebarModelResults" class="sidebar-model-results">
+      <div class="model-empty-state compact"><strong>Ready when you are.</strong><p>Adjust the weights and run your personal F5 board from anywhere in Sports Edge.</p></div>
+    </div>
+
+    <button id="openFullModelLab" class="model-full-lab-link" type="button">Open full Model Center →</button>
+  </aside>
+  <div id="modelSidebarBackdrop" class="model-sidebar-backdrop" aria-hidden="true"></div>
 
   <div id="modal" class="modal hidden">
     <div class="modal-card">
