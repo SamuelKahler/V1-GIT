@@ -1,4 +1,5 @@
 import { loadRecentDailyPicks } from '../lib/mlb/daily-operations.js';
+import { requireAdmin } from '../lib/mlb/auth.js';
 const SCHEDULE_URL = 'https://statsapi.mlb.com/api/v1/schedule';
 const FEED_URL = 'https://statsapi.mlb.com/api/v1.1/game';
 
@@ -220,8 +221,8 @@ async function storedGrades(days=120){
   const start=new Date();
   start.setUTCDate(start.getUTCDate()-Math.max(1,Number(days)||120));
   const startDate=start.toISOString().slice(0,10);
-  const select='pick_id,game_pk,pick_date,selected_team,opponent,market,period,line,odds,result,grade_reason,resolution_confidence,environment,updated_at';
-  const endpoint=`${url}/rest/v1/pick_observations?select=${encodeURIComponent(select)}&pick_date=gte.${startDate}&pick_id=like.SRC-DAILYIMPORTPICKS-*&order=pick_date.asc`;
+  const select='pick_id,game_pk,pick_date,selected_team,opponent,market,period,line,odds,result,grade_reason,resolution_confidence,environment,source_record,updated_at';
+  const endpoint=`${url}/rest/v1/sports_edge_pick_grade_canonical?select=${encodeURIComponent(select)}&pick_date=gte.${startDate}&order=pick_date.asc`;
   const response=await fetch(endpoint,{headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json'}});
   if(!response.ok) throw new Error(`Stored grade fetch failed (${response.status}): ${await response.text()}`);
   const rows=await response.json();
@@ -236,6 +237,7 @@ async function storedGrades(days=120){
     period:row.period,
     line:row.line,
     odds:row.odds,
+    rawPick:row.source_record?.rawPick || row.source_record?.raw_pick || row.source_record?.pick || null,
     result:row.result,
     gradeReason:row.grade_reason,
     resolutionConfidence:row.resolution_confidence,
@@ -305,7 +307,9 @@ export default async function handler(req,res){
     const picks=Array.isArray(req.body?.picks)?req.body.picks:[];
     if(!picks.length) return res.status(400).json({error:'NO_PICKS'});
     if(picks.length>100) return res.status(413).json({error:'BATCH_TOO_LARGE',limit:100});
-    const data=await processPicks(picks,{persistRows:req.query.persist==='1'});
+    const persistRows=req.query.persist==='1';
+    if(persistRows) requireAdmin(req);
+    const data=await processPicks(picks,{persistRows});
     return res.status(200).json(data);
   }catch(error){
     const message=error?.message||String(error);

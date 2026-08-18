@@ -1,10 +1,23 @@
 // Sports Edge Core V2: Today's Picks now reads the reconciled master ledger view.
 // The original data remains preserved in mlb-data.js and SportsEdgeCore.preserved.
-const coreDailyPicks = (window.SportsEdgeDatabase && Array.isArray(window.SportsEdgeDatabase.displayPicks) && window.SportsEdgeDatabase.displayPicks.length)
+const initialCoreDailyPicks = (window.SportsEdgeDatabase && Array.isArray(window.SportsEdgeDatabase.displayPicks) && window.SportsEdgeDatabase.displayPicks.length)
   ? window.SportsEdgeDatabase.displayPicks
   : (window.SportsEdgeCore && Array.isArray(window.SportsEdgeCore.uiPicks) && window.SportsEdgeCore.uiPicks.length)
   ? window.SportsEdgeCore.uiPicks
   : ((typeof trackedPickResults !== 'undefined' && Array.isArray(trackedPickResults)) ? trackedPickResults : []);
+const coreDailyPicks = [...initialCoreDailyPicks];
+function refreshCoreDailyPicks(){
+  const next=(window.SportsEdgeDatabase&&Array.isArray(window.SportsEdgeDatabase.displayPicks))?window.SportsEdgeDatabase.displayPicks:[];
+  if(!next.length) return coreDailyPicks;
+  coreDailyPicks.splice(0,coreDailyPicks.length,...next);
+  return coreDailyPicks;
+}
+window.addEventListener('sportsedge:database-updated',()=>{
+  refreshCoreDailyPicks();
+  try{ if(typeof renderPicks==='function') renderPicks(); }catch{}
+  try{ if(typeof renderHomeDailyDashboard==='function') renderHomeDailyDashboard(); }catch{}
+  try{ if(typeof renderPerformanceLab==='function') renderPerformanceLab(); }catch{}
+});
 
 // V43 stability helper: all missing/blank unit values default to 1U.
 function parseUnits(value) {
@@ -2059,17 +2072,23 @@ function showPage(page){
 $$('.nav,.jump').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
 
 function verifiedStatusForPick(p){
+  const canonical = String(p?.result || p?.status || '').toUpperCase();
+  if(['WIN','LOSS','PUSH','VOID'].includes(canonical)) return canonical;
   const apiStatus = apiStatusForPick(p);
   if(apiStatus) return apiStatus;
-  const raw = String(p.status || '').toUpperCase();
-  if(raw === 'LIVE' || raw === 'PENDING' || raw === 'ACTIVE') return 'ACTIVE';
+  if(canonical === 'LIVE' || canonical === 'PENDING' || canonical === 'ACTIVE') return 'ACTIVE';
   return null;
 }
 function verificationNoteForPick(p){
+  const canonical = String(p?.result || p?.status || '').toUpperCase();
+  if(['WIN','LOSS','PUSH','VOID'].includes(canonical)){
+    const source = p?.gamePk ? 'Verified from the official MLB game result.' : 'Verified by Sports Edge grading.';
+    return `${source}${p?.gradeReason ? ` ${String(p.gradeReason).replace(/_/g,' ').toLowerCase()}.` : ''}`;
+  }
   const apiNote = apiVerificationNoteForPick(p);
   if(apiNote) return apiNote;
   const d = dateKey(parseSlateDate(p?.slate || ''));
-  return `API verification pending for ${d}. This pick will display WIN, LOSS, PUSH, or UNVERIFIED after /api/grade-picks returns an official MLB result.`;
+  return `Verification pending for ${d}.`;
 }
 function statusDisplayName(st){
   if(st === 'UNVERIFIED') return 'API Pending';

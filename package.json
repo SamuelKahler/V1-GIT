@@ -27,6 +27,7 @@
     "validate:daily-operations-v1": "node scripts/validate-daily-operations-v1.mjs",
     "validate:admin-pick-entry-v1": "node scripts/validate-admin-pick-entry-v1.mjs",
     "validate:f5-model-v1a": "node scripts/validate-f5-model-v1a.mjs",
-    "validate:f5-model-v1b": "node scripts/validate-f5-model-v1b.mjs"
+    "validate:f5-model-v1b": "node scripts/validate-f5-model-v1b.mjs",
+    "validate:grade-hydration-v1": "node scripts/validate-grade-hydration-v1.mjs"
   }
 }
