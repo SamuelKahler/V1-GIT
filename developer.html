@@ -56,7 +56,7 @@
       <div>
         <div class="dev-badge">Owner-only operations</div>
         <h1>Sports Edge Developer Console</h1>
-        <p>Import, verify, audit, and maintain the MLB Intelligence Database.</p>
+        <p>Import, verify, audit, and maintain the Sports Edge intelligence databases.</p>
       </div>
       <a class="dev-btn secondary" href="/">Back to Sports Edge</a>
     </header>
@@ -120,6 +120,21 @@
           <div class="dev-field"><label for="envEndDate">End date</label><input id="envEndDate" type="date" /></div>
         </div>
         <div class="dev-actions"><button id="rebuildEnvironments" class="dev-btn">Rebuild Environments</button></div>
+      </article>
+
+      <article class="dev-card full">
+        <h2>NFL Historical Game Ingestion</h2>
+        <p>Imports canonical NFL schedules, final scores, closing moneylines, spreads, totals, rest, QBs, coaches, venue and weather context from nflverse. Re-running the same seasons updates existing game IDs instead of duplicating them.</p>
+        <div class="dev-fields">
+          <div class="dev-field full"><label for="nflSeasons">Seasons</label><input id="nflSeasons" type="text" value="2023,2024,2025,2026" placeholder="2023,2024,2025,2026" /></div>
+        </div>
+        <div class="dev-actions">
+          <button id="nflImportDryRun" class="dev-btn secondary">Preview NFL Import</button>
+          <button id="nflImportSchedules" class="dev-btn orange">Import NFL History</button>
+          <button id="nflHistoricalAudit" class="dev-btn secondary">NFL Ingestion Audit</button>
+        </div>
+        <div class="dev-note">This release imports game-level truth first. Quarter-by-quarter scoring and player box-score enrichment are the next NFL ingestion layer.</div>
+        <div id="nflIngestionMetrics" class="dev-status"></div>
       </article>
 
       <article class="dev-card">

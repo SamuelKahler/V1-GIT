@@ -4,6 +4,7 @@
   const SESSION_KEY = 'sports-edge-mlb-admin-token';
   const LOCAL_KEY = 'sports-edge-mlb-admin-token-remembered';
   const API_PATH = '/api/mlb';
+  const NFL_API_PATH = '/api/nfl';
   const PICKS_API_PATH = '/api/admin-picks';
   const F5_SLATE_API_PATH = '/api/admin-f5-slate';
   let lastPickPreviewText = '';
@@ -78,6 +79,25 @@
     if (!response.ok || !data?.ok) {
       throw new Error(data?.error || `Request failed (${response.status}).`);
     }
+    return data;
+  }
+
+  async function nflRequest(action, payload = {}, method = 'POST') {
+    const adminToken = token();
+    if (!adminToken) throw new Error('Developer Console is locked.');
+    let url = NFL_API_PATH;
+    const options = { method, cache: 'no-store', headers: { 'x-sports-edge-admin-token': adminToken } };
+    if (method === 'GET') {
+      const params = new URLSearchParams({ action, ...payload });
+      url += `?${params.toString()}`;
+    } else {
+      options.headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify(payload);
+      url += `?action=${encodeURIComponent(action)}`;
+    }
+    const response = await fetch(url, options);
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.ok) throw new Error(data?.error || `NFL request failed (${response.status}).`);
     return data;
   }
 
@@ -350,6 +370,38 @@
     }
   }
 
+  function parseNflSeasons() {
+    return String(byId('nflSeasons')?.value || '')
+      .split(',')
+      .map(value => Number(value.trim()))
+      .filter(value => Number.isInteger(value));
+  }
+
+  function renderNflIngestionMetrics(audit = {}) {
+    const target = byId('nflIngestionMetrics');
+    if (!target) return;
+    target.innerHTML = [
+      metric('NFL Games', audit.games ?? '—'),
+      metric('Final Games', audit.finalGames ?? '—'),
+      metric('Team Facts', audit.teamGameFacts ?? '—'),
+      metric('Market Coverage', audit.closingMarketCoveragePercent == null ? '—' : `${audit.closingMarketCoveragePercent}%`)
+    ].join('');
+  }
+
+  async function importNflHistory(dryRun = false) {
+    const button = byId(dryRun ? 'nflImportDryRun' : 'nflImportSchedules');
+    const seasons = parseNflSeasons();
+    if (!seasons.length) { log('NFL import error', 'Enter at least one valid season.'); return; }
+    const result = await runButton(button, dryRun ? 'NFL import preview' : 'NFL historical import', () => nflRequest('importSchedules', { seasons, dryRun }));
+    if (result?.ingestion?.audit) renderNflIngestionMetrics(result.ingestion.audit);
+  }
+
+  async function auditNflHistory() {
+    const button = byId('nflHistoricalAudit');
+    const result = await runButton(button, 'NFL historical ingestion audit', () => nflRequest('historicalAudit', {}, 'GET'));
+    renderNflIngestionMetrics(result.audit || {});
+  }
+
   function initializeDates() {
     const prior = daysAgo(2);
     const today = isoDate(new Date());
@@ -361,6 +413,10 @@
     byId('seasonStart').value = `${today.slice(0, 4)}-03-15`;
     byId('seasonEnd').value = yesterday();
   }
+
+  byId('nflImportDryRun')?.addEventListener('click', () => importNflHistory(true));
+  byId('nflImportSchedules')?.addEventListener('click', () => importNflHistory(false));
+  byId('nflHistoricalAudit')?.addEventListener('click', auditNflHistory);
 
   byId('unlockButton').addEventListener('click', unlock);
   byId('lockButton').addEventListener('click', lock);
