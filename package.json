@@ -1,6 +1,6 @@
 {
   "name": "sports-edge",
-  "version": "32.0.0",
+  "version": "33.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -33,6 +33,7 @@
     "validate:f5-prompt-runtime-v1": "node scripts/validate-f5-prompt-runtime-v1.mjs",
     "validate:f5-prompt-runtime-v1-1": "node scripts/validate-f5-prompt-runtime-v1-1.mjs",
     "validate:nfl-backbone-v1": "node scripts/validate-nfl-intelligence-backbone-v1.mjs",
-    "validate:nfl-history-v1": "node scripts/validate-nfl-historical-ingestion-v1.mjs"
+    "validate:nfl-history-v1": "node scripts/validate-nfl-historical-ingestion-v1.mjs",
+    "validate:nfl-trend-miner-v1": "node scripts/validate-nfl-trend-miner-v1.mjs"
   }
 }

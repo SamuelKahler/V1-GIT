@@ -1,0 +1,12 @@
+supabase/migrations/020_nfl_environment_trend_miner_v1.sql
+lib/nfl/intelligence.js
+api/nfl.js
+sports/nfl/nfl-app.js
+index.html
+styles.css
+developer.html
+developer-console.js
+scripts/validate-nfl-trend-miner-v1.mjs
+package.json
+CHANGELOG-NFL-ENVIRONMENT-TREND-MINER-V1.md
+FILES-CHANGED-NFL-ENVIRONMENT-TREND-MINER-V1.txt

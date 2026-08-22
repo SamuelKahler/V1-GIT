@@ -1,70 +1,162 @@
 (function(){
-  const props = Array.isArray(window.NFL_PROPS) ? window.NFL_PROPS : [];
-  const systems = Array.isArray(window.NFL_SYSTEMS) ? window.NFL_SYSTEMS : [];
-  const games = Array.isArray(window.NFL_GAMES) ? window.NFL_GAMES : [];
-  const winTrends = Array.isArray(window.NFL_WIN_TRENDS) ? window.NFL_WIN_TRENDS : [];
+  // NFL Intelligence Backbone → Environment + Trend Miner consumer layer.
+  const bundledProps = Array.isArray(window.NFL_PROPS) ? window.NFL_PROPS : [];
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-  const pct = (a,b) => b ? `${(a/b*100).toFixed(1)}%` : '—';
-  const group = (rows,key) => rows.reduce((out,row)=>{const value=row[key]||'OTHER';(out[value] ||= []).push(row);return out;},{});
-  const graded = props.filter(p=>['HIT','MISS'].includes(p.result));
-  const hits = graded.filter(p=>p.result==='HIT').length;
-  const styleGroups = group(graded,'style');
-  const environmentGroups = group(graded,'environment');
-  const systemGroups = group(systems,'previousWeekResults');
-  let propFilters = {search:'', style:'ALL', environment:'ALL', result:'ALL'};
-  let systemFilters = {situation:'ALL', outcome:'ALL', week:'ALL'};
-  const backbone = () => window.NFL_BACKBONE || null;
+  const num = (value, fallback=0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+  const fmtPct = value => Number.isFinite(Number(value)) ? `${Number(value).toFixed(1)}%` : '—';
+  const fmtDate = value => { if(!value) return ''; const d=new Date(`${value}T12:00:00`); return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); };
+  const TEAM_COLORS = {ARI:'#97233F',ATL:'#A71930',BAL:'#241773',BUF:'#00338D',CAR:'#0085CA',CHI:'#0B162A',CIN:'#FB4F14',CLE:'#311D00',DAL:'#003594',DEN:'#FB4F14',DET:'#0076B6',GB:'#203731',HOU:'#03202F',IND:'#002C5F',JAX:'#006778',KC:'#E31837',LV:'#000000',LAC:'#0080C6',LAR:'#003594',MIA:'#008E97',MIN:'#4F2683',NE:'#002244',NO:'#D3BC8D',NYG:'#0B2265',NYJ:'#125740',PHI:'#004C54',PIT:'#FFB612',SEA:'#002244',SF:'#AA0000',TB:'#D50A0A',TEN:'#0C2340',WSH:'#5A1414'};
+  let state = { trends: [], trendTeam:'ALL', trendMarket:'ALL', propSearch:'', teamSearch:'' };
+  const backbone = () => window.NFL_BACKBONE || {};
 
-  function topGroups(groups, limit=6){
-    return Object.entries(groups).map(([name,rows])=>({name, rows, hits:rows.filter(r=>r.result==='HIT').length})).sort((a,b)=>b.rows.length-a.rows.length).slice(0,limit);
+  async function fetchJson(url){
+    const response=await fetch(url,{headers:{Accept:'application/json'}});
+    const payload=await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(payload?.error?.message || payload?.error || `NFL request failed (${response.status})`);
+    return payload;
   }
-  function consumerSummary(){
-    if(!games.length) return 'No current-week NFL card has been entered yet. The historical database is active, so consumers can research which prop styles and game environments have performed best without mistaking old results for a current recommendation.';
-    const game=games[0];
-    return `${game.mainReason || 'The matchup and historical evidence point in the same direction.'} The biggest risk is ${(game.biggestRisk || 'late injury, weather, or line movement').toLowerCase()}. Overall, ${game.bestBet || 'the listed play'} is the clearest opportunity currently supported by the database.`;
+  function teamMark(team){
+    const color=TEAM_COLORS[team] || '#174A75';
+    return `<span class="nfl-team-mark" style="--team:${esc(color)}">${esc(team)}</span>`;
+  }
+  function sampleBadge(label){
+    const cls=String(label||'').includes('STRONG')?'strong':String(label||'').includes('QUALIFIED')?'qualified':'small';
+    return `<span class="nfl-sample ${cls}">${esc(label || 'SAMPLE')}</span>`;
+  }
+  function trendCard(t, compact=false){
+    const team=t.team || t.team_abbr || '';
+    const market=t.market || '';
+    const env=t.environment || '';
+    const hitRate=t.hitRate ?? t.hit_rate;
+    const games=t.games || 0;
+    const wins=t.wins ?? Math.round(num(hitRate)*games/100);
+    const losses=t.losses ?? Math.max(0,games-wins);
+    const start=t.startYear ?? t.trend_start_year;
+    const label=t.sampleLabel ?? t.sample_label;
+    return `<button class="nfl-trend-row${compact?' compact':''}" data-trend-team="${esc(team)}" data-trend-market="${esc(market)}" data-trend-env="${esc(env)}" data-trend-start="${esc(start || 2023)}">
+      <div class="nfl-trend-team">${teamMark(team)}<div><strong>${esc(team)}</strong><span>${esc(market)}</span></div></div>
+      <div class="nfl-trend-title"><strong>${esc(env)}</strong><span>${wins}-${losses} · ${fmtPct(hitRate)}${start?` · Since ${start}`:''}</span></div>
+      <div class="nfl-trend-rate"><b>${fmtPct(hitRate)}</b>${sampleBadge(label)}</div>
+      <span class="nfl-chevron">›</span>
+    </button>`;
+  }
+  function propProfiles(){
+    const db=backbone();
+    if(Array.isArray(db.hotProps) && db.hotProps.length) return db.hotProps;
+    const grouped={};
+    bundledProps.filter(p=>['HIT','MISS'].includes(p.result)).forEach(p=>{const key=`${p.player}|${p.style}`;(grouped[key] ||= {player_name:p.player,team_abbr:p.team,market_style:p.style,hits:0,misses:0,games:0}); grouped[key].games++; grouped[key][p.result==='HIT'?'hits':'misses']++;});
+    return Object.values(grouped).map(p=>({...p,hit_rate:p.games?100*p.hits/p.games:0,sample_label:p.games>=10?'STRONG SAMPLE':p.games>=6?'QUALIFIED SAMPLE':'SMALL SAMPLE'})).sort((a,b)=>b.hit_rate-a.hit_rate||b.games-a.games);
+  }
+  function propCard(p){
+    const player=p.player_name || p.player || 'Player';
+    const market=p.market_style || p.style || 'PROP';
+    const rate=p.hit_rate ?? p.hitRate;
+    const games=p.games || 0;
+    const hits=p.hits || 0;
+    const misses=p.misses ?? Math.max(0,games-hits);
+    return `<article class="nfl-prop-row">
+      <div class="nfl-player-avatar">${esc(player.split(/\s+/).map(x=>x[0]).join('').slice(0,2))}</div>
+      <div class="nfl-prop-player"><strong>${esc(player)}</strong><span>${esc(p.team_abbr || p.team || '')}</span></div>
+      <div class="nfl-prop-market"><strong>${esc(String(market).replaceAll('_',' '))}</strong><span>${hits}-${misses} · ${games} games</span></div>
+      <div class="nfl-trend-rate"><b>${fmtPct(rate)}</b>${sampleBadge(p.sample_label || p.sampleLabel)}</div>
+    </article>`;
+  }
+  function weeklyGames(){ return Array.isArray(backbone()?.weekly?.games) ? backbone().weekly.games : []; }
+  function matchupCard(g){
+    const evidence=Array.isArray(g.evidence)?g.evidence:[];
+    const strong=evidence.filter(e=>num(e.hitRate)>=60 && num(e.games)>=6).slice(0,3);
+    return `<article class="nfl-matchup-card" data-game-id="${esc(g.gameId || '')}">
+      <div class="nfl-matchup-teams"><div>${teamMark(g.awayTeam)}<strong>${esc(g.awayTeam)}</strong></div><span>@</span><div>${teamMark(g.homeTeam)}<strong>${esc(g.homeTeam)}</strong></div></div>
+      <div class="nfl-matchup-meta"><strong>${esc(g.weekday || '')} ${fmtDate(g.date)}</strong><span>${esc(g.time || '')}${g.venue?` · ${esc(g.venue)}`:''}</span></div>
+      <div class="nfl-matchup-tags"><span>${evidence.length} matching trends</span>${strong.length?`<span class="hot">${strong.length} strong</span>`:''}</div>
+      <div class="nfl-matchup-peek">${strong.length?strong.map(e=>`<p><b>${esc(e.team)} ${esc(e.market)}</b> ${esc(e.environment)} · ${fmtPct(e.hitRate)} (${e.wins}-${e.losses})</p>`).join(''):'<p>No qualified historical trend match yet.</p>'}</div>
+    </article>`;
   }
   function renderOverview(){
-    const db = backbone();
-    const canonical = db?.canonical || {};
-    const reference = db?.reference || {};
-    const hotTrends = Array.isArray(db?.hotTrends) ? db.hotTrends : [];
-    const hotProps = Array.isArray(db?.hotProps) ? db.hotProps : [];
-    const current = games.length ? games.map(g=>`<article class="nfl-opportunity-card"><div><span class="tag">Current Opportunity</span><h3>${esc(g.awayTeam)} @ ${esc(g.homeTeam)}</h3><strong>${esc(g.bestBet)}</strong></div><p>${esc(g.mainReason)}</p></article>`).join('') : `<article class="nfl-empty-current"><span class="tag gray">Week Board</span><h3>Current-week matchups will live here.</h3><p>The verified historical game backbone is now available. Weekly matchup assignment will be layered on top of these canonical games next.</p></article>`;
-    const trendHtml = hotTrends.length ? hotTrends.slice(0,4).map(t=>`<article class="nfl-hot-card"><div><span>${esc(t.team_abbr)} • ${esc(t.market)}</span><b>${esc(t.sample_label)}</b></div><strong>${Number(t.hit_rate).toFixed(1)}%</strong><h3>${esc(t.environment)}</h3><small>${t.games} games • since ${t.trend_start_year} • strength ${Number(t.strength_score).toFixed(1)}</small></article>`).join('') : '<article class="nfl-empty-current"><h3>Reference trends loading</h3></article>';
-    const propHtml = hotProps.length ? hotProps.slice(0,4).map(p=>`<article class="nfl-hot-card prop"><div><span>${esc(p.player_name)} • ${esc(p.market_style)}</span><b>${esc(p.sample_label)}</b></div><strong>${Number(p.hit_rate).toFixed(1)}%</strong><h3>${p.hits}-${p.misses}</h3><small>${p.games} tracked lines • ${esc(p.team_abbr || '')}</small></article>`).join('') : '<article class="nfl-empty-current"><h3>Prop profiles loading</h3></article>';
-    document.querySelector('#nflOverview').innerHTML = `
-      <section class="nfl-backbone-banner"><div><p class="eyebrow">NFL Intelligence Backbone</p><h2>${db ? 'Connected to Supabase' : 'Loading verified NFL data'}</h2></div><div class="nfl-backbone-stats"><span><strong>${canonical.teams ?? 32}</strong> Teams</span><span><strong>${canonical.games ?? 0}</strong> Canonical Games</span><span><strong>${reference.winTrends ?? winTrends.length}</strong> Seed Trends</span><span><strong>${reference.propObservations ?? props.length}</strong> Prop Rows</span></div></section>
-      <div class="section-head compact-head"><div><p class="eyebrow">Hottest Team Trends</p><h2>Signals worth opening first</h2></div></div>
-      <section class="nfl-hot-grid">${trendHtml}</section>
-      <div class="section-head compact-head"><div><p class="eyebrow">Hottest Prop Profiles</p><h2>Historical player profiles</h2></div></div>
-      <section class="nfl-hot-grid">${propHtml}</section>
-      <section class="nfl-two-column"><div><div class="section-head compact-head"><div><p class="eyebrow">This Week</p><h2>NFL Matchups</h2></div></div>${current}</div>
-      <div><div class="section-head compact-head"><div><p class="eyebrow">Foundation Status</p><h2>What is verified now</h2></div></div><div class="nfl-signal-list"><article><span>Canonical data</span><strong>${canonical.games ? 'ACTIVE' : 'READY FOR INGESTION'}</strong><small>Canonical games, final scores, closing markets and derived team environments are now ingestible. Quarter/player enrichment has dedicated tables ready next.</small></article><article><span>Owner research</span><strong>${reference.winTrends ?? winTrends.length} trends</strong><small>Preserved as reference evidence, not treated as canonical game truth.</small></article><article><span>Quality control</span><strong>${db?.qualityIssues ?? 0} review flags</strong><small>Ambiguous source rows are flagged instead of silently corrected.</small></article></div></div></section>`;
+    const db=backbone(); const canonical=db.canonical||{}; const hot=Array.isArray(db.hotTrends)?db.hotTrends:[]; const props=propProfiles(); const weekly=weeklyGames(); const week=db.weekly?.week;
+    const seasons=Array.isArray(db.seasons)?db.seasons:[];
+    document.querySelector('#nflOverview').innerHTML=`
+      <section class="nfl-intro-grid">
+        <div class="nfl-intro-copy"><span class="nfl-kicker">NFL INTELLIGENCE</span><h1>Data. Trends. Confidence.</h1><p>Verified NFL game history, market environments and player profiles—organized around what matters this week.</p></div>
+        <div class="nfl-kpis">
+          <article><span class="ico">▣</span><b>${num(canonical.games).toLocaleString()}</b><small>Games Imported</small><em>${seasons.length?`${Math.min(...seasons)}–${Math.max(...seasons)}`:'Historical'}</em></article>
+          <article><span class="ico orange">✓</span><b>${canonical.teams || 32}</b><small>Teams Covered</small><em>All NFL Teams</em></article>
+          <article><span class="ico green">▥</span><b>${fmtPct(db.marketCoverage)}</b><small>Market Coverage</small><em>Closing Lines</em></article>
+          <article><span class="ico purple">□</span><b>${seasons.length || 0}</b><small>Seasons</small><em>${seasons.join(', ')}</em></article>
+        </div>
+      </section>
+      <div class="nfl-ready-bar">✓ NFL database is current and ready for trend analysis</div>
+      <section class="nfl-dashboard-grid">
+        <div class="nfl-panel"><div class="nfl-panel-head"><h2>🔥 Hottest Team Trends</h2><button class="nfl-link" data-nfl-go="trends">View All Trends →</button></div><div class="nfl-list">${hot.length?hot.slice(0,5).map(t=>trendCard(t,true)).join(''):'<div class="nfl-clean-empty">Trend miner is loading canonical NFL history.</div>'}</div></div>
+        <div class="nfl-panel"><div class="nfl-panel-head"><h2>🔥 Hottest Prop Profiles</h2><button class="nfl-link" data-nfl-go="props">View All Props →</button></div><div class="nfl-list">${props.length?props.slice(0,5).map(propCard).join(''):'<div class="nfl-clean-empty">Player prop profiles are loading.</div>'}</div></div>
+      </section>
+      <section class="nfl-panel nfl-week-panel"><div class="nfl-panel-head"><div><h2>Week ${week || '—'} Matchups</h2><p>Games with the most matching verified intelligence.</p></div><button class="nfl-link" data-nfl-go="week">View Full Slate →</button></div><div class="nfl-matchup-grid">${weekly.length?weekly.slice(0,8).map(matchupCard).join(''):'<div class="nfl-clean-empty">No upcoming NFL slate is available in the imported schedule yet.</div>'}</div></section>`;
+    bindInteractions();
+  }
+  async function loadTrends(){
+    try{ const payload=await fetchJson('/api/nfl?action=minedTrends&limit=300&minGames=6'); state.trends=payload.trends||[]; }catch(e){ console.warn(e); state.trends=Array.isArray(backbone()?.hotTrends)?backbone().hotTrends:[]; }
+  }
+  function renderTrends(){
+    const target=document.querySelector('#nflTrendLab'); if(!target) return;
+    const teams=['ALL',...new Set(state.trends.map(t=>t.team).filter(Boolean))].sort();
+    const markets=['ALL','ATS','ML','OVER','UNDER'];
+    const rows=state.trends.filter(t=>(state.trendTeam==='ALL'||t.team===state.trendTeam)&&(state.trendMarket==='ALL'||t.market===state.trendMarket));
+    target.innerHTML=`<div class="nfl-page-head"><div><span class="nfl-kicker">CANONICAL TREND MINER</span><h2>Hottest Team Trends</h2><p>Every percentage below is recalculated from imported NFL games—not a hand-entered record.</p></div></div>
+      <div class="nfl-toolbar"><select id="nflTrendTeam">${teams.map(x=>`<option ${x===state.trendTeam?'selected':''}>${esc(x)}</option>`).join('')}</select><select id="nflTrendMarket">${markets.map(x=>`<option ${x===state.trendMarket?'selected':''}>${esc(x)}</option>`).join('')}</select><span>${rows.length} verified trends</span></div>
+      <div class="nfl-trend-table">${rows.length?rows.map(t=>trendCard(t)).join(''):'<div class="nfl-clean-empty">No trends match these filters.</div>'}</div>`;
+    document.querySelector('#nflTrendTeam')?.addEventListener('change',e=>{state.trendTeam=e.target.value;renderTrends();});
+    document.querySelector('#nflTrendMarket')?.addEventListener('change',e=>{state.trendMarket=e.target.value;renderTrends();});
+    bindInteractions();
   }
   function renderProps(){
-    const styles=['ALL',...Object.keys(styleGroups).sort()];
-    const envs=['ALL',...Object.keys(environmentGroups).sort()];
-    const rows=props.filter(p=>(propFilters.style==='ALL'||p.style===propFilters.style)&&(propFilters.environment==='ALL'||p.environment===propFilters.environment)&&(propFilters.result==='ALL'||p.result===propFilters.result)&&(!propFilters.search||`${p.player} ${p.team} ${p.opponent} ${p.bet}`.toLowerCase().includes(propFilters.search.toLowerCase())));
-    document.querySelector('#nflPropLab').innerHTML=`<div class="section-head"><div><p class="eyebrow">Player Intelligence</p><h2>NFL Prop Lab</h2><p>Filter the historical prop database without mixing it into MLB data.</p></div></div>
-    <div class="nfl-filter-bar"><input id="nflPropSearch" placeholder="Search player, team, opponent..." value="${esc(propFilters.search)}"><select id="nflPropStyle">${styles.map(x=>`<option ${x===propFilters.style?'selected':''}>${esc(x)}</option>`).join('')}</select><select id="nflPropEnvironment">${envs.map(x=>`<option ${x===propFilters.environment?'selected':''}>${esc(x)}</option>`).join('')}</select><select id="nflPropResult">${['ALL','HIT','MISS'].map(x=>`<option ${x===propFilters.result?'selected':''}>${x}</option>`).join('')}</select></div>
-    <p class="count">Showing ${rows.length} of ${props.length} historical props.</p><div class="nfl-table-wrap"><table><thead><tr><th>Week</th><th>Player / Bet</th><th>Matchup</th><th>Environment</th><th>Style</th><th>Result</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${p.week}</td><td><strong>${esc(p.player)}</strong><small>${esc(p.bet.replace(p.player,''))}</small></td><td>${esc(p.team)} ${esc(p.opponent)}</td><td>${esc(p.environment)}</td><td>${esc(p.style)}</td><td><span class="nfl-result ${p.result.toLowerCase()}">${p.result}</span></td></tr>`).join('')}</tbody></table></div>`;
-    ['nflPropSearch','nflPropStyle','nflPropEnvironment','nflPropResult'].forEach(id=>document.getElementById(id)?.addEventListener('input',e=>{const map={nflPropSearch:'search',nflPropStyle:'style',nflPropEnvironment:'environment',nflPropResult:'result'};propFilters[map[id]]=e.target.value;renderProps();}));
+    const target=document.querySelector('#nflPropLab'); if(!target) return;
+    const rows=propProfiles().filter(p=>!state.propSearch||`${p.player_name||p.player} ${p.team_abbr||p.team} ${p.market_style||p.style}`.toLowerCase().includes(state.propSearch.toLowerCase()));
+    target.innerHTML=`<div class="nfl-page-head"><div><span class="nfl-kicker">PLAYER INTELLIGENCE</span><h2>Hot Prop Profiles</h2><p>Historical player performance first. Current sportsbook lines will be attached in the next prop-data layer.</p></div></div><div class="nfl-toolbar"><input id="nflPropSearch" placeholder="Search player, team or market" value="${esc(state.propSearch)}"><span>${rows.length} profiles</span></div><div class="nfl-prop-grid">${rows.map(propCard).join('')}</div>`;
+    document.querySelector('#nflPropSearch')?.addEventListener('input',e=>{state.propSearch=e.target.value;renderProps();});
   }
-  function renderSystems(){
-    const situations=['ALL',...Object.keys(systemGroups).sort()];
-    const outcomes=['ALL',...new Set(systems.map(s=>s.outcome))].sort();
-    const weeks=['ALL',...new Set(systems.map(s=>String(s.week)))].sort((a,b)=>Number(a)-Number(b));
-    const rows=systems.filter(s=>(systemFilters.situation==='ALL'||s.previousWeekResults===systemFilters.situation)&&(systemFilters.outcome==='ALL'||s.outcome===systemFilters.outcome)&&(systemFilters.week==='ALL'||String(s.week)===systemFilters.week));
-    const trendCards = winTrends.slice().sort((a,b)=>b.hitRate-a.hitRate).map(t=>`<article><span>${esc(t.teamName)} • ${esc(t.market)}</span><strong>${Number(t.hitRate).toFixed(1)}%</strong><small>${esc(t.environment)} • ${t.games} GP • since ${t.trendStartYear}</small></article>`).join('');
-    document.querySelector('#nflSystemLab').innerHTML=`<div class="section-head"><div><p class="eyebrow">Historical Situations</p><h2>NFL System Lab</h2><p>Win trends and qualifying systems are stored separately so hit-rate evidence is never confused with ungraded qualification rows.</p></div></div><h3>Verified Win-Trend Samples</h3><div class="nfl-system-cards">${trendCards || '<article><span>No win trends loaded</span><strong>—</strong></article>'}</div><div class="nfl-filter-bar"><select id="nflSystemSituation">${situations.map(x=>`<option ${x===systemFilters.situation?'selected':''}>${esc(x)}</option>`).join('')}</select><select id="nflSystemOutcome">${outcomes.map(x=>`<option ${x===systemFilters.outcome?'selected':''}>${esc(x)}</option>`).join('')}</select><select id="nflSystemWeek">${weeks.map(x=>`<option ${x===systemFilters.week?'selected':''}>${esc(x)}</option>`).join('')}</select></div><p class="count">Showing ${rows.length} of ${systems.length} system rows.</p><div class="nfl-system-cards">${Object.entries(group(rows,'previousWeekResults')).map(([name,items])=>`<article><span>${esc(name)}</span><strong>${items.length}</strong><small>qualifying records shown</small></article>`).join('')}</div><div class="nfl-table-wrap"><table><thead><tr><th>Week</th><th>Previous Week</th><th>Matchup</th><th>Recorded Angle</th><th>Line</th><th>Context</th></tr></thead><tbody>${rows.map(s=>`<tr><td>${s.week}</td><td>${esc(s.previousWeekResults)}</td><td>${esc(s.awayTeam)} @ ${esc(s.homeTeam)}</td><td>${esc(s.outcome)}</td><td>${esc(s.line)}</td><td>${esc(s.environment)}</td></tr>`).join('')}</tbody></table></div>`;
-    ['nflSystemSituation','nflSystemOutcome','nflSystemWeek'].forEach(id=>document.getElementById(id)?.addEventListener('input',e=>{const map={nflSystemSituation:'situation',nflSystemOutcome:'outcome',nflSystemWeek:'week'};systemFilters[map[id]]=e.target.value;renderSystems();}));
+  function renderTeams(){
+    const target=document.querySelector('#nflTeams'); if(!target) return;
+    const trends=state.trends;
+    const teamMap={}; trends.forEach(t=>{(teamMap[t.team] ||= []).push(t);});
+    const teams=Object.keys(TEAM_COLORS).filter(t=>!state.teamSearch||t.includes(state.teamSearch.toUpperCase())).sort();
+    target.innerHTML=`<div class="nfl-page-head"><div><span class="nfl-kicker">TEAM DATABASE</span><h2>Explore Every Team</h2><p>Open a team to see its strongest verified ATS, moneyline and total environments.</p></div></div><div class="nfl-toolbar"><input id="nflTeamSearch" placeholder="Search team abbreviation" value="${esc(state.teamSearch)}"><span>${teams.length} teams</span></div><div class="nfl-team-grid">${teams.map(team=>{const best=(teamMap[team]||[]).slice().sort((a,b)=>num(b.strengthScore)-num(a.strengthScore))[0];return `<button class="nfl-team-card" data-team-open="${team}">${teamMark(team)}<strong>${team}</strong><span>${(teamMap[team]||[]).length} verified trends</span>${best?`<small>Best: ${esc(best.environment)} · ${fmtPct(best.hitRate)}</small>`:'<small>No qualified trend sample yet</small>'}</button>`}).join('')}</div>`;
+    document.querySelector('#nflTeamSearch')?.addEventListener('input',e=>{state.teamSearch=e.target.value;renderTeams();});
+    document.querySelectorAll('[data-team-open]').forEach(btn=>btn.addEventListener('click',()=>{state.trendTeam=btn.dataset.teamOpen;switchView('trends');renderTrends();}));
   }
-  function renderPerformance(){
-    const styleHtml=Object.entries(styleGroups).map(([name,rows])=>{const h=rows.filter(r=>r.result==='HIT').length;return `<article><span>${esc(name)}</span><strong>${h}-${rows.length-h}</strong><small>${pct(h,rows.length)} • ${rows.length} plays</small></article>`}).sort().join('');
-    const envHtml=topGroups(environmentGroups,12).map(x=>`<article><span>${esc(x.name)}</span><strong>${x.hits}-${x.rows.length-x.hits}</strong><small>${pct(x.hits,x.rows.length)} • ${x.rows.length} plays</small></article>`).join('');
-    document.querySelector('#nflPerformance').innerHTML=`<div class="section-head"><div><p class="eyebrow">Transparent Results</p><h2>NFL Performance</h2><p>Historical props are graded exactly as supplied. System rows remain counts only because their result column was not included.</p></div></div><div class="nfl-performance-hero"><article><span>Overall</span><strong>${hits}-${graded.length-hits}</strong><small>${pct(hits,graded.length)} hit rate</small></article><article><span>Tracked</span><strong>${graded.length}</strong><small>graded historical props</small></article><article><span>Systems</span><strong>${systems.length}</strong><small>qualification rows, not graded bets</small></article><article><span>Win Trends</span><strong>${winTrends.length}</strong><small>team-market environment samples</small></article></div><h3>By Prop Style</h3><div class="nfl-system-cards">${styleHtml}</div><h3>By Environment</h3><div class="nfl-system-cards">${envHtml}</div>`;
+  function renderModelLab(){
+    const target=document.querySelector('#nflModelLab'); if(!target) return;
+    target.innerHTML=`<section class="nfl-model-shell"><span class="nfl-kicker">NFL MODEL LAB</span><h2>Build Your Football Model</h2><p>The underdog moneyline engine will live here, separated from historical trend evidence so customer-adjusted model runs never contaminate verified records.</p><div class="nfl-model-coming"><b>Foundation connected</b><span>Canonical games, market history and environment intelligence are ready for the model-runtime phase.</span></div></section>`;
   }
-  function renderGuide(){document.querySelector('#nflDataGuide').innerHTML=`<div class="section-head"><div><p class="eyebrow">Foolproof Updates</p><h2>Where NFL updates go</h2><p>Every NFL data type has one home. MLB files never need to be opened for an NFL update.</p></div></div><div class="nfl-guide-grid"><article><span>Historical Props</span><code>sports/nfl/data/nfl-props.js</code><p>Add completed player-prop records.</p></article><article><span>Historical Systems</span><code>sports/nfl/data/nfl-systems.js</code><p>Add qualifying game situations.</p></article><article><span>Win Trends</span><code>sports/nfl/data/nfl-win-trends.js</code><p>Add team, market, environment, hit rate, sample size, and start year.</p></article><article><span>Current Weekly Card</span><code>sports/nfl/data/nfl-games.js</code><p>Add only verified current opportunities and evidence.</p></article><article><span>NFL Display Logic</span><code>sports/nfl/nfl-app.js</code><p>Controls filters, summaries, and rendering.</p></article></div>`;}
-  function init(){if(!document.querySelector('#sport-nfl'))return;renderOverview();renderProps();renderSystems();renderPerformance();renderGuide();window.addEventListener('sports-edge:nfl-backbone-ready',()=>{renderOverview();renderSystems();});document.querySelectorAll('.nfl-tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nfl-tab').forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.nfl-view').forEach(x=>x.classList.toggle('active',x.dataset.nflPanel===btn.dataset.nflView));}));document.querySelectorAll('.nfl-scroll').forEach(btn=>btn.addEventListener('click',()=>document.getElementById(btn.dataset.target)?.scrollIntoView({behavior:'smooth'})));}
+  function renderWeek(){
+    const target=document.querySelector('#nflWeek'); if(!target) return;
+    const w=backbone()?.weekly||{}; const rows=Array.isArray(w.games)?w.games:[];
+    target.innerHTML=`<div class="nfl-page-head"><div><span class="nfl-kicker">THIS WEEK</span><h2>${w.season || ''} Week ${w.week || '—'}</h2><p>Each matchup shows the verified historical environments that actually apply to today's game.</p></div></div><div class="nfl-matchup-grid full">${rows.length?rows.map(matchupCard).join(''):'<div class="nfl-clean-empty">No upcoming NFL games are available in the imported schedule.</div>'}</div>`;
+  }
+  async function openTrendHistory(button){
+    const team=button.dataset.trendTeam, market=button.dataset.trendMarket, env=button.dataset.trendEnv, start=button.dataset.trendStart;
+    let modal=document.querySelector('#nflTrendModal'); if(!modal){modal=document.createElement('div');modal.id='nflTrendModal';modal.className='nfl-modal';document.body.appendChild(modal);}
+    modal.innerHTML=`<div class="nfl-modal-card"><button class="nfl-modal-close">×</button><span class="nfl-kicker">VERIFIED GAME LOG</span><h2>${esc(team)} ${esc(market)} — ${esc(env)}</h2><div class="nfl-modal-loading">Loading underlying games…</div></div>`; modal.classList.add('open'); modal.querySelector('.nfl-modal-close').onclick=()=>modal.classList.remove('open');
+    try{
+      const q=new URLSearchParams({action:'trendHistory',team,market,environment:env,startYear:start||'2023',limit:'150'});
+      const payload=await fetchJson(`/api/nfl?${q}`); const rows=payload.history||[];
+      const wins=rows.filter(r=>r.hit).length;
+      modal.querySelector('.nfl-modal-loading').outerHTML=`<div class="nfl-history-summary"><b>${fmtPct(rows.length?100*wins/rows.length:0)}</b><span>${wins}-${rows.length-wins} · ${rows.length} games · Since ${esc(start)}</span></div><div class="nfl-history-list">${rows.map(r=>`<article><div><strong>${fmtDate(r.date)} · ${esc(r.team)} ${r.location==='HOME'?'vs':'@'} ${esc(r.opponent)}</strong><span>Week ${r.week} · ${esc(r.venue||'')}</span></div><div><b class="${r.hit?'win':'loss'}">${r.hit?'HIT':'MISS'}</b><span>Spread ${r.spread??'—'} · ML ${r.moneyline??'—'} · Total ${r.total??'—'}</span></div></article>`).join('')}</div>`;
+    }catch(e){ modal.querySelector('.nfl-modal-loading').textContent=e.message; }
+  }
+  function switchView(view){
+    document.querySelectorAll('.nfl-tab').forEach(x=>x.classList.toggle('active',x.dataset.nflView===view));
+    document.querySelectorAll('.nfl-view').forEach(x=>x.classList.toggle('active',x.dataset.nflPanel===view));
+  }
+  function bindInteractions(){
+    document.querySelectorAll('[data-nfl-go]').forEach(btn=>btn.onclick=()=>{switchView(btn.dataset.nflGo); if(btn.dataset.nflGo==='trends')renderTrends(); if(btn.dataset.nflGo==='props')renderProps(); if(btn.dataset.nflGo==='week')renderWeek();});
+    document.querySelectorAll('[data-trend-team]').forEach(btn=>btn.onclick=()=>openTrendHistory(btn));
+  }
+  async function init(){
+    if(!document.querySelector('#sport-nfl')) return;
+    renderOverview(); renderProps(); renderTeams(); renderModelLab(); renderWeek();
+    await loadTrends(); renderTrends(); renderTeams();
+    window.addEventListener('sports-edge:nfl-backbone-ready',async()=>{renderOverview();renderWeek();await loadTrends();renderTrends();renderTeams();});
+    document.querySelectorAll('.nfl-tab').forEach(btn=>btn.addEventListener('click',()=>{switchView(btn.dataset.nflView); if(btn.dataset.nflView==='trends')renderTrends(); if(btn.dataset.nflView==='props')renderProps(); if(btn.dataset.nflView==='teams')renderTeams(); if(btn.dataset.nflView==='week')renderWeek();}));
+  }
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
 })();

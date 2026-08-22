@@ -36,6 +36,13 @@
     return sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(LOCAL_KEY) || '';
   }
 
+  function expireAdminSession() {
+    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(LOCAL_KEY);
+    document.body.classList.remove('unlocked');
+    log('Administrator session expired', 'Saved credentials were rejected and have been cleared. Re-enter the current Sports Edge administrator token.');
+  }
+
   function log(title, value) {
     const timestamp = new Date().toLocaleTimeString();
     const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
@@ -77,6 +84,7 @@
     const response = await fetch(url, options);
     const data = await response.json().catch(() => null);
     if (!response.ok || !data?.ok) {
+      if (response.status === 401 || response.status === 403) expireAdminSession();
       throw new Error(data?.error || `Request failed (${response.status}).`);
     }
     return data;
@@ -97,7 +105,10 @@
     }
     const response = await fetch(url, options);
     const data = await response.json().catch(() => null);
-    if (!response.ok || !data?.ok) throw new Error(data?.error || `NFL request failed (${response.status}).`);
+    if (!response.ok || !data?.ok) {
+      if (response.status === 401 || response.status === 403) expireAdminSession();
+      throw new Error(data?.error || `NFL request failed (${response.status}).`);
+    }
     return data;
   }
 
@@ -402,6 +413,19 @@
     renderNflIngestionMetrics(result.audit || {});
   }
 
+  async function auditNflTrendMiner() {
+    const button = byId('nflTrendMinerAudit');
+    const result = await runButton(button, 'NFL environment + trend miner audit', () => nflRequest('trendMinerAudit', {}, 'GET'));
+    const audit = result.audit || {};
+    const target = byId('nflIngestionMetrics');
+    if (target) target.innerHTML = [
+      metric('Mined Trends', audit.minedTrends ?? '—'),
+      metric('Strong Samples', audit.strongSamples ?? '—'),
+      metric('Teams With Trends', audit.teamsWithTrends ?? '—'),
+      metric('Weekly Games', audit.weeklyGames ?? '—')
+    ].join('');
+  }
+
   function initializeDates() {
     const prior = daysAgo(2);
     const today = isoDate(new Date());
@@ -417,6 +441,7 @@
   byId('nflImportDryRun')?.addEventListener('click', () => importNflHistory(true));
   byId('nflImportSchedules')?.addEventListener('click', () => importNflHistory(false));
   byId('nflHistoricalAudit')?.addEventListener('click', auditNflHistory);
+  byId('nflTrendMinerAudit')?.addEventListener('click', auditNflTrendMiner);
 
   byId('unlockButton').addEventListener('click', unlock);
   byId('lockButton').addEventListener('click', lock);
