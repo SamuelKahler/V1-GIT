@@ -1,0 +1,15 @@
+ADDED
+api/nfl.js
+lib/nfl/intelligence.js
+sports/nfl/nfl-intelligence-client.js
+supabase/migrations/018_nfl_intelligence_backbone_v1.sql
+scripts/validate-nfl-intelligence-backbone-v1.mjs
+README-NFL-INTELLIGENCE-BACKBONE-V1-FIRST.txt
+CHANGELOG-NFL-INTELLIGENCE-BACKBONE-V1.md
+FILES-CHANGED-NFL-INTELLIGENCE-BACKBONE-V1.txt
+
+MODIFIED
+app-bootstrap.js
+sports/nfl/nfl-app.js
+styles.css
+package.json

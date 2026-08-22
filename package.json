@@ -1,10 +1,10 @@
 {
   "name": "sports-edge",
-  "version": "30.0.0",
+  "version": "31.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check api/live-data.js && node --check api/grade-picks.js && node --check api/odds.js && node --check api/intelligence-sync.js && node --check api/mlb.js && node --check api/admin-picks.js && node --check api/f5-model.js && node --check api/model-analyst.js && node --check sports/mlb/core/sports-edge-database.js && node --check sports/mlb/core/master-ledger.js && node --check sports/mlb/core/intelligence-engine.js && node --check sports/mlb/core/intelligence-pipeline.js && node --check sports/mlb/core/recent-results.js && node --check sports/mlb/core/performance-engine.js && node --check sports/mlb/mlb-app.js && node --check sports/mlb/mlb-data.js && node --check sports/nfl/nfl-app.js && node --check lib/mlb/auth.js && node --check lib/mlb/http.js && node --check lib/mlb/supabase.js && node --check lib/mlb/transform.js && node --check lib/mlb/stats-api-client.js && node --check lib/mlb/importer.js && node --check lib/mlb/environment-engine.js && node --check lib/mlb/query-engine.js && node --check lib/mlb/evidence-engine.js && node --check sports/mlb/core/mlb-intelligence-client.js && node --check developer-console.js && node --check app-bootstrap.js && node --check daily-import.js && node --check lib/mlb/customer-intelligence.js && node --check lib/mlb/daily-operations.js && node --check lib/mlb/f5-model-engine.js && node --check api/f5-prompt-runtime.js && node --check api/admin-f5-slate.js && node --check lib/mlb/f5-prompt-runtime.js",
+    "check": "node --check api/live-data.js && node --check api/grade-picks.js && node --check api/odds.js && node --check api/intelligence-sync.js && node --check api/mlb.js && node --check api/admin-picks.js && node --check api/f5-model.js && node --check api/model-analyst.js && node --check api/nfl.js && node --check lib/nfl/intelligence.js && node --check sports/nfl/nfl-intelligence-client.js && node --check sports/mlb/core/sports-edge-database.js && node --check sports/mlb/core/master-ledger.js && node --check sports/mlb/core/intelligence-engine.js && node --check sports/mlb/core/intelligence-pipeline.js && node --check sports/mlb/core/recent-results.js && node --check sports/mlb/core/performance-engine.js && node --check sports/mlb/mlb-app.js && node --check sports/mlb/mlb-data.js && node --check sports/nfl/nfl-app.js && node --check lib/mlb/auth.js && node --check lib/mlb/http.js && node --check lib/mlb/supabase.js && node --check lib/mlb/transform.js && node --check lib/mlb/stats-api-client.js && node --check lib/mlb/importer.js && node --check lib/mlb/environment-engine.js && node --check lib/mlb/query-engine.js && node --check lib/mlb/evidence-engine.js && node --check sports/mlb/core/mlb-intelligence-client.js && node --check developer-console.js && node --check app-bootstrap.js && node --check daily-import.js && node --check lib/mlb/customer-intelligence.js && node --check lib/mlb/daily-operations.js && node --check lib/mlb/f5-model-engine.js && node --check api/f5-prompt-runtime.js && node --check api/admin-f5-slate.js && node --check lib/mlb/f5-prompt-runtime.js",
     "validate:phase2a": "node scripts/validate-phase2a.mjs",
     "validate:release2a": "node scripts/validate-release2a.mjs",
     "validate:release3": "node scripts/validate-release3.mjs",
@@ -31,6 +31,7 @@
     "validate:grade-hydration-v1": "node scripts/validate-grade-hydration-v1.mjs",
     "validate:model-lab-v1c": "node scripts/validate-model-lab-v1c.mjs",
     "validate:f5-prompt-runtime-v1": "node scripts/validate-f5-prompt-runtime-v1.mjs",
-    "validate:f5-prompt-runtime-v1-1": "node scripts/validate-f5-prompt-runtime-v1-1.mjs"
+    "validate:f5-prompt-runtime-v1-1": "node scripts/validate-f5-prompt-runtime-v1-1.mjs",
+    "validate:nfl-backbone-v1": "node scripts/validate-nfl-intelligence-backbone-v1.mjs"
   }
 }

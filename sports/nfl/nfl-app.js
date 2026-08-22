@@ -13,6 +13,7 @@
   const systemGroups = group(systems,'previousWeekResults');
   let propFilters = {search:'', style:'ALL', environment:'ALL', result:'ALL'};
   let systemFilters = {situation:'ALL', outcome:'ALL', week:'ALL'};
+  const backbone = () => window.NFL_BACKBONE || null;
 
   function topGroups(groups, limit=6){
     return Object.entries(groups).map(([name,rows])=>({name, rows, hits:rows.filter(r=>r.result==='HIT').length})).sort((a,b)=>b.rows.length-a.rows.length).slice(0,limit);
@@ -23,25 +24,22 @@
     return `${game.mainReason || 'The matchup and historical evidence point in the same direction.'} The biggest risk is ${(game.biggestRisk || 'late injury, weather, or line movement').toLowerCase()}. Overall, ${game.bestBet || 'the listed play'} is the clearest opportunity currently supported by the database.`;
   }
   function renderOverview(){
-    const topStyle = topGroups(styleGroups,1)[0];
-    const topEnv = Object.entries(environmentGroups).map(([name,rows])=>({name,rows,hits:rows.filter(r=>r.result==='HIT').length,rate:rows.filter(r=>r.result==='HIT').length/rows.length})).filter(x=>x.rows.length>=5).sort((a,b)=>b.rate-a.rate)[0];
-    const current = games.length ? games.map(g=>`<article class="nfl-opportunity-card"><div><span class="tag">Current Opportunity</span><h3>${esc(g.awayTeam)} @ ${esc(g.homeTeam)}</h3><strong>${esc(g.bestBet)}</strong></div><p>${esc(g.mainReason)}</p></article>`).join('') : `<article class="nfl-empty-current"><span class="tag gray">No Current Slate</span><h3>Historical research is ready; current picks are intentionally blank.</h3><p>Add verified weekly games to <code>sports/nfl/data/nfl-games.js</code>. The app will never present placeholder picks as real opportunities.</p></article>`;
+    const db = backbone();
+    const canonical = db?.canonical || {};
+    const reference = db?.reference || {};
+    const hotTrends = Array.isArray(db?.hotTrends) ? db.hotTrends : [];
+    const hotProps = Array.isArray(db?.hotProps) ? db.hotProps : [];
+    const current = games.length ? games.map(g=>`<article class="nfl-opportunity-card"><div><span class="tag">Current Opportunity</span><h3>${esc(g.awayTeam)} @ ${esc(g.homeTeam)}</h3><strong>${esc(g.bestBet)}</strong></div><p>${esc(g.mainReason)}</p></article>`).join('') : `<article class="nfl-empty-current"><span class="tag gray">Week Board</span><h3>Current-week matchups will live here.</h3><p>The NFL backbone is now separated from the legacy research sheets. The next release will feed verified schedules and game logs into this board automatically.</p></article>`;
+    const trendHtml = hotTrends.length ? hotTrends.slice(0,4).map(t=>`<article class="nfl-hot-card"><div><span>${esc(t.team_abbr)} • ${esc(t.market)}</span><b>${esc(t.sample_label)}</b></div><strong>${Number(t.hit_rate).toFixed(1)}%</strong><h3>${esc(t.environment)}</h3><small>${t.games} games • since ${t.trend_start_year} • strength ${Number(t.strength_score).toFixed(1)}</small></article>`).join('') : '<article class="nfl-empty-current"><h3>Reference trends loading</h3></article>';
+    const propHtml = hotProps.length ? hotProps.slice(0,4).map(p=>`<article class="nfl-hot-card prop"><div><span>${esc(p.player_name)} • ${esc(p.market_style)}</span><b>${esc(p.sample_label)}</b></div><strong>${Number(p.hit_rate).toFixed(1)}%</strong><h3>${p.hits}-${p.misses}</h3><small>${p.games} tracked lines • ${esc(p.team_abbr || '')}</small></article>`).join('') : '<article class="nfl-empty-current"><h3>Prop profiles loading</h3></article>';
     document.querySelector('#nflOverview').innerHTML = `
-      <section class="nfl-summary-strip">
-        <article><strong>${props.length}</strong><small>Historical Props</small></article>
-        <article><strong>${systems.length}</strong><small>System Rows</small></article>
-        <article><strong>${winTrends.length}</strong><small>Win Trends</small></article>
-        <article><strong>${hits}-${graded.length-hits}</strong><small>Prop Record</small></article>
-        <article><strong>${pct(hits,graded.length)}</strong><small>Hit Rate</small></article>
-      </section>
-      <section class="nfl-consumer-card"><div><p class="eyebrow">Consumer Summary</p><h2>What does the evidence say?</h2></div><p>${esc(consumerSummary())}</p></section>
-      <section class="nfl-two-column"><div><div class="section-head compact-head"><div><p class="eyebrow">Opportunity Board</p><h2>Current NFL Card</h2></div></div>${current}</div>
-      <div><div class="section-head compact-head"><div><p class="eyebrow">Database Pulse</p><h2>Strongest Historical Signals</h2></div></div>
-      <div class="nfl-signal-list">
-        <article><span>Most tracked prop style</span><strong>${esc(topStyle?.name || '—')}</strong><small>${topStyle?.rows.length || 0} graded plays • ${pct(topStyle?.hits || 0,topStyle?.rows.length || 0)}</small></article>
-        <article><span>Best qualified environment</span><strong>${esc(topEnv?.name || '—')}</strong><small>${topEnv?.rows.length || 0} graded plays • ${pct(topEnv?.hits || 0,topEnv?.rows.length || 0)}</small></article>
-        <article><span>Largest system family</span><strong>${esc(Object.entries(systemGroups).sort((a,b)=>b[1].length-a[1].length)[0]?.[0] || '—')}</strong><small>${Object.entries(systemGroups).sort((a,b)=>b[1].length-a[1].length)[0]?.[1].length || 0} historical rows</small></article>
-      </div></div></section>`;
+      <section class="nfl-backbone-banner"><div><p class="eyebrow">NFL Intelligence Backbone</p><h2>${db ? 'Connected to Supabase' : 'Loading verified NFL data'}</h2></div><div class="nfl-backbone-stats"><span><strong>${canonical.teams ?? 32}</strong> Teams</span><span><strong>${canonical.games ?? 0}</strong> Canonical Games</span><span><strong>${reference.winTrends ?? winTrends.length}</strong> Seed Trends</span><span><strong>${reference.propObservations ?? props.length}</strong> Prop Rows</span></div></section>
+      <div class="section-head compact-head"><div><p class="eyebrow">Hottest Team Trends</p><h2>Signals worth opening first</h2></div></div>
+      <section class="nfl-hot-grid">${trendHtml}</section>
+      <div class="section-head compact-head"><div><p class="eyebrow">Hottest Prop Profiles</p><h2>Historical player profiles</h2></div></div>
+      <section class="nfl-hot-grid">${propHtml}</section>
+      <section class="nfl-two-column"><div><div class="section-head compact-head"><div><p class="eyebrow">This Week</p><h2>NFL Matchups</h2></div></div>${current}</div>
+      <div><div class="section-head compact-head"><div><p class="eyebrow">Foundation Status</p><h2>What is verified now</h2></div></div><div class="nfl-signal-list"><article><span>Canonical data</span><strong>${canonical.games ? 'ACTIVE' : 'READY FOR INGESTION'}</strong><small>Games, quarter scores, player stats and markets have dedicated tables.</small></article><article><span>Owner research</span><strong>${reference.winTrends ?? winTrends.length} trends</strong><small>Preserved as reference evidence, not treated as canonical game truth.</small></article><article><span>Quality control</span><strong>${db?.qualityIssues ?? 0} review flags</strong><small>Ambiguous source rows are flagged instead of silently corrected.</small></article></div></div></section>`;
   }
   function renderProps(){
     const styles=['ALL',...Object.keys(styleGroups).sort()];
@@ -67,6 +65,6 @@
     document.querySelector('#nflPerformance').innerHTML=`<div class="section-head"><div><p class="eyebrow">Transparent Results</p><h2>NFL Performance</h2><p>Historical props are graded exactly as supplied. System rows remain counts only because their result column was not included.</p></div></div><div class="nfl-performance-hero"><article><span>Overall</span><strong>${hits}-${graded.length-hits}</strong><small>${pct(hits,graded.length)} hit rate</small></article><article><span>Tracked</span><strong>${graded.length}</strong><small>graded historical props</small></article><article><span>Systems</span><strong>${systems.length}</strong><small>qualification rows, not graded bets</small></article><article><span>Win Trends</span><strong>${winTrends.length}</strong><small>team-market environment samples</small></article></div><h3>By Prop Style</h3><div class="nfl-system-cards">${styleHtml}</div><h3>By Environment</h3><div class="nfl-system-cards">${envHtml}</div>`;
   }
   function renderGuide(){document.querySelector('#nflDataGuide').innerHTML=`<div class="section-head"><div><p class="eyebrow">Foolproof Updates</p><h2>Where NFL updates go</h2><p>Every NFL data type has one home. MLB files never need to be opened for an NFL update.</p></div></div><div class="nfl-guide-grid"><article><span>Historical Props</span><code>sports/nfl/data/nfl-props.js</code><p>Add completed player-prop records.</p></article><article><span>Historical Systems</span><code>sports/nfl/data/nfl-systems.js</code><p>Add qualifying game situations.</p></article><article><span>Win Trends</span><code>sports/nfl/data/nfl-win-trends.js</code><p>Add team, market, environment, hit rate, sample size, and start year.</p></article><article><span>Current Weekly Card</span><code>sports/nfl/data/nfl-games.js</code><p>Add only verified current opportunities and evidence.</p></article><article><span>NFL Display Logic</span><code>sports/nfl/nfl-app.js</code><p>Controls filters, summaries, and rendering.</p></article></div>`;}
-  function init(){if(!document.querySelector('#sport-nfl'))return;renderOverview();renderProps();renderSystems();renderPerformance();renderGuide();document.querySelectorAll('.nfl-tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nfl-tab').forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.nfl-view').forEach(x=>x.classList.toggle('active',x.dataset.nflPanel===btn.dataset.nflView));}));document.querySelectorAll('.nfl-scroll').forEach(btn=>btn.addEventListener('click',()=>document.getElementById(btn.dataset.target)?.scrollIntoView({behavior:'smooth'})));}
+  function init(){if(!document.querySelector('#sport-nfl'))return;renderOverview();renderProps();renderSystems();renderPerformance();renderGuide();window.addEventListener('sports-edge:nfl-backbone-ready',()=>{renderOverview();renderSystems();});document.querySelectorAll('.nfl-tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nfl-tab').forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.nfl-view').forEach(x=>x.classList.toggle('active',x.dataset.nflPanel===btn.dataset.nflView));}));document.querySelectorAll('.nfl-scroll').forEach(btn=>btn.addEventListener('click',()=>document.getElementById(btn.dataset.target)?.scrollIntoView({behavior:'smooth'})));}
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
 })();
