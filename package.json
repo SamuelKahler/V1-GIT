@@ -1,6 +1,6 @@
 {
   "name": "sports-edge",
-  "version": "29.0.0",
+  "version": "30.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -30,6 +30,7 @@
     "validate:f5-model-v1b": "node scripts/validate-f5-model-v1b.mjs",
     "validate:grade-hydration-v1": "node scripts/validate-grade-hydration-v1.mjs",
     "validate:model-lab-v1c": "node scripts/validate-model-lab-v1c.mjs",
-    "validate:f5-prompt-runtime-v1": "node scripts/validate-f5-prompt-runtime-v1.mjs"
+    "validate:f5-prompt-runtime-v1": "node scripts/validate-f5-prompt-runtime-v1.mjs",
+    "validate:f5-prompt-runtime-v1-1": "node scripts/validate-f5-prompt-runtime-v1-1.mjs"
   }
 }

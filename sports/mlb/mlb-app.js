@@ -1650,6 +1650,32 @@ function updateWeightControls(){
 function modelPct(value){return Number.isFinite(Number(value))?`${Number(value).toFixed(1)}%`:'—';}
 function modelSignedPct(value){if(!Number.isFinite(Number(value)))return '—';const n=Number(value);return `${n>=0?'+':''}${n.toFixed(1)}%`;}
 function promptScore(value){return Number.isFinite(Number(value))?`${Number(value).toFixed(1)} / 10`:'—';}
+function evidenceRate(item){
+  if(Number.isFinite(Number(item?.rawRate))) return `${Number(item.rawRate).toFixed(1)}%`;
+  return null;
+}
+function verifiedEvidenceHtml(row){
+  const items=Array.isArray(row?.verifiedEvidence)?row.verifiedEvidence:[];
+  if(!items.length) return '<div class="model-evidence-empty">No additional verified historical sample was available for this side.</div>';
+  return `<div class="model-evidence-grid">${items.map(item=>{
+    const rate=evidenceRate(item);
+    const hasRecord=item.wins!=null&&item.losses!=null;
+    const record=hasRecord?`${item.wins}-${item.losses}${Number(item.pushes)>0?`-${item.pushes}`:''}`:null;
+    const extra=item.extra||{};
+    const offense=extra.opponentAvgF5Runs!=null?`Opponent ${Number(extra.opponentAvgF5Runs).toFixed(2)} F5 runs vs MLB ${Number(extra.leagueAvgF5Runs).toFixed(2)}`:'';
+    return `<div class="model-evidence-card"><span>${escapeHtml(item.label||'Verified history')}</span>${rate?`<strong>${rate}</strong>`:`<strong>${Number.isFinite(Number(item.score))?Number(item.score).toFixed(1)+' score':'Verified'}</strong>`}${record?`<small>${record} • ${Number(item.sample)||0} games</small>`:`<small>${offense||`${Number(item.sample)||0} verified games`}</small>`}</div>`;
+  }).join('')}</div>`;
+}
+function failedGateHtml(row){
+  const gates=Array.isArray(row?.failedGates)?row.failedGates:[];
+  if(!gates.length) return '';
+  return `<div class="model-gate-list">${gates.map(g=>`<div class="model-gate-row"><span>${escapeHtml(g.label||g.key)}</span><strong>${escapeHtml(String(g.actual??'—'))}</strong><small>Needs ${escapeHtml(String(g.required||'qualification'))}${Number.isFinite(Number(g.shortfall))?` • short by ${Number(g.shortfall).toFixed(g.key==='EDGE'?1:2)}${g.key==='EDGE'?' pp':''}`:''}</small></div>`).join('')}</div>`;
+}
+function slateDiagnosisHtml(diag){
+  if(!diag) return '';
+  const closest=diag.closestQualifier;
+  return `<section class="model-slate-read"><div class="model-slate-read-head"><span>Today’s Model Read</span><strong>${escapeHtml(diag.headline||'Full slate scored.')}</strong><p>${escapeHtml(diag.summary||'')}</p></div><div class="model-read-metrics"><div><small>Positive Edge</small><b>${Number(diag.positiveEdgeProfiles)||0}</b></div><div><small>Near Misses</small><b>${Number(lastF5ModelResult?.nearMisses?.length)||0}</b></div><div><small>Hard DQs</small><b>${Number(diag.hardDisqualifications)||0}</b></div></div>${closest?`<div class="model-closest"><small>Closest qualifier</small><strong>${escapeHtml(closest.pick||'')}</strong><span>${modelSignedPct(closest.edge)} edge • FMS ${Number(closest.finalModelScore||0).toFixed(2)}</span></div>`:''}${diag.strongestFactor?`<div class="model-read-factor"><span>Strongest slate factor</span><b>${escapeHtml(diag.strongestFactor.label)} ${Number(diag.strongestFactor.average).toFixed(1)}/10</b></div>`:''}${diag.weakestFactor?`<div class="model-read-factor"><span>Weakest slate factor</span><b>${escapeHtml(diag.weakestFactor.label)} ${Number(diag.weakestFactor.average).toFixed(1)}/10</b></div>`:''}</section>`;
+}
 function runtimePickLabel(row){
   if(!row?.selectedTeam) return `${row?.away||''} @ ${row?.home||''} — No Play`;
   const line=Number(row.selectedLine);
@@ -1664,48 +1690,60 @@ function promptFactorRows(row){
   </div>`).join('');
 }
 function modelCardHtml(row,index){
-  const top=row.decision==='TOP_PLAY';
+  const top=row.tier==='TOP_PLAY'||row.decision==='TOP_PLAY';
+  const near=row.tier==='NEAR_MISS';
   const edgeClass=Number(row.edge)>0?'positive':Number(row.edge)<0?'negative':'neutral';
   const sources=(row.sources||[]).filter(x=>x?.url).slice(0,6);
-  return `<article class="custom-model-result-card ${top?'top-play-card':'passed-card'}" data-model-result-index="${index}">
-    <div class="model-rank">${top?`#${(lastF5ModelResult?.topPlays||[]).findIndex(x=>x.id===row.id)+1}`:'—'}</div>
+  const tierLabel=top?'TOP PLAY':near?'NEAR MISS':row.decision==='AUTO_DQ'?'AUTO DQ':row.decision==='NO_PLAY'?'NO PLAY':'PASS / FADE';
+  return `<article class="custom-model-result-card ${top?'top-play-card':near?'near-miss-card':'passed-card'}" data-model-result-index="${index}">
+    <div class="model-rank">${top?`#${(lastF5ModelResult?.topPlays||[]).findIndex(x=>x.id===row.id)+1}`:near?'△':'—'}</div>
     <div class="model-result-main">
-      <div class="model-result-title"><div><span class="model-status ${top?'official':'research'}">${top?'TOP PLAY':row.decision.replace('_',' ')}</span><h3>${runtimePickLabel(row)}</h3><p>${row.away} @ ${row.home}${row.venue?` • ${row.venue}`:''}${row.firstPitch?` • ${row.firstPitch}`:''}</p></div><span class="coverage-pill">FMS ${row.finalModelScore==null?'—':Number(row.finalModelScore).toFixed(2)}</span></div>
+      <div class="model-result-title"><div><span class="model-status ${top?'official':near?'near':'research'}">${tierLabel}</span><h3>${runtimePickLabel(row)}</h3><p>${row.away} @ ${row.home}${row.venue?` • ${row.venue}`:''}${row.firstPitch?` • ${row.firstPitch}`:''}</p></div><span class="coverage-pill">FMS ${row.finalModelScore==null?'—':Number(row.finalModelScore).toFixed(2)}</span></div>
       <div class="model-metrics-grid">
         <div><small>Projected F5</small><strong>${modelPct(row.projectedF5Pct)}</strong></div>
         <div><small>Market Implied</small><strong>${modelPct(row.impliedPct)}</strong></div>
         <div class="edge-metric ${edgeClass}"><small>Expected Edge</small><strong>${modelSignedPct(row.edge)}</strong></div>
         <div><small>Listed Price</small><strong>${row.price==null?'—':`${Number(row.price)>0?'+':''}${row.price}`}</strong></div>
       </div>
-      <div class="model-runtime-decision"><strong>${top?'Qualified by your model':'Why it did not qualify'}</strong><span>${escapeHtml(row.qualificationReason||'')}</span>${top?`<b>${Number(row.suggestedUnits||0).toFixed(2)}U suggested</b>`:''}</div>
-      <details class="model-factor-details" ${top?'open':''}><summary>See all 8 category scores</summary><div class="model-factor-grid">${promptFactorRows(row)}</div></details>
+      <div class="model-runtime-decision ${near?'near':''}"><strong>${top?'Cleared every model gate':near?'Closest path to qualifying':'Why this game did not qualify'}</strong><span>${escapeHtml(row.qualificationReason||'')}</span>${top?`<b>${Number(row.suggestedUnits||0).toFixed(2)}U suggested</b>`:''}</div>
+      ${failedGateHtml(row)}
+      <details class="model-evidence-details" ${top||near?'open':''}><summary>Verified historical support</summary>${verifiedEvidenceHtml(row)}</details>
+      <details class="model-factor-details" ${top?'open':''}><summary>All 8 category scores & your weights</summary><div class="model-factor-grid">${promptFactorRows(row)}</div></details>
       ${(row.weatherReason||row.volatilityReason||row.lineupRisk)?`<div class="model-runtime-notes">${row.weatherReason?`<span><b>Weather:</b> ${escapeHtml(row.weatherReason)}</span>`:''}${row.volatilityReason?`<span><b>SP volatility:</b> ${escapeHtml(row.volatilityReason)}</span>`:''}${row.lineupRisk?`<span><b>Lineup:</b> ${escapeHtml(row.lineupRisk)}</span>`:''}</div>`:''}
       ${sources.length?`<details class="model-source-list"><summary>Research sources</summary>${sources.map(x=>`<a href="${escapeHtml(x.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(x.title||x.url)}</a>`).join('')}</details>`:''}
     </div>
   </article>`;
 }
+
 function compactModelResultHtml(row,index){
   const edgeClass=Number(row.edge)>0?'positive':Number(row.edge)<0?'negative':'neutral';
   return `<button class="sidebar-result-card" type="button" data-open-model-result="${index}"><span class="sidebar-result-rank">#${index+1}</span><span class="sidebar-result-copy"><strong>${runtimePickLabel(row)}</strong><small>${modelPct(row.projectedF5Pct)} projected • ${modelPct(row.impliedPct)} market</small></span><span class="sidebar-edge ${edgeClass}">${modelSignedPct(row.edge)}</span></button>`;
 }
 function renderSidebarModelResults(){
   const board=$('#sidebarModelResults'); if(!board) return;
-  const rows=Array.isArray(lastF5ModelResult?.topPlays)?lastF5ModelResult.topPlays:[];
-  if(!rows.length){board.innerHTML='<div class="model-empty-state compact"><strong>No qualifying Top Play yet.</strong><p>Adjust your eight prompt weights and rerun the complete F5 slate.</p></div>';return;}
-  board.innerHTML=`<div class="sidebar-results-head"><strong>Your Top Plays</strong><span>${lastF5ModelResult.date||''}</span></div>${rows.slice(0,4).map(compactModelResultHtml).join('')}`;
+  const top=Array.isArray(lastF5ModelResult?.topPlays)?lastF5ModelResult.topPlays:[];
+  const near=Array.isArray(lastF5ModelResult?.nearMisses)?lastF5ModelResult.nearMisses:[];
+  const rows=top.length?top:near;
+  if(!rows.length){board.innerHTML='<div class="model-empty-state compact"><strong>Full slate scored.</strong><p>No Top Play or one-gate near miss. Open Model Center for the complete pass/fade diagnosis.</p></div>';return;}
+  board.innerHTML=`<div class="sidebar-results-head"><strong>${top.length?'Your Top Plays':'Closest Near Misses'}</strong><span>${lastF5ModelResult.date||''}</span></div>${rows.slice(0,4).map(compactModelResultHtml).join('')}<button class="sidebar-open-full" type="button" data-open-model-center>View full slate intelligence</button>`;
 }
 function renderCustomModelBoard(){
   const board=$('#customModelBoard'); if(!board){renderSidebarModelResults();return;}
-  if(!lastF5ModelResult){board.innerHTML='<div class="model-empty-state"><strong>Run your version of the Sports Edge F5 prompt.</strong><p>Your weights control the eight canonical categories. Sports Edge AI researches the complete published slate, then code independently applies every price, score and edge gate.</p></div>';renderSidebarModelResults();return;}
+  if(!lastF5ModelResult){board.innerHTML='<div class="model-empty-state"><strong>Run your version of the Sports Edge F5 prompt.</strong><p>Every paid run scores the complete slate. You will receive Top Plays, near misses, pass/fade reasons, verified historical support and a full slate diagnosis even when no wager qualifies.</p></div>';renderSidebarModelResults();return;}
   const top=Array.isArray(lastF5ModelResult.topPlays)?lastF5ModelResult.topPlays:[];
-  const passed=Array.isArray(lastF5ModelResult.passed)?lastF5ModelResult.passed:[];
+  const near=Array.isArray(lastF5ModelResult.nearMisses)?lastF5ModelResult.nearMisses:[];
+  const fades=Array.isArray(lastF5ModelResult.passFades)?lastF5ModelResult.passFades:(Array.isArray(lastF5ModelResult.passed)?lastF5ModelResult.passed:[]);
   const dateEl=$('#modelRunDate'); if(dateEl)dateEl.textContent=lastF5ModelResult.date?`Slate: ${lastF5ModelResult.date}`:'No F5 slate found';
-  board.innerHTML=`<div class="model-beta-note"><strong>Your canonical F5 prompt — your weights</strong><span>AI researches and scores the eight categories. Sports Edge code independently calculates FMS, implied probability, expected edge, price disqualifications, probability caps and Top Play gates.</span></div>
-    <div class="model-runtime-summary"><div><small>Games Scored</small><strong>${(lastF5ModelResult.games||[]).length}</strong></div><div><small>Top Plays</small><strong>${top.length}</strong></div><div><small>AI Model</small><strong>${escapeHtml(lastF5ModelResult.model||'Configured model')}</strong></div></div>
-    ${top.length?`<h3 class="model-section-heading">Top Plays — ranked by Expected Edge</h3><div class="custom-model-results">${top.map(modelCardHtml).join('')}</div>`:'<div class="model-empty-state"><strong>No game cleared all three Top Play gates.</strong><p>The slate was still fully scored. Passed and fade candidates are below.</p></div>'}
-    <details class="model-passed-board"><summary>Passed / Fade candidates (${passed.length})</summary><div class="custom-model-results">${passed.map(modelCardHtml).join('')}</div></details>`;
+  board.innerHTML=`<div class="model-beta-note"><strong>One run = complete slate intelligence</strong><span>Your eight weights control the canonical F5 prompt. Expanding evidence and explanations does not rerun the model.</span></div>
+    <div class="model-runtime-summary"><div><small>Games Scored</small><strong>${(lastF5ModelResult.games||[]).length}</strong></div><div><small>Top Plays</small><strong>${top.length}</strong></div><div><small>Near Misses</small><strong>${near.length}</strong></div></div>
+    ${slateDiagnosisHtml(lastF5ModelResult.slateDiagnosis)}
+    ${top.length?`<h3 class="model-section-heading">Top Plays — cleared every gate</h3><div class="custom-model-results">${top.map(modelCardHtml).join('')}</div>`:''}
+    ${near.length?`<h3 class="model-section-heading near-heading">Near Misses — missed exactly one core gate</h3><div class="custom-model-results near-results">${near.map(modelCardHtml).join('')}</div>`:''}
+    ${!top.length&&!near.length?'<div class="model-empty-state"><strong>No qualifying play or one-gate near miss today.</strong><p>Your run still includes the complete pass/fade board and verified evidence for every priced candidate below.</p></div>':''}
+    <details class="model-passed-board" ${!top.length&&!near.length?'open':''}><summary>Pass / Fade board (${fades.length})</summary><p class="model-board-help">Every remaining game is still scored. Open any card to see the exact failed gate, category rationale and historical support.</p><div class="custom-model-results">${fades.map(modelCardHtml).join('')}</div></details>`;
   renderSidebarModelResults();
 }
+
 async function runCustomF5Model(){
   if(f5ModelRunning||!modelWeightsValid())return;
   f5ModelRunning=true;updateWeightControls();
