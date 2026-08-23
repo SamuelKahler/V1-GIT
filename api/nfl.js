@@ -1,9 +1,10 @@
 import { requireAdmin } from '../lib/mlb/auth.js';
 import { createHttpError, getQueryValue, handleOptions, parseJsonBody, requireBoolean, requireMethod, sendError, sendSuccess } from '../lib/mlb/http.js';
-import { getNflBackboneAudit, getNflDashboard, getNflHistoricalIngestionAudit, getNflPropProfiles, getNflReferenceTrends, getNflMinedTrends, getNflWeeklyIntelligence, getNflTrendHistory, getNflTrendMinerAudit, importNflSchedules, importNflPlayers, getNflPlayerProfiles, getNflPlayerGameLog, getNflPlayerIntelligenceAudit, getNflPropBoard, getNflPlayerPropIntelligence, getNflPlayerThresholdSplits, getNflPropIntelligenceAudit } from '../lib/nfl/intelligence.js';
+import { getNflBackboneAudit, getNflHydrationAudit, getNflDashboard, getNflHistoricalIngestionAudit, getNflPropProfiles, getNflReferenceTrends, getNflMinedTrends, getNflWeeklyIntelligence, getNflTrendHistory, getNflTrendMinerAudit, importNflSchedules, importNflPlayers, getNflPlayerProfiles, getNflPlayerGameLog, getNflPlayerIntelligenceAudit, getNflPropBoard, getNflPlayerPropIntelligence, getNflPlayerThresholdSplits, getNflPropIntelligenceAudit } from '../lib/nfl/intelligence.js';
 
 const ACTIONS = Object.freeze({
   dashboard: { method: 'GET', admin: false },
+  hydrationAudit: { method: 'GET', admin: true },
   trends: { method: 'GET', admin: false },
   props: { method: 'GET', admin: false },
   audit: { method: 'GET', admin: true },
@@ -33,7 +34,8 @@ export default async function handler(request, response) {
     if (config.admin) requireAdmin(request);
     const limit = Number(getQueryValue(request, 'limit') || 12);
     let data;
-    if (action === 'propAudit') data = { audit: await getNflPropIntelligenceAudit() };
+    if (action === 'hydrationAudit') data = { audit: await getNflHydrationAudit() };
+    else if (action === 'propAudit') data = { audit: await getNflPropIntelligenceAudit() };
     else if (action === 'propBoard') data = { profiles: await getNflPropBoard({ limit, minGames: getQueryValue(request,'minGames'), window: getQueryValue(request,'window'), market: getQueryValue(request,'market'), team: getQueryValue(request,'team'), position: getQueryValue(request,'position') }) };
     else if (action === 'playerIntelligence') data = { intelligence: await getNflPlayerPropIntelligence({ playerId: getQueryValue(request,'playerId'), playerName: getQueryValue(request,'playerName') }) };
     else if (action === 'playerThresholdSplits') data = { splits: await getNflPlayerThresholdSplits({ playerId: getQueryValue(request,'playerId'), market: getQueryValue(request,'market'), threshold: getQueryValue(request,'threshold'), window: getQueryValue(request,'window') }) };

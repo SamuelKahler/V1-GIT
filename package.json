@@ -36,6 +36,7 @@
     "validate:nfl-history-v1": "node scripts/validate-nfl-historical-ingestion-v1.mjs",
     "validate:nfl-trend-miner-v1": "node scripts/validate-nfl-trend-miner-v1.mjs",
     "validate:nfl-player-v1": "node scripts/validate-nfl-player-prop-intelligence-v1.mjs",
-    "validate:nfl-prop-v2": "node scripts/validate-nfl-prop-intelligence-v2.mjs"
+    "validate:nfl-prop-v2": "node scripts/validate-nfl-prop-intelligence-v2.mjs",
+    "validate:nfl-hydration-fix-v1": "node scripts/validate-nfl-hydration-fix-v1.mjs"
   }
 }
