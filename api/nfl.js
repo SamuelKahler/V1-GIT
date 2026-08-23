@@ -1,6 +1,6 @@
 import { requireAdmin } from '../lib/mlb/auth.js';
 import { createHttpError, getQueryValue, handleOptions, parseJsonBody, requireBoolean, requireMethod, sendError, sendSuccess } from '../lib/mlb/http.js';
-import { getNflBackboneAudit, getNflDashboard, getNflHistoricalIngestionAudit, getNflPropProfiles, getNflReferenceTrends, getNflMinedTrends, getNflWeeklyIntelligence, getNflTrendHistory, getNflTrendMinerAudit, importNflSchedules, importNflPlayers, getNflPlayerProfiles, getNflPlayerGameLog, getNflPlayerIntelligenceAudit } from '../lib/nfl/intelligence.js';
+import { getNflBackboneAudit, getNflDashboard, getNflHistoricalIngestionAudit, getNflPropProfiles, getNflReferenceTrends, getNflMinedTrends, getNflWeeklyIntelligence, getNflTrendHistory, getNflTrendMinerAudit, importNflSchedules, importNflPlayers, getNflPlayerProfiles, getNflPlayerGameLog, getNflPlayerIntelligenceAudit, getNflPropBoard, getNflPlayerPropIntelligence, getNflPlayerThresholdSplits, getNflPropIntelligenceAudit } from '../lib/nfl/intelligence.js';
 
 const ACTIONS = Object.freeze({
   dashboard: { method: 'GET', admin: false },
@@ -16,7 +16,11 @@ const ACTIONS = Object.freeze({
   importPlayers: { method: 'POST', admin: true },
   playerProfiles: { method: 'GET', admin: false },
   playerGameLog: { method: 'GET', admin: false },
-  playerAudit: { method: 'GET', admin: true }
+  playerAudit: { method: 'GET', admin: true },
+  propBoard: { method: 'GET', admin: false },
+  playerIntelligence: { method: 'GET', admin: false },
+  playerThresholdSplits: { method: 'GET', admin: false },
+  propAudit: { method: 'GET', admin: true }
 });
 
 export default async function handler(request, response) {
@@ -29,7 +33,11 @@ export default async function handler(request, response) {
     if (config.admin) requireAdmin(request);
     const limit = Number(getQueryValue(request, 'limit') || 12);
     let data;
-    if (action === 'playerAudit') data = { audit: await getNflPlayerIntelligenceAudit() };
+    if (action === 'propAudit') data = { audit: await getNflPropIntelligenceAudit() };
+    else if (action === 'propBoard') data = { profiles: await getNflPropBoard({ limit, minGames: getQueryValue(request,'minGames'), window: getQueryValue(request,'window'), market: getQueryValue(request,'market'), team: getQueryValue(request,'team'), position: getQueryValue(request,'position') }) };
+    else if (action === 'playerIntelligence') data = { intelligence: await getNflPlayerPropIntelligence({ playerId: getQueryValue(request,'playerId'), playerName: getQueryValue(request,'playerName') }) };
+    else if (action === 'playerThresholdSplits') data = { splits: await getNflPlayerThresholdSplits({ playerId: getQueryValue(request,'playerId'), market: getQueryValue(request,'market'), threshold: getQueryValue(request,'threshold'), window: getQueryValue(request,'window') }) };
+    else if (action === 'playerAudit') data = { audit: await getNflPlayerIntelligenceAudit() };
     else if (action === 'importPlayers') { const body = parseJsonBody(request); data = { ingestion: await importNflPlayers({ seasons: body.seasons, dryRun: requireBoolean(body.dryRun, 'dryRun', false) }) }; }
     else if (action === 'playerProfiles') data = { players: await getNflPlayerProfiles({ limit, team: getQueryValue(request,'team'), position: getQueryValue(request,'position') }) };
     else if (action === 'playerGameLog') data = { games: await getNflPlayerGameLog({ playerId: getQueryValue(request,'playerId'), playerName: getQueryValue(request,'playerName'), limit }) };

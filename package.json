@@ -1,6 +1,6 @@
 {
   "name": "sports-edge",
-  "version": "34.0.0",
+  "version": "35.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -35,6 +35,7 @@
     "validate:nfl-backbone-v1": "node scripts/validate-nfl-intelligence-backbone-v1.mjs",
     "validate:nfl-history-v1": "node scripts/validate-nfl-historical-ingestion-v1.mjs",
     "validate:nfl-trend-miner-v1": "node scripts/validate-nfl-trend-miner-v1.mjs",
-    "validate:nfl-player-v1": "node scripts/validate-nfl-player-prop-intelligence-v1.mjs"
+    "validate:nfl-player-v1": "node scripts/validate-nfl-player-prop-intelligence-v1.mjs",
+    "validate:nfl-prop-v2": "node scripts/validate-nfl-prop-intelligence-v2.mjs"
   }
 }

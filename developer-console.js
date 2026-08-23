@@ -456,6 +456,19 @@
     renderNflPlayerMetrics(result.audit || {});
   }
 
+  async function auditNflPropEngine() {
+    const button = byId('nflPropAudit');
+    const result = await runButton(button, 'NFL prop intelligence engine audit', () => nflRequest('propAudit', {}, 'GET'));
+    const audit = result.audit || {};
+    const target = byId('nflPlayerMetrics');
+    if (target) target.innerHTML = [
+      metric('Canonical Players', audit.canonicalPlayers ?? '—'),
+      metric('Qualified Profiles', audit.qualifiedThresholdProfiles ?? '—'),
+      metric('Featured Profiles', audit.featuredProfiles ?? '—'),
+      metric('Tiny Samples Featured', audit.tinySamplesOnFeaturedBoard ?? '—')
+    ].join('');
+  }
+
   function initializeDates() {
     const prior = daysAgo(2);
     const today = isoDate(new Date());
@@ -475,6 +488,7 @@
   byId('nflPlayerDryRun')?.addEventListener('click', () => importNflPlayerHistory(true));
   byId('nflImportPlayers')?.addEventListener('click', () => importNflPlayerHistory(false));
   byId('nflPlayerAudit')?.addEventListener('click', auditNflPlayers);
+  byId('nflPropAudit')?.addEventListener('click', auditNflPropEngine);
 
   byId('unlockButton').addEventListener('click', unlock);
   byId('lockButton').addEventListener('click', lock);
