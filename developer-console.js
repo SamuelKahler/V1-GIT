@@ -426,6 +426,36 @@
     ].join('');
   }
 
+
+  function parseNflPlayerSeasons() {
+    return String(byId('nflPlayerSeasons')?.value || '')
+      .split(',').map(value => Number(value.trim())).filter(value => Number.isInteger(value));
+  }
+
+  function renderNflPlayerMetrics(audit = {}) {
+    const target = byId('nflPlayerMetrics'); if (!target) return;
+    target.innerHTML = [
+      metric('Player Game Rows', audit.playerGameRows ?? '—'),
+      metric('Players', audit.players ?? '—'),
+      metric('Games With Stats', audit.gamesWithPlayerStats ?? '—'),
+      metric('Week 1 Hygiene', audit.weekOnePreviousGameSignalsExcluded ? 'ACTIVE' : 'READY')
+    ].join('');
+  }
+
+  async function importNflPlayerHistory(dryRun = false) {
+    const button = byId(dryRun ? 'nflPlayerDryRun' : 'nflImportPlayers');
+    const seasons = parseNflPlayerSeasons();
+    if (!seasons.length) { log('NFL player import error', 'Enter at least one valid season.'); return; }
+    const result = await runButton(button, dryRun ? 'NFL player import preview' : 'NFL player stats import', () => nflRequest('importPlayers', { seasons, dryRun }));
+    if (result?.ingestion?.audit) renderNflPlayerMetrics(result.ingestion.audit);
+  }
+
+  async function auditNflPlayers() {
+    const button = byId('nflPlayerAudit');
+    const result = await runButton(button, 'NFL player intelligence audit', () => nflRequest('playerAudit', {}, 'GET'));
+    renderNflPlayerMetrics(result.audit || {});
+  }
+
   function initializeDates() {
     const prior = daysAgo(2);
     const today = isoDate(new Date());
@@ -442,6 +472,9 @@
   byId('nflImportSchedules')?.addEventListener('click', () => importNflHistory(false));
   byId('nflHistoricalAudit')?.addEventListener('click', auditNflHistory);
   byId('nflTrendMinerAudit')?.addEventListener('click', auditNflTrendMiner);
+  byId('nflPlayerDryRun')?.addEventListener('click', () => importNflPlayerHistory(true));
+  byId('nflImportPlayers')?.addEventListener('click', () => importNflPlayerHistory(false));
+  byId('nflPlayerAudit')?.addEventListener('click', auditNflPlayers);
 
   byId('unlockButton').addEventListener('click', unlock);
   byId('lockButton').addEventListener('click', lock);

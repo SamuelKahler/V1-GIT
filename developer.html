@@ -138,6 +138,21 @@
         <div id="nflIngestionMetrics" class="dev-status"></div>
       </article>
 
+      <article class="dev-card full">
+        <h2>NFL Player Stats + Prop Intelligence</h2>
+        <p>Imports canonical weekly NFL player production from nflverse and enriches Sports Edge player profiles with real passing, rushing, receiving, targets and usage data.</p>
+        <div class="dev-fields">
+          <div class="dev-field full"><label for="nflPlayerSeasons">Player seasons</label><input id="nflPlayerSeasons" type="text" value="2023,2024,2025" placeholder="2023,2024,2025" /></div>
+        </div>
+        <div class="dev-actions">
+          <button id="nflPlayerDryRun" class="dev-btn secondary">Preview Player Import</button>
+          <button id="nflImportPlayers" class="dev-btn orange">Import Player Stats</button>
+          <button id="nflPlayerAudit" class="dev-btn secondary">NFL Player Audit</button>
+        </div>
+        <div class="dev-note">Week 1 customer evidence automatically excludes previous-game and rest signals carried over from the prior season. Full-season team trends remain eligible.</div>
+        <div id="nflPlayerMetrics" class="dev-status"></div>
+      </article>
+
       <article class="dev-card">
         <h2>Current-season backfill</h2>
         <p>Runs controlled seven-day import batches. Keep this page open until all batches finish.</p>

@@ -1,6 +1,6 @@
 import { requireAdmin } from '../lib/mlb/auth.js';
 import { createHttpError, getQueryValue, handleOptions, parseJsonBody, requireBoolean, requireMethod, sendError, sendSuccess } from '../lib/mlb/http.js';
-import { getNflBackboneAudit, getNflDashboard, getNflHistoricalIngestionAudit, getNflPropProfiles, getNflReferenceTrends, getNflMinedTrends, getNflWeeklyIntelligence, getNflTrendHistory, getNflTrendMinerAudit, importNflSchedules } from '../lib/nfl/intelligence.js';
+import { getNflBackboneAudit, getNflDashboard, getNflHistoricalIngestionAudit, getNflPropProfiles, getNflReferenceTrends, getNflMinedTrends, getNflWeeklyIntelligence, getNflTrendHistory, getNflTrendMinerAudit, importNflSchedules, importNflPlayers, getNflPlayerProfiles, getNflPlayerGameLog, getNflPlayerIntelligenceAudit } from '../lib/nfl/intelligence.js';
 
 const ACTIONS = Object.freeze({
   dashboard: { method: 'GET', admin: false },
@@ -12,7 +12,11 @@ const ACTIONS = Object.freeze({
   minedTrends: { method: 'GET', admin: false },
   weekly: { method: 'GET', admin: false },
   trendHistory: { method: 'GET', admin: false },
-  trendMinerAudit: { method: 'GET', admin: true }
+  trendMinerAudit: { method: 'GET', admin: true },
+  importPlayers: { method: 'POST', admin: true },
+  playerProfiles: { method: 'GET', admin: false },
+  playerGameLog: { method: 'GET', admin: false },
+  playerAudit: { method: 'GET', admin: true }
 });
 
 export default async function handler(request, response) {
@@ -25,7 +29,11 @@ export default async function handler(request, response) {
     if (config.admin) requireAdmin(request);
     const limit = Number(getQueryValue(request, 'limit') || 12);
     let data;
-    if (action === 'audit') data = { audit: await getNflBackboneAudit() };
+    if (action === 'playerAudit') data = { audit: await getNflPlayerIntelligenceAudit() };
+    else if (action === 'importPlayers') { const body = parseJsonBody(request); data = { ingestion: await importNflPlayers({ seasons: body.seasons, dryRun: requireBoolean(body.dryRun, 'dryRun', false) }) }; }
+    else if (action === 'playerProfiles') data = { players: await getNflPlayerProfiles({ limit, team: getQueryValue(request,'team'), position: getQueryValue(request,'position') }) };
+    else if (action === 'playerGameLog') data = { games: await getNflPlayerGameLog({ playerId: getQueryValue(request,'playerId'), playerName: getQueryValue(request,'playerName'), limit }) };
+    else if (action === 'audit') data = { audit: await getNflBackboneAudit() };
     else if (action === 'historicalAudit') data = { audit: await getNflHistoricalIngestionAudit() };
     else if (action === 'importSchedules') {
       const body = parseJsonBody(request);

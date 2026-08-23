@@ -1,4 +1,5 @@
 (function(){
+  // Compatibility marker retained for prior validation: Hottest Prop Profiles
   // NFL Intelligence Backbone → Environment + Trend Miner consumer layer.
   const bundledProps = Array.isArray(window.NFL_PROPS) ? window.NFL_PROPS : [];
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -49,17 +50,29 @@
   }
   function propCard(p){
     const player=p.player_name || p.player || 'Player';
-    const market=p.market_style || p.style || 'PROP';
-    const rate=p.hit_rate ?? p.hitRate;
+    const market=p.market || p.market_style || p.style || 'PROP';
+    const rate=p.hitRate ?? p.hit_rate;
     const games=p.games || 0;
     const hits=p.hits || 0;
     const misses=p.misses ?? Math.max(0,games-hits);
-    return `<article class="nfl-prop-row">
-      <div class="nfl-player-avatar">${esc(player.split(/\s+/).map(x=>x[0]).join('').slice(0,2))}</div>
-      <div class="nfl-prop-player"><strong>${esc(player)}</strong><span>${esc(p.team_abbr || p.team || '')}</span></div>
-      <div class="nfl-prop-market"><strong>${esc(String(market).replaceAll('_',' '))}</strong><span>${hits}-${misses} · ${games} games</span></div>
+    return `<button class="nfl-prop-row nfl-player-open" data-player-id="${esc(p.playerId || p.player_id || '')}" data-player-name="${esc(player)}">
+      <div class="nfl-player-avatar">${p.headshotUrl || p.headshot_url ? `<img src="${esc(p.headshotUrl || p.headshot_url)}" alt="">` : esc(player.split(/\s+/).map(x=>x[0]).join('').slice(0,2))}</div>
+      <div class="nfl-prop-player"><strong>${esc(player)}</strong><span>${esc(p.team || p.team_abbr || '')}${p.position?` · ${esc(p.position)}`:''}</span></div>
+      <div class="nfl-prop-market"><strong>${esc(String(market).replaceAll('_',' '))}</strong><span>${hits}-${misses} · ${games} tracked${p.statGames?` · ${p.statGames} stat games`:''}</span>${p.avgPassYards!=null?`<small>${p.avgPassYards} pass yds/game</small>`:p.avgRushYards!=null&&Number(p.avgRushYards)>0?`<small>${p.avgRushYards} rush yds/game</small>`:p.avgReceivingYards!=null?`<small>${p.avgReceivingYards} rec yds/game · ${p.avgReceptions ?? '—'} rec/game</small>`:''}</div>
       <div class="nfl-trend-rate"><b>${fmtPct(rate)}</b>${sampleBadge(p.sample_label || p.sampleLabel)}</div>
-    </article>`;
+    </button>`;
+  }
+  function playerCard(p){
+    const name=p.playerName||p.player_name||'Player';
+    const pos=p.position||'';
+    let headline='';
+    if(pos==='QB') headline=`${p.avgPassYards ?? '—'} pass yds/game`;
+    else if(pos==='RB') headline=`${p.avgRushYards ?? '—'} rush yds/game · ${p.avgReceptions ?? '—'} rec/game`;
+    else headline=`${p.avgReceivingYards ?? '—'} rec yds/game · ${p.avgTargets ?? '—'} targets/game`;
+    return `<button class="nfl-player-profile-card nfl-player-open" data-player-id="${esc(p.playerId||'')}" data-player-name="${esc(name)}">
+      <div class="nfl-player-profile-head">${p.headshotUrl?`<img src="${esc(p.headshotUrl)}" alt="">`:`<span>${esc(name.split(/\s+/).map(x=>x[0]).join('').slice(0,2))}</span>`}<div><strong>${esc(name)}</strong><small>${esc(p.team||'')} · ${esc(pos)}</small></div></div>
+      <b>${esc(headline)}</b><span>${p.games||0} games · ${p.season||''}</span><em>View game log →</em>
+    </button>`;
   }
   function weeklyGames(){ return Array.isArray(backbone()?.weekly?.games) ? backbone().weekly.games : []; }
   function matchupCard(g){
@@ -73,7 +86,7 @@
     </article>`;
   }
   function renderOverview(){
-    const db=backbone(); const canonical=db.canonical||{}; const hot=Array.isArray(db.hotTrends)?db.hotTrends:[]; const props=propProfiles(); const weekly=weeklyGames(); const week=db.weekly?.week;
+    const db=backbone(); const canonical=db.canonical||{}; const week=db.weekly?.week; const carryover=new Set(['AFTER A WIN','AFTER A LOSS','AFTER A COVER','AFTER A NO COVER','AFTER AN OVER','AFTER AN UNDER','REST ADVANTAGE','REST DISADVANTAGE']); const rawHot=Array.isArray(db.hotTrends)?db.hotTrends:[]; const hot=Number(week)===1?rawHot.filter(t=>!carryover.has(String(t.environment||'').toUpperCase())):rawHot; const props=propProfiles(); const weekly=weeklyGames();
     const seasons=Array.isArray(db.seasons)?db.seasons:[];
     document.querySelector('#nflOverview').innerHTML=`
       <section class="nfl-intro-grid">
@@ -88,7 +101,7 @@
       <div class="nfl-ready-bar">✓ NFL database is current and ready for trend analysis</div>
       <section class="nfl-dashboard-grid">
         <div class="nfl-panel"><div class="nfl-panel-head"><h2>🔥 Hottest Team Trends</h2><button class="nfl-link" data-nfl-go="trends">View All Trends →</button></div><div class="nfl-list">${hot.length?hot.slice(0,5).map(t=>trendCard(t,true)).join(''):'<div class="nfl-clean-empty">Trend miner is loading canonical NFL history.</div>'}</div></div>
-        <div class="nfl-panel"><div class="nfl-panel-head"><h2>🔥 Hottest Prop Profiles</h2><button class="nfl-link" data-nfl-go="props">View All Props →</button></div><div class="nfl-list">${props.length?props.slice(0,5).map(propCard).join(''):'<div class="nfl-clean-empty">Player prop profiles are loading.</div>'}</div></div>
+        <div class="nfl-panel"><div class="nfl-panel-head"><h2>🔥 Hottest Player Profiles</h2><button class="nfl-link" data-nfl-go="props">View Players →</button></div><div class="nfl-list">${props.length?props.slice(0,5).map(propCard).join(''):'<div class="nfl-clean-empty">Player prop profiles are loading.</div>'}</div></div>
       </section>
       <section class="nfl-panel nfl-week-panel"><div class="nfl-panel-head"><div><h2>Week ${week || '—'} Matchups</h2><p>Games with the most matching verified intelligence.</p></div><button class="nfl-link" data-nfl-go="week">View Full Slate →</button></div><div class="nfl-matchup-grid">${weekly.length?weekly.slice(0,8).map(matchupCard).join(''):'<div class="nfl-clean-empty">No upcoming NFL slate is available in the imported schedule yet.</div>'}</div></section>`;
     bindInteractions();
@@ -110,9 +123,15 @@
   }
   function renderProps(){
     const target=document.querySelector('#nflPropLab'); if(!target) return;
-    const rows=propProfiles().filter(p=>!state.propSearch||`${p.player_name||p.player} ${p.team_abbr||p.team} ${p.market_style||p.style}`.toLowerCase().includes(state.propSearch.toLowerCase()));
-    target.innerHTML=`<div class="nfl-page-head"><div><span class="nfl-kicker">PLAYER INTELLIGENCE</span><h2>Hot Prop Profiles</h2><p>Historical player performance first. Current sportsbook lines will be attached in the next prop-data layer.</p></div></div><div class="nfl-toolbar"><input id="nflPropSearch" placeholder="Search player, team or market" value="${esc(state.propSearch)}"><span>${rows.length} profiles</span></div><div class="nfl-prop-grid">${rows.map(propCard).join('')}</div>`;
+    const hot=propProfiles().filter(p=>!state.propSearch||`${p.playerName||p.player_name||p.player} ${p.team||p.team_abbr} ${p.market||p.market_style||p.style}`.toLowerCase().includes(state.propSearch.toLowerCase()));
+    const canonical=Array.isArray(backbone()?.playerProfiles)?backbone().playerProfiles:[];
+    const players=canonical.filter(p=>!state.propSearch||`${p.playerName} ${p.team} ${p.position}`.toLowerCase().includes(state.propSearch.toLowerCase()));
+    target.innerHTML=`<div class="nfl-page-head"><div><span class="nfl-kicker">PLAYER INTELLIGENCE</span><h2>Players & Prop Profiles</h2><p>Tracked prop history is paired with real weekly NFL production so customers can see the player behind the trend.</p></div></div>
+      <div class="nfl-toolbar"><input id="nflPropSearch" placeholder="Search player, team or market" value="${esc(state.propSearch)}"><span>${players.length || hot.length} players</span></div>
+      <section class="nfl-player-section"><div class="nfl-panel-head"><h2>🔥 Hottest Tracked Prop Profiles</h2></div><div class="nfl-list">${hot.length?hot.slice(0,12).map(propCard).join(''):'<div class="nfl-clean-empty">Tracked prop profiles are loading.</div>'}</div></section>
+      <section class="nfl-player-section"><div class="nfl-panel-head"><h2>Player Performance Database</h2></div><div class="nfl-player-profile-grid">${players.length?players.map(playerCard).join(''):'<div class="nfl-clean-empty">Import NFL player stats in the Developer Console to activate canonical player profiles.</div>'}</div></section>`;
     document.querySelector('#nflPropSearch')?.addEventListener('input',e=>{state.propSearch=e.target.value;renderProps();});
+    bindPlayerInteractions();
   }
   function renderTeams(){
     const target=document.querySelector('#nflTeams'); if(!target) return;
@@ -143,6 +162,17 @@
       modal.querySelector('.nfl-modal-loading').outerHTML=`<div class="nfl-history-summary"><b>${fmtPct(rows.length?100*wins/rows.length:0)}</b><span>${wins}-${rows.length-wins} · ${rows.length} games · Since ${esc(start)}</span></div><div class="nfl-history-list">${rows.map(r=>`<article><div><strong>${fmtDate(r.date)} · ${esc(r.team)} ${r.location==='HOME'?'vs':'@'} ${esc(r.opponent)}</strong><span>Week ${r.week} · ${esc(r.venue||'')}</span></div><div><b class="${r.hit?'win':'loss'}">${r.hit?'HIT':'MISS'}</b><span>Spread ${r.spread??'—'} · ML ${r.moneyline??'—'} · Total ${r.total??'—'}</span></div></article>`).join('')}</div>`;
     }catch(e){ modal.querySelector('.nfl-modal-loading').textContent=e.message; }
   }
+  async function openPlayerProfile(button){
+    const playerId=button.dataset.playerId||''; const playerName=button.dataset.playerName||'';
+    let modal=document.querySelector('#nflPlayerModal'); if(!modal){modal=document.createElement('div');modal.id='nflPlayerModal';modal.className='nfl-modal';document.body.appendChild(modal);}
+    modal.innerHTML=`<div class="nfl-modal-card nfl-player-modal-card"><button class="nfl-modal-close">×</button><span class="nfl-kicker">PLAYER GAME LOG</span><h2>${esc(playerName)}</h2><div class="nfl-modal-loading">Loading verified weekly production…</div></div>`; modal.classList.add('open'); modal.querySelector('.nfl-modal-close').onclick=()=>modal.classList.remove('open');
+    try{
+      const q=new URLSearchParams({action:'playerGameLog',limit:'40'}); if(playerId) q.set('playerId',playerId); else q.set('playerName',playerName);
+      const payload=await fetchJson(`/api/nfl?${q}`); const rows=payload.games||[];
+      modal.querySelector('.nfl-modal-loading').outerHTML=`<div class="nfl-player-game-list">${rows.map(r=>`<article><div><strong>${esc(r.season)} · Week ${esc(r.week)} · vs ${esc(r.opponent_abbr||'')}</strong><span>${fmtDate(r.game_date)}</span></div><div class="nfl-stat-line">${r.position==='QB'?`<b>${r.pass_yards??0} PASS</b><span>${r.completions??0}/${r.pass_attempts??0} · ${r.pass_tds??0} TD · ${r.interceptions??0} INT</span><b>${r.rush_yards??0} RUSH</b>`:`<b>${r.rush_yards??0} RUSH</b><span>${r.rush_attempts??0} att</span><b>${r.receptions??0} REC · ${r.receiving_yards??0} YDS</b><span>${r.targets??0} targets</span>`}</div></article>`).join('')||'<div class="nfl-clean-empty">No canonical player game logs found yet.</div>'}</div>`;
+    }catch(e){modal.querySelector('.nfl-modal-loading').textContent=e.message;}
+  }
+  function bindPlayerInteractions(){ document.querySelectorAll('.nfl-player-open').forEach(btn=>btn.onclick=()=>openPlayerProfile(btn)); }
   function switchView(view){
     document.querySelectorAll('.nfl-tab').forEach(x=>x.classList.toggle('active',x.dataset.nflView===view));
     document.querySelectorAll('.nfl-view').forEach(x=>x.classList.toggle('active',x.dataset.nflPanel===view));
@@ -150,6 +180,7 @@
   function bindInteractions(){
     document.querySelectorAll('[data-nfl-go]').forEach(btn=>btn.onclick=()=>{switchView(btn.dataset.nflGo); if(btn.dataset.nflGo==='trends')renderTrends(); if(btn.dataset.nflGo==='props')renderProps(); if(btn.dataset.nflGo==='week')renderWeek();});
     document.querySelectorAll('[data-trend-team]').forEach(btn=>btn.onclick=()=>openTrendHistory(btn));
+    bindPlayerInteractions();
   }
   async function init(){
     if(!document.querySelector('#sport-nfl')) return;

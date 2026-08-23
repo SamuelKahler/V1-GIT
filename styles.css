@@ -750,3 +750,30 @@ body.theme-nfl{background:#f4f7fb!important;color:#102a43!important}
 .nfl-clean-empty{padding:24px;text-align:center;color:#70869a;font-size:12px}.nfl-modal{position:fixed;inset:0;display:none;place-items:center;padding:24px;background:rgba(8,25,42,.58);z-index:999}.nfl-modal.open{display:grid}.nfl-modal-card{position:relative;width:min(980px,96vw);max-height:90vh;overflow:auto;border-radius:20px;background:#fff;padding:26px;box-shadow:0 30px 90px rgba(0,0,0,.25);color:#102b49}.nfl-modal-close{position:absolute;right:16px;top:12px;border:0;background:#edf3f7;width:34px;height:34px;border-radius:50%;font-size:22px;cursor:pointer;color:#234661}.nfl-modal-card h2{margin:2px 0 18px;color:#0d2c4d}.nfl-modal-loading{padding:24px;color:#61788c}.nfl-history-summary{display:flex;align-items:baseline;gap:12px;padding:16px;border-radius:12px;background:#edf8f2;border:1px solid #cde8d8;margin-bottom:12px}.nfl-history-summary b{font-size:30px;color:#087a49}.nfl-history-summary span{color:#3f5f52;font-weight:800}.nfl-history-list{display:grid;border:1px solid #dfe8ef;border-radius:12px;overflow:hidden}.nfl-history-list article{display:grid;grid-template-columns:1fr auto;gap:20px;padding:12px 14px;border-bottom:1px solid #e7edf3}.nfl-history-list article:last-child{border-bottom:0}.nfl-history-list article>div{display:grid;gap:3px}.nfl-history-list strong{font-size:12px}.nfl-history-list span{font-size:9px;color:#647c91}.nfl-history-list b{justify-self:end;font-size:11px}.nfl-history-list b.win{color:#078149}.nfl-history-list b.loss{color:#bd3b3b}
 @media(max-width:1100px){.nfl-topline{align-items:flex-start;flex-direction:column}.nfl-consumer-shell .nfl-subnav{width:100%;overflow:auto}.nfl-intro-grid{grid-template-columns:1fr}.nfl-dashboard-grid{grid-template-columns:1fr}.nfl-matchup-grid,.nfl-matchup-grid.full{grid-template-columns:repeat(2,minmax(0,1fr))}.nfl-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.nfl-team-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.nfl-consumer-shell .nfl-view{padding:18px}.nfl-topline{padding:14px 18px}.nfl-consumer-shell .nfl-subnav{gap:20px}.nfl-kpis,.nfl-matchup-grid,.nfl-matchup-grid.full,.nfl-prop-grid,.nfl-team-grid{grid-template-columns:1fr}.nfl-trend-row{grid-template-columns:1fr auto}.nfl-trend-title{grid-column:1/2}.nfl-trend-rate{grid-column:2;grid-row:1/3}.nfl-chevron{display:none}.nfl-prop-row{grid-template-columns:42px 1fr auto}.nfl-prop-market{grid-column:2}.nfl-prop-row .nfl-trend-rate{grid-column:3;grid-row:1/3}.nfl-toolbar{align-items:stretch;flex-direction:column}.nfl-toolbar input,.nfl-toolbar select{width:100%;min-width:0}.nfl-toolbar span{margin-left:0}.nfl-history-list article{grid-template-columns:1fr}.nfl-intro-copy h1,.nfl-page-head h2{font-size:28px}}
+
+/* NFL Player + Prop Intelligence V1 */
+#sport-nfl .nfl-player-avatar{overflow:hidden;background:#edf6ff;color:#12395e;font-weight:900}
+#sport-nfl .nfl-player-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+#sport-nfl .nfl-prop-row{width:100%;border:0;background:#fff;text-align:left;cursor:pointer}
+#sport-nfl .nfl-prop-row:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(18,57,94,.08)}
+#sport-nfl .nfl-prop-market small{display:block;margin-top:4px;color:#55718d;font-size:12px;font-weight:700}
+#sport-nfl .nfl-player-section{margin-top:24px;background:#fff;border:1px solid #d9e7f3;border-radius:22px;padding:18px;box-shadow:0 12px 35px rgba(17,54,87,.05)}
+#sport-nfl .nfl-player-profile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+#sport-nfl .nfl-player-profile-card{border:1px solid #d9e7f3;border-radius:18px;background:linear-gradient(180deg,#fff,#f8fbfe);padding:16px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:8px;min-height:160px;color:#102a43}
+#sport-nfl .nfl-player-profile-card:hover{border-color:#6db3e8;box-shadow:0 12px 30px rgba(27,103,157,.1);transform:translateY(-2px)}
+#sport-nfl .nfl-player-profile-head{display:flex;gap:12px;align-items:center}
+#sport-nfl .nfl-player-profile-head>img,#sport-nfl .nfl-player-profile-head>span{width:48px;height:48px;border-radius:14px;object-fit:cover;background:#e7f2fb;display:grid;place-items:center;font-weight:900;color:#174a75}
+#sport-nfl .nfl-player-profile-head div{display:flex;flex-direction:column;gap:2px}
+#sport-nfl .nfl-player-profile-head strong{font-size:17px;color:#102a43}
+#sport-nfl .nfl-player-profile-head small{color:#5e7387;font-weight:700}
+#sport-nfl .nfl-player-profile-card>b{font-size:20px;color:#174a75;margin-top:6px}
+#sport-nfl .nfl-player-profile-card>span{color:#62778b;font-size:13px}
+#sport-nfl .nfl-player-profile-card>em{margin-top:auto;color:#0b67b2;font-style:normal;font-weight:800;font-size:13px}
+#sport-nfl .nfl-player-game-list{display:grid;gap:10px;margin-top:16px}
+#sport-nfl .nfl-player-game-list article{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,1.2fr);gap:16px;padding:14px;border:1px solid #dce8f2;border-radius:14px;background:#fafdff}
+#sport-nfl .nfl-player-game-list article>div:first-child{display:flex;flex-direction:column;gap:4px}
+#sport-nfl .nfl-player-game-list article span{color:#657b8f}
+#sport-nfl .nfl-stat-line{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+#sport-nfl .nfl-stat-line b{background:#eaf5ff;color:#0e4e82;border-radius:999px;padding:7px 10px;font-size:13px}
+@media(max-width:980px){#sport-nfl .nfl-player-profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){#sport-nfl .nfl-player-profile-grid{grid-template-columns:1fr}#sport-nfl .nfl-player-game-list article{grid-template-columns:1fr}#sport-nfl .nfl-stat-line{justify-content:flex-start}}
