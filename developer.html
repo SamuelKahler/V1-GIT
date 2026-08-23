@@ -154,6 +154,24 @@
         <div id="nflPlayerMetrics" class="dev-status"></div>
       </article>
 
+      <article class="dev-card full">
+        <h2>NFL Real-Line Prop Ledger</h2>
+        <p>Imports the actual player-prop line attached to each NFL game and grades the player against that line. Consumer history begins with 2025; synthetic X+ thresholds are not used in the Prop Lab.</p>
+        <div class="dev-fields">
+          <div class="dev-field"><label for="nflPropLineSeason">Season</label><input id="nflPropLineSeason" type="number" min="2025" max="2035" value="2025" /></div>
+          <div class="dev-field"><label for="nflPropLineWeek">Week</label><input id="nflPropLineWeek" type="number" min="1" max="22" value="1" /></div>
+          <div class="dev-field full"><label for="nflPropLineMarkets">Markets</label><input id="nflPropLineMarkets" type="text" value="player_pass_yds,player_pass_completions,player_pass_tds,player_rush_yds,player_rush_attempts,player_receptions,player_reception_yds" /></div>
+        </div>
+        <div class="dev-actions">
+          <button id="nflPropLinePreview" class="dev-btn secondary">Preview Line Import + Cost</button>
+          <button id="nflPropLineImport" class="dev-btn orange">Import This Week's Lines</button>
+          <button id="nflPropLineGrade" class="dev-btn secondary">Grade Stored Lines</button>
+          <button id="nflPropLineAudit" class="dev-btn secondary">Real-Line Audit</button>
+        </div>
+        <div class="dev-note">For completed 2025 games this requests a closing snapshot shortly before kickoff. Historical player props require a paid historical plan from The Odds API. Preview first so you can see the estimated provider-credit cost before importing.</div>
+        <div id="nflPropLineMetrics" class="dev-status"></div>
+      </article>
+
       <article class="dev-card">
         <h2>Current-season backfill</h2>
         <p>Runs controlled seven-day import batches. Keep this page open until all batches finish.</p>

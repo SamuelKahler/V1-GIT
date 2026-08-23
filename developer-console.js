@@ -469,6 +469,48 @@
     ].join('');
   }
 
+
+  function parseNflPropLineMarkets() {
+    return String(byId('nflPropLineMarkets')?.value || '').split(',').map(value => value.trim()).filter(Boolean);
+  }
+
+  function renderNflPropLineMetrics(data = {}) {
+    const target = byId('nflPropLineMetrics'); if (!target) return;
+    target.innerHTML = [
+      metric('Stored Line Rows', data.propLineRows ?? data.normalizedRows ?? '—'),
+      metric('Closing Rows', data.closingRows ?? data.audit?.closingRows ?? '—'),
+      metric('Graded Rows', data.gradedRows ?? data.audit?.gradedRows ?? data.persisted?.gradedRows ?? '—'),
+      metric('Qualified Profiles', data.qualifiedProfiles ?? data.audit?.qualifiedProfiles ?? '—')
+    ].join('');
+  }
+
+  async function importNflPropLines(dryRun = false) {
+    const button = byId(dryRun ? 'nflPropLinePreview' : 'nflPropLineImport');
+    const season = Number(byId('nflPropLineSeason')?.value || 2025);
+    const week = Number(byId('nflPropLineWeek')?.value || 1);
+    const markets = parseNflPropLineMarkets();
+    const result = await runButton(button, dryRun ? 'NFL real-line prop import preview' : 'NFL real-line prop import', () => nflRequest('importPropLines', { season, week, markets, dryRun }));
+    const ingestion = result?.ingestion || {};
+    if (dryRun) {
+      log('NFL prop-line estimate', `${ingestion.games || 0} games • ${ingestion.markets?.length || 0} markets • up to ${ingestion.estimatedHistoricalEventOddsCredits || 0} historical event-odds credits.`);
+    } else if (ingestion.failures?.length) {
+      log('NFL prop-line import warnings', ingestion.failures.slice(0, 8).map(x => `${x.game}: ${x.reason}`).join('\n'));
+    }
+    renderNflPropLineMetrics(ingestion.audit || ingestion);
+  }
+
+  async function gradeNflPropLines() {
+    const button = byId('nflPropLineGrade');
+    const result = await runButton(button, 'NFL real-line prop grading', () => nflRequest('gradePropLines', {}, 'POST'));
+    renderNflPropLineMetrics(result?.grading || {});
+  }
+
+  async function auditNflRealPropLines() {
+    const button = byId('nflPropLineAudit');
+    const result = await runButton(button, 'NFL real-line prop audit', () => nflRequest('realLinePropAudit', {}, 'GET'));
+    renderNflPropLineMetrics(result?.audit || {});
+  }
+
   function initializeDates() {
     const prior = daysAgo(2);
     const today = isoDate(new Date());
@@ -489,6 +531,10 @@
   byId('nflImportPlayers')?.addEventListener('click', () => importNflPlayerHistory(false));
   byId('nflPlayerAudit')?.addEventListener('click', auditNflPlayers);
   byId('nflPropAudit')?.addEventListener('click', auditNflPropEngine);
+  byId('nflPropLinePreview')?.addEventListener('click', () => importNflPropLines(true));
+  byId('nflPropLineImport')?.addEventListener('click', () => importNflPropLines(false));
+  byId('nflPropLineGrade')?.addEventListener('click', gradeNflPropLines);
+  byId('nflPropLineAudit')?.addEventListener('click', auditNflRealPropLines);
 
   byId('unlockButton').addEventListener('click', unlock);
   byId('lockButton').addEventListener('click', lock);
