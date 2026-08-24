@@ -39,6 +39,7 @@
     "validate:nfl-prop-v2": "node scripts/validate-nfl-prop-intelligence-v2.mjs",
     "validate:nfl-hydration-fix-v1": "node scripts/validate-nfl-hydration-fix-v1.mjs",
     "validate:nfl-real-lines-v1": "node scripts/validate-nfl-real-line-prop-ledger-v1.mjs",
-    "validate:nfl-prop-qualification-v1": "node scripts/validate-nfl-prop-qualification-smart-backfill-v1.mjs"
+    "validate:nfl-prop-qualification-v1": "node scripts/validate-nfl-prop-qualification-smart-backfill-v1.mjs",
+    "validate:nfl-prop-date-fix-v1": "node scripts/validate-nfl-historical-prop-date-fix-v1.mjs"
   }
 }
