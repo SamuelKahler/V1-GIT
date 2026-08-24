@@ -1,6 +1,6 @@
 import { requireAdmin } from '../lib/mlb/auth.js';
 import { createHttpError, getQueryValue, handleOptions, parseJsonBody, requireBoolean, requireMethod, sendError, sendSuccess } from '../lib/mlb/http.js';
-import { getNflBackboneAudit, getNflHydrationAudit, getNflDashboard, getNflHistoricalIngestionAudit, getNflPropProfiles, getNflReferenceTrends, getNflMinedTrends, getNflWeeklyIntelligence, getNflTrendHistory, getNflTrendMinerAudit, importNflSchedules, importNflPlayers, getNflPlayerProfiles, getNflPlayerGameLog, getNflPlayerIntelligenceAudit, getNflPropBoard, getNflPlayerPropIntelligence, getNflPlayerThresholdSplits, getNflPropIntelligenceAudit, importNflRealPropLines, getNflRealLinePropBoard, getNflPlayerRealLineHistory, gradeNflRealPropLines, getNflRealLinePropAudit } from '../lib/nfl/intelligence.js';
+import { getNflBackboneAudit, getNflHydrationAudit, getNflDashboard, getNflHistoricalIngestionAudit, getNflPropProfiles, getNflReferenceTrends, getNflMinedTrends, getNflWeeklyIntelligence, getNflTrendHistory, getNflTrendMinerAudit, importNflSchedules, importNflPlayers, getNflPlayerProfiles, getNflPlayerGameLog, getNflPlayerIntelligenceAudit, getNflPropBoard, getNflPlayerPropIntelligence, getNflPlayerThresholdSplits, getNflPropIntelligenceAudit, importNflRealPropLines, getNflRealLinePropBoard, getNflPlayerRealLineHistory, gradeNflRealPropLines, getNflRealLinePropAudit, importNflRoster, getNflQualifiedRealLinePropBoard, previewNflPropBackfill, runNflPropBackfill, getNflPropQualificationAudit } from '../lib/nfl/intelligence.js';
 
 const ACTIONS = Object.freeze({
   dashboard: { method: 'GET', admin: false },
@@ -26,7 +26,12 @@ const ACTIONS = Object.freeze({
   realLinePropBoard: { method: 'GET', admin: false },
   playerRealLineHistory: { method: 'GET', admin: false },
   gradePropLines: { method: 'POST', admin: true },
-  realLinePropAudit: { method: 'GET', admin: true }
+  realLinePropAudit: { method: 'GET', admin: true },
+  qualifiedRealLinePropBoard: { method: 'GET', admin: false },
+  importRoster: { method: 'POST', admin: true },
+  previewPropBackfill: { method: 'POST', admin: true },
+  runPropBackfill: { method: 'POST', admin: true },
+  propQualificationAudit: { method: 'GET', admin: true }
 });
 
 export default async function handler(request, response) {
@@ -39,7 +44,12 @@ export default async function handler(request, response) {
     if (config.admin) requireAdmin(request);
     const limit = Number(getQueryValue(request, 'limit') || 12);
     let data;
-    if (action === 'realLinePropAudit') data = { audit: await getNflRealLinePropAudit() };
+    if (action === 'propQualificationAudit') data = { audit: await getNflPropQualificationAudit() };
+    else if (action === 'importRoster') { const body = parseJsonBody(request); data = { roster: await importNflRoster({ season: body.season, dryRun: requireBoolean(body.dryRun, 'dryRun', false) }) }; }
+    else if (action === 'previewPropBackfill') { const body = parseJsonBody(request); data = { preview: await previewNflPropBackfill({ season: body.season, startWeek: body.startWeek, endWeek: body.endWeek, markets: body.markets, maxEstimatedCredits: body.maxEstimatedCredits }) }; }
+    else if (action === 'runPropBackfill') { const body = parseJsonBody(request); data = { backfill: await runNflPropBackfill({ season: body.season, startWeek: body.startWeek, endWeek: body.endWeek, markets: body.markets, maxEstimatedCredits: body.maxEstimatedCredits }) }; }
+    else if (action === 'qualifiedRealLinePropBoard') data = { profiles: await getNflQualifiedRealLinePropBoard({ limit, minGames: getQueryValue(request,'minGames'), minHitRate: getQueryValue(request,'minHitRate'), market: getQueryValue(request,'market'), team: getQueryValue(request,'team'), position: getQueryValue(request,'position') }) };
+    else if (action === 'realLinePropAudit') data = { audit: await getNflRealLinePropAudit() };
     else if (action === 'gradePropLines') data = { grading: await gradeNflRealPropLines() };
     else if (action === 'realLinePropBoard') data = { profiles: await getNflRealLinePropBoard({ limit, minGames: getQueryValue(request,'minGames'), market: getQueryValue(request,'market'), team: getQueryValue(request,'team'), position: getQueryValue(request,'position') }) };
     else if (action === 'playerRealLineHistory') data = { history: await getNflPlayerRealLineHistory({ playerId: getQueryValue(request,'playerId'), playerName: getQueryValue(request,'playerName'), market: getQueryValue(request,'market'), direction: getQueryValue(request,'direction'), limit }) };

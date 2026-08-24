@@ -170,6 +170,24 @@
         </div>
         <div class="dev-note">For completed 2025 games this requests a closing snapshot shortly before kickoff. Historical player props require a paid historical plan from The Odds API. Preview first so you can see the estimated provider-credit cost before importing.</div>
         <div id="nflPropLineMetrics" class="dev-status"></div>
+        <hr class="dev-divider" />
+        <h3>Qualified Profiles + Smart Backfill</h3>
+        <p>Customer-facing profiles require a real 2025 closing-line record of at least 10 games and 60% hits. Historical hit rate is never rewritten for a new-team player; continuity only changes the relevance label.</p>
+        <div class="dev-fields">
+          <div class="dev-field"><label for="nflRosterSeason">Current roster season</label><input id="nflRosterSeason" type="number" min="2026" max="2035" value="2026" /></div>
+          <div class="dev-field"><label for="nflBackfillStartWeek">Start week</label><input id="nflBackfillStartWeek" type="number" min="1" max="22" value="1" /></div>
+          <div class="dev-field"><label for="nflBackfillEndWeek">End week</label><input id="nflBackfillEndWeek" type="number" min="1" max="22" value="18" /></div>
+          <div class="dev-field"><label for="nflBackfillBudget">Max estimated provider credits</label><input id="nflBackfillBudget" type="number" min="100" value="18000" /></div>
+        </div>
+        <div class="dev-actions">
+          <button id="nflRosterPreview" class="dev-btn secondary">Preview 2026 Roster</button>
+          <button id="nflRosterImport" class="dev-btn secondary">Import 2026 Roster</button>
+          <button id="nflPropBackfillPreview" class="dev-btn secondary">Preview 2025 Smart Backfill</button>
+          <button id="nflPropBackfillRun" class="dev-btn orange">Run Smart Backfill</button>
+          <button id="nflPropQualificationAudit" class="dev-btn secondary">Qualification Audit</button>
+        </div>
+        <div class="dev-note"><strong>Safety:</strong> Preview does not purchase historical data. Smart Backfill refuses to start if its estimate exceeds your configured budget and stops on provider authorization/billing failures.</div>
+        <div id="nflPropQualificationMetrics" class="dev-status"></div>
       </article>
 
       <article class="dev-card">

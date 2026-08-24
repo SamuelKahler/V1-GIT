@@ -511,6 +511,39 @@
     renderNflPropLineMetrics(result?.audit || {});
   }
 
+
+  function renderNflPropQualificationMetrics(data = {}) {
+    const target = byId('nflPropQualificationMetrics'); if (!target) return;
+    target.innerHTML = [metric('2026 Roster Rows', data.currentRosterRows ?? data.rows ?? '—'),metric('Qualified Profiles', data.qualifiedProfiles ?? '—'),metric('New-Team Players', data.newTeamPlayersDetected ?? '—'),metric('Tiny Profiles Featured', data.featuredProfilesBelow10Games ?? '—')].join('');
+  }
+
+  async function importNflRoster(dryRun = false) {
+    const button = byId(dryRun ? 'nflRosterPreview' : 'nflRosterImport');
+    const season = Number(byId('nflRosterSeason')?.value || 2026);
+    const result = await runButton(button, dryRun ? 'NFL roster preview' : 'NFL roster import', () => nflRequest('importRoster', { season, dryRun }));
+    renderNflPropQualificationMetrics(result?.roster?.audit || result?.roster || {});
+  }
+
+  async function previewNflSmartBackfill(run = false) {
+    const button = byId(run ? 'nflPropBackfillRun' : 'nflPropBackfillPreview');
+    const season = Number(byId('nflPropLineSeason')?.value || 2025);
+    const startWeek = Number(byId('nflBackfillStartWeek')?.value || 1);
+    const endWeek = Number(byId('nflBackfillEndWeek')?.value || 18);
+    const maxEstimatedCredits = Number(byId('nflBackfillBudget')?.value || 18000);
+    const markets = parseNflPropLineMarkets();
+    const action = run ? 'runPropBackfill' : 'previewPropBackfill';
+    const result = await runButton(button, run ? 'NFL smart prop backfill' : 'NFL smart prop backfill preview', () => nflRequest(action, { season, startWeek, endWeek, maxEstimatedCredits, markets }));
+    const data = run ? result?.backfill : result?.preview;
+    if (data) log(run ? 'NFL smart backfill result' : 'NFL smart backfill estimate', `${data.totalGames || 0} games • ${data.markets?.length || 0} markets • up to ${data.estimatedHistoricalEventOddsCredits || 0} credits • budget ${data.maxEstimatedCredits || maxEstimatedCredits} • ${data.withinConfiguredBudget ? 'WITHIN BUDGET' : 'BLOCKED'}`);
+    renderNflPropQualificationMetrics(data?.audit || {});
+  }
+
+  async function auditNflPropQualification() {
+    const button = byId('nflPropQualificationAudit');
+    const result = await runButton(button, 'NFL prop qualification audit', () => nflRequest('propQualificationAudit', {}, 'GET'));
+    renderNflPropQualificationMetrics(result?.audit || {});
+  }
+
   function initializeDates() {
     const prior = daysAgo(2);
     const today = isoDate(new Date());
@@ -535,6 +568,11 @@
   byId('nflPropLineImport')?.addEventListener('click', () => importNflPropLines(false));
   byId('nflPropLineGrade')?.addEventListener('click', gradeNflPropLines);
   byId('nflPropLineAudit')?.addEventListener('click', auditNflRealPropLines);
+  byId('nflRosterPreview')?.addEventListener('click', () => importNflRoster(true));
+  byId('nflRosterImport')?.addEventListener('click', () => importNflRoster(false));
+  byId('nflPropBackfillPreview')?.addEventListener('click', () => previewNflSmartBackfill(false));
+  byId('nflPropBackfillRun')?.addEventListener('click', () => previewNflSmartBackfill(true));
+  byId('nflPropQualificationAudit')?.addEventListener('click', auditNflPropQualification);
 
   byId('unlockButton').addEventListener('click', unlock);
   byId('lockButton').addEventListener('click', lock);
