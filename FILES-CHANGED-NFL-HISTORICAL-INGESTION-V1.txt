@@ -1,0 +1,11 @@
+api/nfl.js
+lib/nfl/intelligence.js
+lib/nfl/historical-ingestion.js
+developer.html
+developer-console.js
+supabase/migrations/019_nfl_historical_game_ingestion_v1.sql
+scripts/validate-nfl-historical-ingestion-v1.mjs
+package.json
+README-NFL-HISTORICAL-INGESTION-V1-FIRST.txt
+CHANGELOG-NFL-HISTORICAL-INGESTION-V1.md
+FILES-CHANGED-NFL-HISTORICAL-INGESTION-V1.txt

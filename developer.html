@@ -56,7 +56,7 @@
       <div>
         <div class="dev-badge">Owner-only operations</div>
         <h1>Sports Edge Developer Console</h1>
-        <p>Import, verify, audit, and maintain the MLB Intelligence Database.</p>
+        <p>Import, verify, audit, and maintain the Sports Edge intelligence databases.</p>
       </div>
       <a class="dev-btn secondary" href="/">Back to Sports Edge</a>
     </header>
@@ -120,6 +120,74 @@
           <div class="dev-field"><label for="envEndDate">End date</label><input id="envEndDate" type="date" /></div>
         </div>
         <div class="dev-actions"><button id="rebuildEnvironments" class="dev-btn">Rebuild Environments</button></div>
+      </article>
+
+      <article class="dev-card full">
+        <h2>NFL Historical Game Ingestion</h2>
+        <p>Imports canonical NFL schedules, final scores, closing moneylines, spreads, totals, rest, QBs, coaches, venue and weather context from nflverse. Re-running the same seasons updates existing game IDs instead of duplicating them.</p>
+        <div class="dev-fields">
+          <div class="dev-field full"><label for="nflSeasons">Seasons</label><input id="nflSeasons" type="text" value="2023,2024,2025,2026" placeholder="2023,2024,2025,2026" /></div>
+        </div>
+        <div class="dev-actions">
+          <button id="nflImportDryRun" class="dev-btn secondary">Preview NFL Import</button>
+          <button id="nflImportSchedules" class="dev-btn orange">Import NFL History</button>
+          <button id="nflHistoricalAudit" class="dev-btn secondary">NFL Ingestion Audit</button>
+          <button id="nflTrendMinerAudit" class="dev-btn secondary">NFL Trend Miner Audit</button>
+        </div>
+        <div class="dev-note">Canonical game history is live. The Trend Miner now calculates ATS, ML, Over and Under environments directly from imported games; reference research remains separate.</div>
+        <div id="nflIngestionMetrics" class="dev-status"></div>
+      </article>
+
+      <article class="dev-card full">
+        <h2>NFL Player Stats + Prop Intelligence</h2>
+        <p>Imports canonical weekly NFL player production from nflverse and enriches Sports Edge player profiles with real passing, rushing, receiving, targets and usage data.</p>
+        <div class="dev-fields">
+          <div class="dev-field full"><label for="nflPlayerSeasons">Player seasons</label><input id="nflPlayerSeasons" type="text" value="2023,2024,2025" placeholder="2023,2024,2025" /></div>
+        </div>
+        <div class="dev-actions">
+          <button id="nflPlayerDryRun" class="dev-btn secondary">Preview Player Import</button>
+          <button id="nflImportPlayers" class="dev-btn orange">Import Player Stats</button>
+          <button id="nflPlayerAudit" class="dev-btn secondary">NFL Player Audit</button>
+          <button id="nflPropAudit" class="dev-btn secondary">NFL Prop Engine Audit</button>
+        </div>
+        <div class="dev-note">Week 1 customer evidence excludes prior-season one-game carryover signals. Prop V2 derives threshold profiles from the canonical player database and keeps tracked spreadsheet props as supporting research only.</div>
+        <div id="nflPlayerMetrics" class="dev-status"></div>
+      </article>
+
+      <article class="dev-card full">
+        <h2>NFL Real-Line Prop Ledger</h2>
+        <p>Imports the actual player-prop line attached to each NFL game and grades the player against that line. Consumer history begins with 2025; synthetic X+ thresholds are not used in the Prop Lab.</p>
+        <div class="dev-fields">
+          <div class="dev-field"><label for="nflPropLineSeason">Season</label><input id="nflPropLineSeason" type="number" min="2025" max="2035" value="2025" /></div>
+          <div class="dev-field"><label for="nflPropLineWeek">Week</label><input id="nflPropLineWeek" type="number" min="1" max="22" value="1" /></div>
+          <div class="dev-field full"><label for="nflPropLineMarkets">Markets</label><input id="nflPropLineMarkets" type="text" value="player_pass_yds,player_pass_completions,player_pass_tds,player_rush_yds,player_rush_attempts,player_receptions,player_reception_yds" /></div>
+        </div>
+        <div class="dev-actions">
+          <button id="nflPropLinePreview" class="dev-btn secondary">Preview Line Import + Cost</button>
+          <button id="nflPropLineImport" class="dev-btn orange">Import This Week's Lines</button>
+          <button id="nflPropLineGrade" class="dev-btn secondary">Grade Stored Lines</button>
+          <button id="nflPropLineAudit" class="dev-btn secondary">Real-Line Audit</button>
+        </div>
+        <div class="dev-note">For completed 2025 games this requests a closing snapshot shortly before kickoff. Historical player props require a paid historical plan from The Odds API. Preview first so you can see the estimated provider-credit cost before importing.</div>
+        <div id="nflPropLineMetrics" class="dev-status"></div>
+        <hr class="dev-divider" />
+        <h3>Qualified Profiles + Smart Backfill</h3>
+        <p>Customer-facing profiles require a real 2025 closing-line record of at least 10 games and 60% hits. Historical hit rate is never rewritten for a new-team player; continuity only changes the relevance label.</p>
+        <div class="dev-fields">
+          <div class="dev-field"><label for="nflRosterSeason">Current roster season</label><input id="nflRosterSeason" type="number" min="2026" max="2035" value="2026" /></div>
+          <div class="dev-field"><label for="nflBackfillStartWeek">Start week</label><input id="nflBackfillStartWeek" type="number" min="1" max="22" value="1" /></div>
+          <div class="dev-field"><label for="nflBackfillEndWeek">End week</label><input id="nflBackfillEndWeek" type="number" min="1" max="22" value="18" /></div>
+          <div class="dev-field"><label for="nflBackfillBudget">Max estimated provider credits</label><input id="nflBackfillBudget" type="number" min="100" value="18000" /></div>
+        </div>
+        <div class="dev-actions">
+          <button id="nflRosterPreview" class="dev-btn secondary">Preview 2026 Roster</button>
+          <button id="nflRosterImport" class="dev-btn secondary">Import 2026 Roster</button>
+          <button id="nflPropBackfillPreview" class="dev-btn secondary">Preview 2025 Smart Backfill</button>
+          <button id="nflPropBackfillRun" class="dev-btn orange">Run Smart Backfill</button>
+          <button id="nflPropQualificationAudit" class="dev-btn secondary">Qualification Audit</button>
+        </div>
+        <div class="dev-note"><strong>Safety:</strong> Preview does not purchase historical data. Smart Backfill refuses to start if its estimate exceeds your configured budget and stops on provider authorization/billing failures.</div>
+        <div id="nflPropQualificationMetrics" class="dev-status"></div>
       </article>
 
       <article class="dev-card">

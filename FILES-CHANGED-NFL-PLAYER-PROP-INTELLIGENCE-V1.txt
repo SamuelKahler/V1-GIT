@@ -1,0 +1,17 @@
+NEW
+lib/nfl/player-ingestion.js
+supabase/migrations/021_nfl_player_prop_intelligence_v1.sql
+scripts/validate-nfl-player-prop-intelligence-v1.mjs
+CHANGELOG-NFL-PLAYER-PROP-INTELLIGENCE-V1.md
+README-NFL-PLAYER-PROP-INTELLIGENCE-V1-FIRST.txt
+FILES-CHANGED-NFL-PLAYER-PROP-INTELLIGENCE-V1.txt
+
+UPDATED
+api/nfl.js
+lib/nfl/intelligence.js
+sports/nfl/nfl-app.js
+index.html
+styles.css
+developer.html
+developer-console.js
+package.json

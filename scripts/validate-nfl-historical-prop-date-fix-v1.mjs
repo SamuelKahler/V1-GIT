@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+const file='lib/nfl/prop-line-ingestion.js';
+const src=fs.readFileSync(file,'utf8');
+const assert=(ok,msg)=>{if(!ok)throw new Error(msg)};
+assert(src.includes('function providerIso'), 'providerIso helper missing');
+assert(src.includes("replace(/\\.\\d{3}Z$/,'Z')"), 'millisecond stripping missing');
+assert(src.includes('/events?date=${date}&dateFormat=iso'), 'historical event lookup must use raw canonical date and dateFormat=iso');
+assert(!src.includes('encodeURIComponent(isoBefore(game.kickoffAt,10))'), 'historical event date must not be pre-encoded');
+assert(!src.includes('encodeURIComponent(isoBefore(game.kickoffAt,5))'), 'historical event-odds date must not be pre-encoded');
+console.log('NFL_HISTORICAL_PROP_DATE_FIX_V1_VALIDATION_PASSED');

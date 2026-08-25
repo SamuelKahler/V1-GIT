@@ -7,6 +7,7 @@
     'sports/nfl/data/nfl-systems.js',
     'sports/nfl/data/nfl-win-trends.js',
     'sports/nfl/data/nfl-games.js',
+    'sports/nfl/nfl-intelligence-client.js',
     'sports/mlb/core/sports-edge-database.js',
     'sports/mlb/core/master-ledger.js',
     'sports/mlb/core/intelligence-engine.js',

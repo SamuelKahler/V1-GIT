@@ -221,79 +221,24 @@
       </div>
     </section>
 
-    <section id="sport-nfl" class="page sport-page nfl-theme">
-      <div class="sport-hero nfl-hero">
-        <div>
-          <p class="eyebrow">NFL Command Center</p>
-          <h1>Football opportunities, explained.</h1>
+    <section id="sport-nfl" class="page sport-page nfl-theme nfl-consumer-shell">
+      <header class="nfl-topline">
+        <div class="nfl-brand-lockup"><span class="nfl-shield">NFL</span><div><b>SPORTS <em>EDGE</em></b><small>NFL INTELLIGENCE</small></div></div>
+        <nav class="nfl-subnav" aria-label="NFL sections">
+          <button class="nfl-tab active" data-nfl-view="overview">This Week</button>
+          <button class="nfl-tab" data-nfl-view="trends">Hot Trends</button>
+          <button class="nfl-tab" data-nfl-view="props">Players</button>
+          <button class="nfl-tab" data-nfl-view="teams">Teams</button>
+          <button class="nfl-tab" data-nfl-view="model-lab">Model Lab</button>
+        </nav>
+      </header>
 
-          <p>
-            Historical props and situational systems presented
-            with transparent evidence and performance.
-          </p>
-        </div>
-
-        <div class="sport-action-card">
-          <strong id="nflDataStatus">NFL Database Loaded</strong>
-
-          <span id="nflDataSubtitle">
-            Historical props and systems are ready for research.
-          </span>
-
-          <button
-            class="primary nfl-scroll"
-            data-target="nflOpportunityBoard"
-          >
-            Open NFL Board
-          </button>
-        </div>
-      </div>
-
-      <div class="nfl-subnav" aria-label="NFL sections">
-        <button class="nfl-tab active" data-nfl-view="overview">
-          Overview
-        </button>
-
-        <button class="nfl-tab" data-nfl-view="props">
-          Prop Lab
-        </button>
-
-        <button class="nfl-tab" data-nfl-view="systems">
-          System Lab
-        </button>
-
-        <button class="nfl-tab" data-nfl-view="performance">
-          Performance
-        </button>
-
-        <button class="nfl-tab" data-nfl-view="data-guide">
-          Update Guide
-        </button>
-      </div>
-
-      <div
-        id="nflOpportunityBoard"
-        class="nfl-view active"
-        data-nfl-panel="overview"
-      >
-        <div id="nflOverview"></div>
-      </div>
-
-      <div class="nfl-view" data-nfl-panel="props">
-        <div id="nflPropLab"></div>
-      </div>
-
-      <div class="nfl-view" data-nfl-panel="systems">
-        <div id="nflSystemLab"></div>
-      </div>
-
-      <div class="nfl-view" data-nfl-panel="performance">
-        <div id="nflPerformance"></div>
-      </div>
-
-      <div class="nfl-view" data-nfl-panel="data-guide">
-        <div id="nflDataGuide"></div>
-      </div>
+      <div id="nflOpportunityBoard" class="nfl-view active" data-nfl-panel="overview"><div id="nflOverview"></div></div>
+      <div class="nfl-view" data-nfl-panel="week"><div id="nflWeek"></div></div>
+      <div class="nfl-view" data-nfl-panel="trends"><div id="nflTrendLab"></div></div>
+      <div class="nfl-view" data-nfl-panel="props"><div id="nflPropLab"></div></div>
+      <div class="nfl-view" data-nfl-panel="teams"><div id="nflTeams"></div></div>
+      <div class="nfl-view" data-nfl-panel="model-lab"><div id="nflModelLab"></div></div>
     </section>
 
     <section id="sport-cfb" class="page sport-page cfb-theme">
