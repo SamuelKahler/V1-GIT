@@ -122,7 +122,7 @@
     };
     let url = PICKS_API_PATH;
     if (method === 'GET') {
-      url += action === 'audit' ? '?mode=audit' : '?limit=120';
+      url += '?limit=120';
     } else {
       options.headers['Content-Type'] = 'application/json';
       options.body = JSON.stringify({ action, text });
@@ -167,20 +167,6 @@
     const result = await runButton(button, 'Publish picks', () => picksRequest('publish', text));
     renderPickPreview(result.preview || []);
     log('Published pick dates', `${(result.dates || []).join(', ')} | ${result.count || 0} picks`);
-  }
-
-
-  async function auditPickPipeline() {
-    const button = byId('auditPickPipeline');
-    const result = await runButton(button, 'MLB pick pipeline audit', () => picksRequest('audit', '', 'GET'));
-    const audit = result.audit || {};
-    const target = byId('pickPipelineMetrics');
-    if (target) target.innerHTML = [
-      metric('Canonical Latest', audit.canonicalLatestDate || '—'),
-      metric('Published Latest', audit.storedLatestDate || '—'),
-      metric('Recovered Latest', audit.recoveredLatestDate || '—'),
-      metric('Fallback Latest', audit.fallbackLatestDate || '—')
-    ].join('');
   }
 
   async function refreshPublishedPicks() {
@@ -601,7 +587,6 @@
   byId('previewPicks').addEventListener('click', previewPicks);
   byId('publishPicks').addEventListener('click', publishPicks);
   byId('refreshPublishedPicks').addEventListener('click', refreshPublishedPicks);
-  byId('auditPickPipeline')?.addEventListener('click', auditPickPipeline);
   byId('pickEntryText').addEventListener('input', () => { lastPickPreviewText = ''; lastPickPreviewCount = 0; byId('publishPicks').disabled = true; });
   byId('previewF5Slate')?.addEventListener('click', previewF5Slate);
   byId('publishF5Slate')?.addEventListener('click', publishF5Slate);
