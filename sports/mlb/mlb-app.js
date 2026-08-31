@@ -737,7 +737,10 @@ const PICK_MATCHUP_CONTEXT = {
   'ATL ML': {away:'ATL', home:'SD', label:'ATL @ SD'}
 };
 function cleanPickTitle(p){
-  return String(p?.pick || '').replace(/\s+—\s+.+$/,'').trim();
+  return String(p?.pick || '')
+    .replace(/^\s*TIER\s*[123]\s*\|\s*/i,'')
+    .replace(/\s+—\s+.+$/,'')
+    .trim();
 }
 function matchupContextForPick(p){
   if(p?.matchup){
