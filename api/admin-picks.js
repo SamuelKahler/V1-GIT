@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { requireAdmin } from '../lib/mlb/auth.js';
 import { sendError, sendSuccess, requireMethod, parseJsonBody, getQueryValue } from '../lib/mlb/http.js';
 import { requestSupabase } from '../lib/mlb/supabase.js';
-import { parseDailyImportPicks, canonicalDailyImportText, pickHash } from '../lib/mlb/daily-operations.js';
+import { parseDailyImportPicks, canonicalDailyImportText, pickHash, readDailyImportText, loadCanonicalDailyPicks, loadObservationBackedPicks } from '../lib/mlb/daily-operations.js';
 import { processPicks } from './intelligence-sync.js';
 
 function previewRows(text) {
@@ -52,6 +52,43 @@ async function recentPublished(limit = 120) {
   return requestSupabase(`/rest/v1/sports_edge_picks?select=canonical_key,pick_date,raw_line,raw_pick,odds,units,has_explicit_units,status,batch_id,published_at&order=pick_date.desc,published_at.desc&limit=${Math.max(1, Math.min(500, Number(limit) || 120))}`);
 }
 
+
+function latestDate(rows = []) {
+  return rows.map(row => row.date || row.pick_date).filter(Boolean).sort().reverse()[0] || null;
+}
+
+async function pickPipelineAudit() {
+  const [stored, recovered, canonical] = await Promise.all([
+    recentPublished(500),
+    loadObservationBackedPicks(),
+    loadCanonicalDailyPicks()
+  ]);
+  const fallback = parseDailyImportPicks(await readDailyImportText());
+  let supabaseHost = null;
+  try { supabaseHost = new URL(String(process.env.SUPABASE_URL || '')).hostname || null; } catch {}
+  const storedDates = [...new Set((stored || []).map(row => row.pick_date).filter(Boolean))].sort().reverse();
+  const recoveredDates = [...new Set((recovered || []).map(row => row.date).filter(Boolean))].sort().reverse();
+  const canonicalDates = [...new Set((canonical || []).map(row => row.date).filter(Boolean))].sort().reverse();
+  return {
+    passed: canonicalDates.length > 0,
+    release: 'MLB_PICK_PIPELINE_RECOVERY_V1',
+    checkedAt: new Date().toISOString(),
+    supabaseHost,
+    storedPickRows: stored?.length || 0,
+    storedLatestDate: latestDate(stored || []),
+    storedDates: storedDates.slice(0, 20),
+    recoveredObservationRows: recovered?.length || 0,
+    recoveredLatestDate: latestDate(recovered || []),
+    recoveredDates: recoveredDates.slice(0, 20),
+    fallbackRows: fallback.length,
+    fallbackLatestDate: latestDate(fallback),
+    canonicalRows: canonical?.length || 0,
+    canonicalLatestDate: latestDate(canonical || []),
+    canonicalDates: canonicalDates.slice(0, 20),
+    sourcePriority: ['ADMIN_PICK_ENTRY', 'PICK_OBSERVATION_RECOVERY', 'STATIC_FALLBACK']
+  };
+}
+
 export default async function handler(req, res) {
   try {
     const method = requireMethod(req, ['GET', 'POST']);
@@ -64,6 +101,10 @@ export default async function handler(req, res) {
     }
 
     requireAdmin(req);
+
+    if (method === 'GET' && mode === 'audit') {
+      return sendSuccess(res, { audit: await pickPipelineAudit() });
+    }
 
     if (method === 'GET') {
       const rows = await recentPublished(getQueryValue(req, 'limit'));

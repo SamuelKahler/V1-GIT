@@ -1,6 +1,17 @@
 // Sports Edge canonical daily pick loader.
 // Admin-published Supabase picks replace matching fallback dates.
 window.SPORTS_EDGE_DAILY_IMPORT_FALLBACK_TEXT = `
+08/16
+F5 TOR -0.5 +110
+F5 MIA -0.5 +110
+F5 KC -0.5 +110
+
+08/15
+PIT ML -102, .5U & LIVE; no CLV
+F5 TOR -0.5 +115, .325U
+F5 MIA -0.5 +110 - LIVE
+F5 KC -0.5 +110
+
 08/11
 F5 TEX -0.5 -114 - LIVE
 F5 PIT -0.5 +120 - LIVE
